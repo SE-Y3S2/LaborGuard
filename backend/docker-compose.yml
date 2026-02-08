@@ -1,0 +1,180 @@
+version: '3.8'
+
+services:
+  # ===================
+  # Infrastructure
+  # ===================
+  
+  mongodb:
+    image: mongo:7.0
+    container_name: laborguard-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=laborguard
+    networks:
+      - laborguard-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: laborguard-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - laborguard-network
+    healthcheck:
+      test: nc -z localhost 2181 || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: laborguard-kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks:
+      - laborguard-network
+    healthcheck:
+      test: kafka-topics --bootstrap-server localhost:9092 --list
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # ===================
+  # Microservices
+  # ===================
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: laborguard-auth-service
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - SERVICE_NAME=auth-service
+      - MONGODB_URI=mongodb://mongodb:27017/laborguard
+      - KAFKA_BROKER=kafka:9092
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - laborguard-network
+    restart: unless-stopped
+
+  community-service:
+    build:
+      context: ./services/community-service
+      dockerfile: Dockerfile
+    container_name: laborguard-community-service
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - SERVICE_NAME=community-service
+      - MONGODB_URI=mongodb://mongodb:27017/laborguard
+      - KAFKA_BROKER=kafka:9092
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - laborguard-network
+    restart: unless-stopped
+
+  complaint-service:
+    build:
+      context: ./services/complaint-service
+      dockerfile: Dockerfile
+    container_name: laborguard-complaint-service
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - SERVICE_NAME=complaint-service
+      - MONGODB_URI=mongodb://mongodb:27017/laborguard
+      - KAFKA_BROKER=kafka:9092
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - laborguard-network
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: laborguard-notification-service
+    ports:
+      - "3004:3004"
+    environment:
+      - PORT=3004
+      - SERVICE_NAME=notification-service
+      - MONGODB_URI=mongodb://mongodb:27017/laborguard
+      - KAFKA_BROKER=kafka:9092
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - laborguard-network
+    restart: unless-stopped
+
+  messaging-service:
+    build:
+      context: ./services/messaging-service
+      dockerfile: Dockerfile
+    container_name: laborguard-messaging-service
+    ports:
+      - "3005:3005"
+    environment:
+      - PORT=3005
+      - SERVICE_NAME=messaging-service
+      - MONGODB_URI=mongodb://mongodb:27017/laborguard
+      - KAFKA_BROKER=kafka:9092
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - laborguard-network
+    restart: unless-stopped
+
+networks:
+  laborguard-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
