@@ -132,7 +132,3 @@ Each service includes:
 2. Create models in `src/models/`
 3. Create controllers in `src/controllers/`
 4. Publish/subscribe to Kafka topics for inter-service communication
-
-## 📄 License
-
-MIT
