@@ -1,0 +1,43 @@
+const mongoose = require('mongoose');
+
+const userProfileSchema = new mongoose.Schema({
+    userId: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    name: {
+        type: String,
+        required: true
+    },
+    role: {
+        type: String,
+        default: 'worker', // 'worker', 'lawyer', 'ngo_representative'
+    },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    avatarUrl: {
+        type: String,
+        default: ''
+    },
+    bio: {
+        type: String,
+        default: ''
+    },
+    followers: [{
+        type: String // userIds
+    }],
+    following: [{
+        type: String // userIds
+    }],
+    bookmarks: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Post'
+    }]
+}, {
+    timestamps: true
+});
+
+module.exports = mongoose.model('UserProfile', userProfileSchema);
