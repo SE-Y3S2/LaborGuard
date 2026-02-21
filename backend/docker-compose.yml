@@ -4,7 +4,7 @@ services:
   # ===================
   # Infrastructure
   # ===================
-  
+
   mongodb:
     image: mongo:7.0
     container_name: laborguard-mongodb
