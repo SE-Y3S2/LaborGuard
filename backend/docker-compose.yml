@@ -121,6 +121,8 @@ services:
       - SERVICE_NAME=complaint-service
       - MONGODB_URI=mongodb://mongodb:27017/laborguard
       - KAFKA_BROKER=kafka:9092
+      - JWT_SECRET=mysecret123
+      # change this
     depends_on:
       mongodb:
         condition: service_healthy
