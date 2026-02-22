@@ -1,29 +1,32 @@
-// Twilio integration will be fully implemented in Phase 2
-// For now, this is a placeholder/stub to allow the server to run without errors
+const twilio = require('twilio');
 
-const sendVerificationSMS = async (phone, code) => {
+const sendVerificationSMS = async (toPhone, code) => {
     try {
-        console.log(`[SMS STUB] Sending verification code ${code} to ${phone}`);
-        // In production: await client.messages.create({...})
-        return { success: true, messageId: 'stub-sms-id' };
-    } catch (error) {
-        console.error('SMS send error:', error);
-        return { success: false, error: error.message };
-    }
-};
+        // Only initialize client if credentials exist
+        if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
+            console.log('\n=============================================');
+            console.log(`📱 [SIMULATED SMS to ${toPhone}]`);
+            console.log(`Your LaborGuard verification code is: ${code}`);
+            console.log('=============================================\n');
+            return true;
+        }
 
-const sendPasswordResetSMS = async (phone, code) => {
-    try {
-        console.log(`[SMS STUB] Sending password reset code ${code} to ${phone}`);
-        // In production: await client.messages.create({...})
-        return { success: true, messageId: 'stub-sms-id' };
+        const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+
+        const message = await client.messages.create({
+            body: `Your LaborGuard verification code is: ${code}. It expires in 15 minutes.`,
+            from: process.env.TWILIO_PHONE_NUMBER,
+            to: toPhone
+        });
+
+        console.log('SMS sent:', message.sid);
+        return true;
     } catch (error) {
-        console.error('SMS send error:', error);
-        return { success: false, error: error.message };
+        console.error('Error sending SMS:', error);
+        throw new Error('Failed to send verification SMS');
     }
 };
 
 module.exports = {
-    sendVerificationSMS,
-    sendPasswordResetSMS
+    sendVerificationSMS
 };

@@ -34,4 +34,20 @@ const authMiddleware = async (req, res, next) => {
     }
 };
 
-module.exports = authMiddleware;
+// Middleware to restrict access by roles
+const authorize = (...roles) => {
+    return (req, res, next) => {
+        if (!req.user || !roles.includes(req.user.role)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied: You do not have permission to perform this action'
+            });
+        }
+        next();
+    };
+};
+
+module.exports = {
+    protect: authMiddleware,
+    authorize
+};
