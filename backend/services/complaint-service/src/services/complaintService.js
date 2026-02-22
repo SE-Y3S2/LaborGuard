@@ -1,5 +1,6 @@
 const Complaint = require('../models/Complaint');
 const { sendComplaintConfirmationEmail, sendStatusUpdateEmail } = require('./emailService');
+const { isEligibleForAppointment, autoCreateAppointment } = require('./appointmentService');
 
 // Create a new complaint filed by a worker
 const createComplaint = async (data, user) => {
@@ -217,6 +218,14 @@ const updateComplaintStatus = async (complaintId, { status, reason }, user) => {
   sendStatusUpdateEmail(complaint, previousStatus, status).catch((err) =>
     console.error('[complaint-service] Status update email failed:', err.message)
   );
+
+  // Auto-book appointment if complaint moves to under_review
+  // and meets eligibility criteria (category + priority)
+  if (status === 'under_review' && isEligibleForAppointment(complaint.category, complaint.priority)) {
+    autoCreateAppointment(complaint, user).catch((err) =>
+      console.error('[complaint-service] Auto-booking failed:', err.message)
+    );
+  }
 
   return complaint;
 };
