@@ -3,6 +3,9 @@ const mongoose = require('mongoose');
 const { Kafka } = require('kafkajs');
 const cors = require('cors');
 
+const complaintRoutes = require('./routes/complaintRoutes');
+const { errorHandler, notFound } = require('./middleware/errorHandler');
+
 const app = express();
 
 // Middleware
@@ -81,10 +84,12 @@ app.get('/', (req, res) => {
     });
 });
 
-// TODO: Add complaint routes
-// app.post('/api/complaints', ...)
-// app.get('/api/complaints', ...)
-// app.patch('/api/complaints/:id/status', ...)
+// Routes
+app.use('/api/complaints', complaintRoutes);
+
+// Error Handling
+app.use(notFound);
+app.use(errorHandler);
 
 // Start server
 const startServer = async () => {
