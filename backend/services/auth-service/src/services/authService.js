@@ -2,7 +2,7 @@ const User = require('../models/User');
 const RefreshToken = require('../models/RefreshToken');
 const VerificationCode = require('../models/VerificationCode');
 const { hashPassword, comparePassword } = require('../utils/passwordHelper');
-const { generateAccessToken, generateRefreshToken } = require('../config/jwt');
+const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require('../config/jwt');
 const { generateCodeWithExpiry } = require('../utils/codeGenerator');
 const emailService = require('./emailService');
 const smsService = require('./smsService');
@@ -28,20 +28,36 @@ const registerUser = async (userData) => {
         password: hashedPassword
     });
 
-    // Generate verification code
-    const { code, expiresAt } = generateCodeWithExpiry();
+    // Generate two verification codes
+    const emailCodeData = generateCodeWithExpiry();
+    const smsCodeData = generateCodeWithExpiry();
 
-    // Save verification code
+    // Save Email verification code
     await VerificationCode.create({
         userId: user._id,
-        code,
+        code: emailCodeData.code,
         type: 'email',
         purpose: 'registration',
-        expiresAt
+        expiresAt: emailCodeData.expiresAt
     });
 
-    // Send verification email
-    await emailService.sendVerificationEmail(user.email, code);
+    // Save SMS verification code
+    await VerificationCode.create({
+        userId: user._id,
+        code: smsCodeData.code,
+        type: 'sms',
+        purpose: 'registration',
+        expiresAt: smsCodeData.expiresAt
+    });
+
+    // Send verification email & SMS asynchronously
+    try {
+        await emailService.sendVerificationEmail(user.email, emailCodeData.code);
+        // We catch SMS errors separately so fake numbers in dev don't break registration
+        smsService.sendVerificationSMS(user.phone, smsCodeData.code).catch(err => console.error("SMS Warning:", err.message));
+    } catch (error) {
+        console.error("Verification dispatch error:", error);
+    }
 
     return {
         userId: user._id,
@@ -124,8 +140,124 @@ const verifyCode = async (userId, code, type) => {
     return { message: `${type} verified successfully` };
 };
 
+const forgotPassword = async (email) => {
+    const user = await User.findOne({ email });
+    if (!user) {
+        // We throw 200 conceptually or simple success so attackers can't guess emails
+        return { message: 'If that email is registered, a reset code was sent' };
+    }
+
+    const { code, expiresAt } = generateCodeWithExpiry();
+
+    await VerificationCode.create({
+        userId: user._id,
+        code,
+        type: 'email',
+        purpose: 'password_reset',
+        expiresAt
+    });
+
+    try {
+        await emailService.sendVerificationEmail(user.email, code); // You can customize this email later
+    } catch (error) {
+        console.error("Forgot password email error:", error);
+    }
+
+    return { message: 'If that email is registered, a reset code was sent' };
+};
+
+const resetPassword = async (email, code, newPassword) => {
+    const user = await User.findOne({ email });
+    if (!user) {
+        throw { statusCode: 400, message: 'Invalid request' };
+    }
+
+    const record = await VerificationCode.findOne({
+        userId: user._id,
+        code,
+        type: 'email',
+        purpose: 'password_reset',
+        isUsed: false
+    });
+
+    if (!record || record.isExpired()) {
+        throw { statusCode: 400, message: 'Invalid or expired reset code' };
+    }
+
+    // Hash new password and update
+    user.password = await hashPassword(newPassword);
+    await user.save();
+
+    // Mark code as used
+    record.isUsed = true;
+    await record.save();
+
+    return { message: 'Password has been reset successfully. You can now login.' };
+};
+
+const refreshAccessToken = async (token) => {
+    // Verify token structure
+    const decoded = verifyRefreshToken(token);
+
+    // Check if token exists in DB
+    const refreshTokenDoc = await RefreshToken.findOne({ token, userId: decoded.userId });
+    if (!refreshTokenDoc) {
+        throw { statusCode: 401, message: 'Refresh token not found or revoked' };
+    }
+
+    if (refreshTokenDoc.isExpired()) {
+        await RefreshToken.findByIdAndDelete(refreshTokenDoc._id);
+        throw { statusCode: 401, message: 'Refresh token expired' };
+    }
+
+    // Get user to generate new access token
+    const user = await User.findById(decoded.userId);
+    if (!user || !user.isActive) {
+        throw { statusCode: 403, message: 'User not found or deactivated' };
+    }
+
+    // Generate new Access Token
+    const newAccessToken = generateAccessToken(user._id, user.email, user.role);
+
+    return {
+        accessToken: newAccessToken
+    };
+};
+
+const logoutUser = async (token) => {
+    // Simply delete the refresh token from the DB to invalidate it
+    const result = await RefreshToken.findOneAndDelete({ token });
+    if (!result) {
+        throw { statusCode: 400, message: 'Token not found' };
+    }
+
+    return { message: 'Logged out successfully' };
+};
+
+const changePassword = async (userId, currentPassword, newPassword) => {
+    const user = await User.findById(userId).select('+password');
+    if (!user) {
+        throw { statusCode: 404, message: 'User not found' };
+    }
+
+    const isMatch = await comparePassword(currentPassword, user.password);
+    if (!isMatch) {
+        throw { statusCode: 401, message: 'Incorrect current password' };
+    }
+
+    user.password = await hashPassword(newPassword);
+    await user.save();
+
+    return { message: 'Password changed successfully' };
+};
+
 module.exports = {
     registerUser,
     loginUser,
-    verifyCode
+    verifyCode,
+    forgotPassword,
+    resetPassword,
+    refreshAccessToken,
+    logoutUser,
+    changePassword
 };
