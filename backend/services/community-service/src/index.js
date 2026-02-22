@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const { Kafka } = require('kafkajs');
 const cors = require('cors');
+const UserProfile = require('./models/UserProfile');
 
 const app = express();
 
@@ -49,12 +50,29 @@ const connectKafka = async () => {
 
         // Subscribe to relevant topics
         await consumer.subscribe({ topic: 'community-events', fromBeginning: false });
+        await consumer.subscribe({ topic: 'auth-events', fromBeginning: false });
 
         // Start consuming messages
         await consumer.run({
             eachMessage: async ({ topic, partition, message }) => {
-                console.log(`[${SERVICE_NAME}] Received message from ${topic}:`, message.value.toString());
-                // TODO: Handle incoming messages
+                const msgValue = message.value.toString();
+                console.log(`[${SERVICE_NAME}] Received message from ${topic}:`, msgValue);
+
+                try {
+                    const event = JSON.parse(msgValue);
+                    if (topic === 'auth-events' && event.type === 'user_registered') {
+                        const { userId, name, role } = event.payload;
+
+                        let profile = await UserProfile.findOne({ userId });
+                        if (!profile) {
+                            profile = new UserProfile({ userId, name, role });
+                            await profile.save();
+                            console.log(`[${SERVICE_NAME}] Created profile for user ${userId}`);
+                        }
+                    }
+                } catch (err) {
+                    console.error(`[${SERVICE_NAME}] Error processing message:`, err.message);
+                }
             }
         });
     } catch (error) {
@@ -81,10 +99,19 @@ app.get('/', (req, res) => {
     });
 });
 
-// TODO: Add community routes
-// app.post('/api/communities', ...)
-// app.get('/api/communities', ...)
-// app.post('/api/communities/:id/join', ...)
+// Import routes
+const userProfileRoutes = require('./routes/userProfileRoutes');
+const postRoutes = require('./routes/postRoutes');
+const commentRoutes = require('./routes/commentRoutes');
+const statusRoutes = require('./routes/statusRoutes');
+const reportRoutes = require('./routes/reportRoutes');
+
+// Mount routes
+app.use('/api/profiles', userProfileRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/comments', commentRoutes);
+app.use('/api/statuses', statusRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Start server
 const startServer = async () => {
