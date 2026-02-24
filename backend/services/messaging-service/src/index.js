@@ -4,6 +4,7 @@ const { Kafka } = require('kafkajs');
 const cors = require('cors');
 
 const app = express();
+require('dotenv').config();
 
 // Middleware
 app.use(cors());
@@ -85,6 +86,15 @@ app.get('/', (req, res) => {
 // app.post('/api/messages', ...)
 // app.get('/api/messages/conversations', ...)
 // app.get('/api/messages/:conversationId', ...)
+
+const messageRoutes = require('./routes/messageRoutes');
+
+app.use((req, res, next) => {
+    req.producer = producer;
+    next();
+});
+
+app.use('/api/messages', messageRoutes);
 
 // Start server
 const startServer = async () => {
