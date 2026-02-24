@@ -17,6 +17,7 @@ const Dashboard = () => {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setProfile(response.data.data);
+                localStorage.setItem('userRole', response.data.data.role);
             } catch (err) {
                 setError('Failed to load profile. Token might be expired.');
                 localStorage.removeItem('accessToken');
@@ -44,6 +45,9 @@ const Dashboard = () => {
                 <p><strong>Phone:</strong> {profile.phone}</p>
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
+                <button onClick={() => navigate('/jobs')} style={{ padding: '0.5rem 1rem', background: '#28a745', color: 'white', border: 'none', cursor: 'pointer' }}>
+                    Job Board
+                </button>
                 {profile.role === 'admin' && (
                     <button onClick={() => navigate('/admin')} style={{ padding: '0.5rem 1rem', background: '#007bff', color: 'white', border: 'none', cursor: 'pointer' }}>
                         Admin Panel
