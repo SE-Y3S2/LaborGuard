@@ -3,17 +3,34 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
+const session = require('express-session');
+const passport = require('passport');
 const errorHandler = require('./middleware/errorHandler');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 // Load env vars
 dotenv.config();
+
+// Passport config
+require('./config/passport');
 
 const app = express();
 
 // Security Middleware
 app.use(helmet());
+
+// Session Middleware (Required for Passport OAuth)
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'secret',
+    resave: false,
+    saveUninitialized: false
+}));
+
+// Passport Middleware
+app.use(passport.initialize());
+app.use(passport.session());
 
 // CORS Middleware
 app.use(cors({
@@ -33,6 +50,7 @@ if (process.env.NODE_ENV === 'development') {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health Check
 app.get('/', (req, res) => {

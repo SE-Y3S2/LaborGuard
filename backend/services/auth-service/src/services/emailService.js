@@ -1,68 +1,47 @@
 const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport({
+const createTransporter = () => {
+  return nodemailer.createTransport({
     service: process.env.EMAIL_SERVICE,
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASSWORD
+    },
+    tls: {
+      rejectUnauthorized: false
     }
-});
-
-const sendVerificationEmail = async (email, code) => {
-    try {
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'LaborGuard - Email Verification',
-            html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>Verify Your Email</h2>
-          <p>Thank you for registering with LaborGuard. Please use the following code to verify your email address:</p>
-          <div style="background-color: #f4f4f4; padding: 15px; text-align: center; border-radius: 5px;">
-            <h1 style="margin: 0; color: #333;">${code}</h1>
-          </div>
-          <p>This code will expire in 10 minutes.</p>
-          <p>If you didn't request this, please ignore this email.</p>
-        </div>
-      `
-        };
-
-        const info = await transporter.sendMail(mailOptions);
-        return { success: true, messageId: info.messageId };
-    } catch (error) {
-        console.error('Email send error:', error);
-        return { success: false, error: error.message };
-    }
+  });
 };
 
-const sendPasswordResetEmail = async (email, code) => {
-    try {
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'LaborGuard - Password Reset',
-            html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>Reset Your Password</h2>
-          <p>You have requested to reset your password. Please use the following code:</p>
-          <div style="background-color: #f4f4f4; padding: 15px; text-align: center; border-radius: 5px;">
-            <h1 style="margin: 0; color: #333;">${code}</h1>
-          </div>
-          <p>This code will expire in 10 minutes.</p>
-          <p>If you didn't request this, strictly ignore this email.</p>
-        </div>
-      `
-        };
+const sendVerificationEmail = async (toEmail, code) => {
+  try {
+    const transporter = createTransporter();
 
-        const info = await transporter.sendMail(mailOptions);
-        return { success: true, messageId: info.messageId };
-    } catch (error) {
-        console.error('Email send error:', error);
-        return { success: false, error: error.message };
-    }
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: toEmail,
+      subject: 'LaborGuard - Verify your Email',
+      html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                    <h2>Welcome to LaborGuard!</h2>
+                    <p>Thank you for registering. Please use the following 6-digit code to verify your email address. This code will expire in 15 minutes.</p>
+                    <div style="background-color: #f4f4f4; padding: 15px; text-align: center; border-radius: 5px; margin: 20px 0;">
+                        <h1 style="color: #0056b3; letter-spacing: 5px; margin: 0;">${code}</h1>
+                    </div>
+                </div>
+            `
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent: %s', info.messageId);
+    return true;
+  } catch (error) {
+    console.error('Error sending email:', error);
+    // Throwing error so caller knows delivery failed, but you can also choose to absorb it
+    throw new Error('Failed to send verification email');
+  }
 };
 
 module.exports = {
-    sendVerificationEmail,
-    sendPasswordResetEmail
+  sendVerificationEmail
 };

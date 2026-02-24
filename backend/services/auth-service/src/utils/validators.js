@@ -26,7 +26,7 @@ const registerValidator = [
 
     body('role')
         .optional()
-        .isIn(['worker', 'legal_officer', 'admin']).withMessage('Invalid role')
+        .isIn(['worker', 'lawyer', 'ngo', 'employer', 'admin']).withMessage('Invalid role')
 ];
 
 const loginValidator = [
@@ -83,6 +83,11 @@ const changePasswordValidator = [
         })
 ];
 
+const forgotPasswordValidator = [
+    body('email')
+        .isEmail().withMessage('Valid email is required')
+];
+
 const resetPasswordValidator = [
     body('email')
         .isEmail().withMessage('Valid email is required'),
@@ -106,5 +111,6 @@ module.exports = {
     verifyCodeValidator,
     updateProfileValidator,
     changePasswordValidator,
+    forgotPasswordValidator,
     resetPasswordValidator
 };

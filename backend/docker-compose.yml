@@ -121,6 +121,7 @@ services:
       - SERVICE_NAME=complaint-service
       - MONGODB_URI=mongodb://mongodb:27017/laborguard
       - KAFKA_BROKER=kafka:9092
+      
     depends_on:
       mongodb:
         condition: service_healthy
