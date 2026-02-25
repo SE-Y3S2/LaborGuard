@@ -7,6 +7,8 @@ import VerifyOTP from './components/VerifyOTP';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import AdminDashboard from './components/AdminDashboard';
+import JobDashboard from './components/JobDashboard';
+import JobForm from './components/JobForm';
 
 function App() {
   return (
@@ -21,6 +23,8 @@ function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/jobs" element={<JobDashboard />} />
+          <Route path="/jobs/new" element={<JobForm />} />
           <Route path="/oauth-success" element={<OAuthSuccess />} />
         </Routes>
       </div>
