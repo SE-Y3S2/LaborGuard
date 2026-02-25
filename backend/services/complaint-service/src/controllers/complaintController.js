@@ -180,6 +180,51 @@ const getComplaintStats = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Upload an attachment/evidence for a complaint
+ * @route   POST /api/complaints/:id/attachments
+ * @access  Private (worker - owner, admin)
+ */
+const uploadAttachment = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      const error = new Error('No file uploaded');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const complaint = await complaintService.addAttachment(
+      req.params.id,
+      req.file,
+      req.user
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Attachment uploaded successfully.',
+      data: complaint
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Generate and download a PDF report for a complaint
+ * @route   GET /api/complaints/:id/report
+ * @access  Private (authenticated users with access)
+ */
+const generateReport = async (req, res, next) => {
+  try {
+    const { generateComplaintPDF } = require('../utils/pdfGenerator');
+    const complaint = await complaintService.getComplaintById(req.params.id, req.user);
+
+    generateComplaintPDF(complaint, res);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createComplaint,
   getAllComplaints,
@@ -189,5 +234,7 @@ module.exports = {
   updateComplaintStatus,
   assignComplaint,
   deleteComplaint,
-  getComplaintStats
+  getComplaintStats,
+  uploadAttachment,
+  generateReport
 };

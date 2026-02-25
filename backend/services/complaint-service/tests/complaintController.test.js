@@ -154,4 +154,47 @@ describe('Complaint Controller', () => {
             expect(mockRes.json).toHaveBeenCalledWith({ success: true, data: mockStats });
         });
     });
+
+    describe('uploadAttachment', () => {
+        it('should upload an attachment and return 200', async () => {
+            mockReq.params.id = 'c1';
+            mockReq.file = { originalname: 'test.jpg', path: 'path/to/test.jpg', mimetype: 'image/jpeg' };
+            const mockComplaint = { _id: 'c1', attachments: [mockReq.file] };
+            complaintService.addAttachment.mockResolvedValue(mockComplaint);
+
+            await complaintController.uploadAttachment(mockReq, mockRes, mockNext);
+
+            expect(complaintService.addAttachment).toHaveBeenCalledWith('c1', mockReq.file, mockReq.user);
+            expect(mockRes.status).toHaveBeenCalledWith(200);
+            expect(mockRes.json).toHaveBeenCalledWith({
+                success: true,
+                message: 'Attachment uploaded successfully.',
+                data: mockComplaint
+            });
+        });
+
+        it('should return 400 if no file is uploaded', async () => {
+            mockReq.file = null;
+            await complaintController.uploadAttachment(mockReq, mockRes, mockNext);
+            expect(mockNext).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 400 }));
+        });
+    });
+
+    describe('generateReport', () => {
+        it('should generate a report and return it', async () => {
+            mockReq.params.id = 'c1';
+            const mockComplaint = { _id: 'c1', title: 'Test' };
+            complaintService.getComplaintById.mockResolvedValue(mockComplaint);
+
+            // Mock the required utility locally since it's required inside the controller
+            const pdfGenerator = require('../src/utils/pdfGenerator');
+            jest.mock('../src/utils/pdfGenerator', () => ({
+                generateComplaintPDF: jest.fn()
+            }));
+
+            await complaintController.generateReport(mockReq, mockRes, mockNext);
+
+            expect(complaintService.getComplaintById).toHaveBeenCalledWith('c1', mockReq.user);
+        });
+    });
 });
