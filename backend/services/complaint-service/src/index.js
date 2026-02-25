@@ -4,6 +4,8 @@ const { Kafka } = require('kafkajs');
 const cors = require('cors');
 
 const complaintRoutes = require('./routes/complaintRoutes');
+const appointmentRoutes = require('./routes/appointmentRoutes');
+const registryRoutes = require('./routes/registryRoutes');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
 
 const app = express();
@@ -86,6 +88,8 @@ app.get('/', (req, res) => {
 
 // Routes
 app.use('/api/complaints', complaintRoutes);
+app.use('/api/appointments', appointmentRoutes);
+app.use('/api/registry', registryRoutes);
 
 // Error Handling
 app.use(notFound);
