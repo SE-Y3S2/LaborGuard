@@ -1,17 +1,41 @@
 const Post = require('../models/Post');
 const UserProfile = require('../models/UserProfile');
 const { emitEvent } = require('../utils/kafkaProducer');
+const { uploadToCloudinary } = require('../utils/cloudinaryConfig');
 
 exports.createPost = async (req, res) => {
     try {
-        const { authorId, content, mediaUrls, hashtags, poll } = req.body;
+        const { authorId, content, hashtags, poll } = req.body;
+
+        // Upload files to Cloudinary from memory buffers (after NSFWJS check)
+        let mediaUrls = [];
+        if (req.files && req.files.length > 0) {
+            const uploadPromises = req.files.map(file => uploadToCloudinary(file.buffer));
+            const results = await Promise.all(uploadPromises);
+            mediaUrls = results.map(r => r.secure_url);
+        } else if (req.body.mediaUrls) {
+            // Fallback: accept URLs directly from JSON body
+            mediaUrls = Array.isArray(req.body.mediaUrls) ? req.body.mediaUrls : [req.body.mediaUrls];
+        }
+
+        // Parse hashtags if sent as a JSON string (multipart/form-data)
+        let parsedHashtags = hashtags || [];
+        if (typeof parsedHashtags === 'string') {
+            try { parsedHashtags = JSON.parse(parsedHashtags); } catch (e) { parsedHashtags = [parsedHashtags]; }
+        }
+
+        // Parse poll if sent as a JSON string (multipart/form-data)
+        let parsedPoll = poll || undefined;
+        if (typeof parsedPoll === 'string') {
+            try { parsedPoll = JSON.parse(parsedPoll); } catch (e) { parsedPoll = undefined; }
+        }
 
         const post = new Post({
             authorId,
             content,
-            mediaUrls: mediaUrls || [],
-            hashtags: hashtags || [],
-            poll: poll || undefined
+            mediaUrls,
+            hashtags: parsedHashtags,
+            poll: parsedPoll
         });
 
         await post.save();
@@ -64,7 +88,7 @@ exports.getPostById = async (req, res) => {
 exports.updatePost = async (req, res) => {
     try {
         const { postId } = req.params;
-        const { authorId, content, mediaUrls } = req.body;
+        const { authorId, content } = req.body;
 
         const post = await Post.findById(postId);
 
@@ -78,7 +102,15 @@ exports.updatePost = async (req, res) => {
         }
 
         if (content) post.content = content;
-        if (mediaUrls) post.mediaUrls = mediaUrls;
+
+        // Handle new uploaded media — upload buffers to Cloudinary
+        if (req.files && req.files.length > 0) {
+            const uploadPromises = req.files.map(file => uploadToCloudinary(file.buffer));
+            const results = await Promise.all(uploadPromises);
+            post.mediaUrls = results.map(r => r.secure_url);
+        } else if (req.body.mediaUrls) {
+            post.mediaUrls = Array.isArray(req.body.mediaUrls) ? req.body.mediaUrls : [req.body.mediaUrls];
+        }
 
         await post.save();
         res.json(post);

@@ -1,14 +1,24 @@
 const Status = require('../models/Status');
 const UserProfile = require('../models/UserProfile');
+const { uploadToCloudinary } = require('../utils/cloudinaryConfig');
 
 exports.createStatus = async (req, res) => {
     try {
-        const { authorId, content, mediaUrl } = req.body;
+        const { authorId, content } = req.body;
+
+        // Upload file buffer to Cloudinary, or fallback to body URL
+        let mediaUrl = '';
+        if (req.file && req.file.buffer) {
+            const result = await uploadToCloudinary(req.file.buffer);
+            mediaUrl = result.secure_url;
+        } else if (req.body.mediaUrl) {
+            mediaUrl = req.body.mediaUrl;
+        }
 
         const status = new Status({
             authorId,
             content: content || '',
-            mediaUrl: mediaUrl || ''
+            mediaUrl
         });
 
         await status.save();

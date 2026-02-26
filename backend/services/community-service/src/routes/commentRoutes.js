@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const commentController = require('../controllers/commentController');
+const { moderateContent } = require('../middleware/contentModeration');
 
-// POST /api/comments/:postId
-router.post('/:postId', commentController.addComment);
+// POST /api/comments/:postId — check toxicity before adding comment
+router.post('/:postId', moderateContent, commentController.addComment);
 
 // GET /api/comments/:postId
 router.get('/:postId', commentController.getComments);

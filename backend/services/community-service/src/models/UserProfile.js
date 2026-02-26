@@ -12,7 +12,8 @@ const userProfileSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        default: 'worker', // 'worker', 'lawyer', 'ngo_representative'
+        enum: ['worker', 'lawyer', 'ngo_representative', 'employer', 'admin'],
+        default: 'worker',
     },
     isVerified: {
         type: Boolean,
