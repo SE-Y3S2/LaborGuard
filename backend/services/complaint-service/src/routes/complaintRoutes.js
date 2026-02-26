@@ -39,4 +39,11 @@ router.patch('/:id/assign', authenticate, authorize('admin'), validateObjectId, 
 // DELETE /api/complaints/:id
 router.delete('/:id', authenticate, validateObjectId, validate, complaintController.deleteComplaint);
 
+// POST /api/complaints/:id/attachments
+const { upload } = require('../utils/cloudinary');
+router.post('/:id/attachments', authenticate, validateObjectId, upload.single('file'), complaintController.uploadAttachment);
+
+// GET /api/complaints/:id/report
+router.get('/:id/report', authenticate, validateObjectId, complaintController.generateReport);
+
 module.exports = router;

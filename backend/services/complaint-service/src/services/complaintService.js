@@ -324,6 +324,44 @@ const getComplaintStats = async () => {
   };
 };
 
+//Add an attachment to a complaint
+const addAttachment = async (complaintId, fileData, user) => {
+  const complaint = await Complaint.findById(complaintId);
+
+  if (!complaint) {
+    const error = new Error('Complaint not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // Authorization: Only owner can add attachments to pending/under_review
+  // Admins can add anytime
+  const isOwner = complaint.workerId.toString() === user.id;
+  const isAdmin = user.role === 'admin';
+
+  if (!isOwner && !isAdmin) {
+    const error = new Error('Access denied. You cannot add attachments to this complaint.');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (isOwner && !['pending', 'under_review'].includes(complaint.status)) {
+    const error = new Error('Evidence can only be uploaded for complaints that are pending or under review.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  complaint.attachments.push({
+    url: fileData.path,
+    fileType: fileData.mimetype.startsWith('image/') ? 'image' : 'document',
+    originalName: fileData.originalname,
+    uploadedAt: new Date()
+  });
+
+  await complaint.save();
+  return complaint;
+};
+
 module.exports = {
   createComplaint,
   getAllComplaints,
@@ -333,5 +371,6 @@ module.exports = {
   updateComplaintStatus,
   assignComplaint,
   deleteComplaint,
-  getComplaintStats
+  getComplaintStats,
+  addAttachment
 };
