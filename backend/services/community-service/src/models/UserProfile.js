@@ -28,10 +28,10 @@ const userProfileSchema = new mongoose.Schema({
         default: ''
     },
     followers: [{
-        type: String // userIds
+        type: String
     }],
     following: [{
-        type: String // userIds
+        type: String
     }],
     bookmarks: [{
         type: mongoose.Schema.Types.ObjectId,

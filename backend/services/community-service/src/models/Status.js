@@ -9,7 +9,7 @@ const statusSchema = new mongoose.Schema({
         type: String
     },
     mediaUrl: {
-        type: String // URL for the status picture/video
+        type: String
     },
     expiresAt: {
         type: Date,
@@ -20,7 +20,6 @@ const statusSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// TTL index to automatically delete expired statuses
 statusSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 module.exports = mongoose.model('Status', statusSchema);

@@ -6,7 +6,7 @@ exports.createStatus = async (req, res) => {
     try {
         const { authorId, content } = req.body;
 
-        // Upload file buffer to Cloudinary, or fallback to body URL
+
         let mediaUrl = '';
         if (req.file && req.file.buffer) {
             const result = await uploadToCloudinary(req.file.buffer);
@@ -37,11 +37,10 @@ exports.getStatuses = async (req, res) => {
             return res.status(404).json({ message: 'User profile not found' });
         }
 
-        // Get statuses from followed users + own statuses
+
         const userIds = [...profile.following, userId];
 
-        // Since we have a TTL index on Status, expired items should automatically be deleted.
-        // We can add a fallback filter just in case TTL cleanup hasn't run yet.
+
         const activeStatuses = await Status.find({
             authorId: { $in: userIds },
             expiresAt: { $gt: new Date() }

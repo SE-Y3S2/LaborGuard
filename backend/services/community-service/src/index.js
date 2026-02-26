@@ -6,17 +6,16 @@ const UserProfile = require('./models/UserProfile');
 
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Environment variables
+
 const PORT = process.env.PORT || 3002;
 const SERVICE_NAME = process.env.SERVICE_NAME || 'community-service';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/laborguard';
 const KAFKA_BROKER = process.env.KAFKA_BROKER || 'localhost:9092';
 
-// MongoDB Connection
+
 const connectMongoDB = async () => {
     try {
         await mongoose.connect(MONGODB_URI);
@@ -27,7 +26,7 @@ const connectMongoDB = async () => {
     }
 };
 
-// Kafka Setup
+
 const kafka = new Kafka({
     clientId: SERVICE_NAME,
     brokers: [KAFKA_BROKER],
@@ -48,11 +47,9 @@ const connectKafka = async () => {
         await consumer.connect();
         console.log(`[${SERVICE_NAME}] Kafka consumer connected`);
 
-        // Subscribe to relevant topics
         await consumer.subscribe({ topic: 'community-events', fromBeginning: false });
         await consumer.subscribe({ topic: 'auth-events', fromBeginning: false });
 
-        // Start consuming messages
         await consumer.run({
             eachMessage: async ({ topic, partition, message }) => {
                 const msgValue = message.value.toString();
@@ -81,7 +78,6 @@ const connectKafka = async () => {
     }
 };
 
-// Health Check Endpoint
 app.get('/health', (req, res) => {
     res.json({
         status: 'ok',
@@ -90,7 +86,6 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Root Endpoint
 app.get('/', (req, res) => {
     res.json({
         service: SERVICE_NAME,
@@ -99,25 +94,21 @@ app.get('/', (req, res) => {
     });
 });
 
-// Import routes
 const userProfileRoutes = require('./routes/userProfileRoutes');
 const postRoutes = require('./routes/postRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 const statusRoutes = require('./routes/statusRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 
-// Mount routes
 app.use('/api/profiles', userProfileRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/statuses', statusRoutes);
 app.use('/api/reports', reportRoutes);
 
-// Start server
 const startServer = async () => {
     await connectMongoDB();
 
-    // Connect Kafka in background - don't block server startup
     connectKafka().catch(err => {
         console.error(`[${SERVICE_NAME}] Kafka initial connection failed, will retry:`, err.message);
     });

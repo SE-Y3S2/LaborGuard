@@ -1,11 +1,5 @@
 const { classifyImage } = require('../utils/nsfwCheck');
 
-/**
- * Express middleware that checks uploaded image files for NSFW content
- * using NSFWJS. Must be placed AFTER multer middleware.
- * Blocks upload with 403 if any image is flagged as NSFW.
- * Video files bypass NSFWJS check (only images are supported).
- */
 const moderateImages = async (req, res, next) => {
     try {
         const files = req.files || (req.file ? [req.file] : []);
@@ -14,7 +8,6 @@ const moderateImages = async (req, res, next) => {
             return next();
         }
 
-        // Only check image files, skip videos
         const imageFiles = files.filter(f => f.mimetype.startsWith('image/'));
 
         for (const file of imageFiles) {
@@ -32,7 +25,6 @@ const moderateImages = async (req, res, next) => {
         next();
     } catch (error) {
         console.error('[community-service] Image moderation error:', error.message);
-        // Graceful degradation: allow through if moderation fails
         next();
     }
 };

@@ -1,9 +1,5 @@
 const { analyzeText } = require('../utils/perspectiveApi');
 
-/**
- * Express middleware that checks req.body.content for toxicity
- * using the Perspective API. Blocks toxic content with 403.
- */
 const moderateContent = async (req, res, next) => {
     const content = req.body.content;
 
@@ -21,12 +17,10 @@ const moderateContent = async (req, res, next) => {
             });
         }
 
-        // Attach score to request for optional logging
         req.toxicityScore = result.score;
         next();
     } catch (error) {
         console.error('[community-service] Content moderation error:', error.message);
-        // If moderation fails, allow content through (graceful degradation)
         next();
     }
 };

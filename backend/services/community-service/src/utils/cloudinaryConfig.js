@@ -1,20 +1,18 @@
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 
-// Configure Cloudinary
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Use memoryStorage so we can inspect the buffer with NSFWJS before uploading
 const storage = multer.memoryStorage();
 
 const upload = multer({
     storage,
     limits: {
-        fileSize: 50 * 1024 * 1024 // 50MB max
+        fileSize: 50 * 1024 * 1024
     },
     fileFilter: (req, file, cb) => {
         const allowedMimes = [
@@ -29,12 +27,6 @@ const upload = multer({
     }
 });
 
-/**
- * Upload a buffer to Cloudinary
- * @param {Buffer} buffer - The file buffer
- * @param {object} options - Cloudinary upload options
- * @returns {Promise<object>} - Cloudinary upload result
- */
 const uploadToCloudinary = (buffer, options = {}) => {
     return new Promise((resolve, reject) => {
         const uploadOptions = {
