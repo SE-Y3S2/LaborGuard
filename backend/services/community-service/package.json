@@ -9,11 +9,18 @@
         "test": "jest"
     },
     "dependencies": {
+        "@tensorflow/tfjs": "^4.22.0",
+        "axios": "^1.13.5",
+        "cloudinary": "^2.9.0",
         "cors": "^2.8.5",
         "dotenv": "^16.3.1",
         "express": "^4.18.2",
+        "jpeg-js": "^0.4.4",
         "kafkajs": "^2.2.4",
-        "mongoose": "^8.0.0"
+        "mongoose": "^8.0.0",
+        "multer": "^2.0.2",
+        "nsfwjs": "^4.2.1",
+        "pngjs": "^7.0.0"
     },
     "devDependencies": {
         "jest": "^30.2.0",

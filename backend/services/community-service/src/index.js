@@ -116,7 +116,11 @@ app.use('/api/reports', reportRoutes);
 // Start server
 const startServer = async () => {
     await connectMongoDB();
-    await connectKafka();
+
+    // Connect Kafka in background - don't block server startup
+    connectKafka().catch(err => {
+        console.error(`[${SERVICE_NAME}] Kafka initial connection failed, will retry:`, err.message);
+    });
 
     app.listen(PORT, () => {
         console.log(`[${SERVICE_NAME}] Server running on port ${PORT}`);
@@ -124,3 +128,4 @@ const startServer = async () => {
 };
 
 startServer();
+
