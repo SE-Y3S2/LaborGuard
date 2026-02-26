@@ -7,7 +7,7 @@ exports.addComment = async (req, res) => {
         const { postId } = req.params;
         const { authorId, content } = req.body;
 
-        // Ensure post exists
+
         const post = await Post.findById(postId);
         if (!post) {
             return res.status(404).json({ message: 'Post not found' });
@@ -21,7 +21,6 @@ exports.addComment = async (req, res) => {
 
         await comment.save();
 
-        // Emit comment event, but only if they are not the author
         if (post.authorId !== authorId) {
             emitEvent('community-events', 'post_commented', {
                 commenterId: authorId,
@@ -44,7 +43,7 @@ exports.getComments = async (req, res) => {
         const limit = parseInt(req.query.limit) || 20;
 
         const comments = await Comment.find({ postId })
-            .sort({ createdAt: 1 }) // oldest first typically for comments
+            .sort({ createdAt: 1 })
             .skip((page - 1) * limit)
             .limit(limit);
 

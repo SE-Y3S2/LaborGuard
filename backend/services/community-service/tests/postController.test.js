@@ -3,11 +3,13 @@ const Post = require('../src/models/Post');
 const UserProfile = require('../src/models/UserProfile');
 const Report = require('../src/models/Report');
 const { emitEvent } = require('../src/utils/kafkaProducer');
+const { uploadToCloudinary } = require('../src/utils/cloudinaryConfig');
 
 jest.mock('../src/models/Post');
 jest.mock('../src/models/UserProfile');
 jest.mock('../src/models/Report');
 jest.mock('../src/utils/kafkaProducer');
+jest.mock('../src/utils/cloudinaryConfig');
 
 describe('Post Controller', () => {
     let mockReq, mockRes;
@@ -16,7 +18,8 @@ describe('Post Controller', () => {
         mockReq = {
             params: {},
             body: {},
-            query: {}
+            query: {},
+            files: null
         };
         mockRes = {
             status: jest.fn().mockReturnThis(),
@@ -25,10 +28,10 @@ describe('Post Controller', () => {
         jest.clearAllMocks();
     });
 
-    // ... createPost
+    // ===== createPost =====
     describe('createPost', () => {
-        it('should create and return a post', async () => {
-            mockReq.body = { authorId: '1', content: 'hello' };
+        it('should create a post with JSON body (no file upload)', async () => {
+            mockReq.body = { authorId: '1', content: 'hello', mediaUrls: ['http://example.com/img.jpg'] };
             const mockSave = jest.fn();
             Post.mockImplementation(() => ({ save: mockSave }));
 
@@ -37,9 +40,65 @@ describe('Post Controller', () => {
             expect(mockSave).toHaveBeenCalled();
             expect(mockRes.status).toHaveBeenCalledWith(201);
         });
+
+        it('should upload files to Cloudinary and store secure_urls', async () => {
+            mockReq.body = { authorId: '1', content: 'with media' };
+            mockReq.files = [
+                { buffer: Buffer.from('fake-image-1'), mimetype: 'image/jpeg' },
+                { buffer: Buffer.from('fake-image-2'), mimetype: 'image/png' }
+            ];
+            uploadToCloudinary
+                .mockResolvedValueOnce({ secure_url: 'https://res.cloudinary.com/img1.jpg' })
+                .mockResolvedValueOnce({ secure_url: 'https://res.cloudinary.com/img2.png' });
+
+            const mockSave = jest.fn();
+            Post.mockImplementation(function (data) {
+                Object.assign(this, data);
+                this.save = mockSave;
+            });
+
+            await postController.createPost(mockReq, mockRes);
+
+            expect(uploadToCloudinary).toHaveBeenCalledTimes(2);
+            expect(uploadToCloudinary).toHaveBeenCalledWith(mockReq.files[0].buffer);
+            expect(uploadToCloudinary).toHaveBeenCalledWith(mockReq.files[1].buffer);
+            expect(mockSave).toHaveBeenCalled();
+            expect(mockRes.status).toHaveBeenCalledWith(201);
+        });
+
+        it('should parse hashtags from JSON string (multipart/form-data)', async () => {
+            mockReq.body = { authorId: '1', content: 'tags', hashtags: '["labor","rights"]' };
+            const mockSave = jest.fn();
+            Post.mockImplementation(function (data) {
+                Object.assign(this, data);
+                this.save = mockSave;
+            });
+
+            await postController.createPost(mockReq, mockRes);
+
+            expect(Post).toHaveBeenCalledWith(
+                expect.objectContaining({ hashtags: ['labor', 'rights'] })
+            );
+        });
+
+        it('should parse poll from JSON string (multipart/form-data)', async () => {
+            const pollObj = { question: 'Pick?', options: [{ text: 'A', votes: [] }] };
+            mockReq.body = { authorId: '1', content: 'poll', poll: JSON.stringify(pollObj) };
+            const mockSave = jest.fn();
+            Post.mockImplementation(function (data) {
+                Object.assign(this, data);
+                this.save = mockSave;
+            });
+
+            await postController.createPost(mockReq, mockRes);
+
+            expect(Post).toHaveBeenCalledWith(
+                expect.objectContaining({ poll: pollObj })
+            );
+        });
     });
 
-    // ... getFeed
+    // ===== getFeed =====
     describe('getFeed', () => {
         it('should return 404 if profile not found', async () => {
             mockReq.params.userId = '1';
@@ -68,7 +127,7 @@ describe('Post Controller', () => {
         });
     });
 
-    // ... getPostById, updatePost, deletePost
+    // ===== getPostById =====
     describe('getPostById', () => {
         it('should return 404 if post not found', async () => {
             mockReq.params.postId = '1';
@@ -87,6 +146,7 @@ describe('Post Controller', () => {
         });
     });
 
+    // ===== updatePost =====
     describe('updatePost', () => {
         it('should return 403 if unauthorized', async () => {
             mockReq.params.postId = 'p1';
@@ -98,10 +158,10 @@ describe('Post Controller', () => {
             expect(mockRes.status).toHaveBeenCalledWith(403);
         });
 
-        it('should update the post', async () => {
+        it('should update content without file upload', async () => {
             mockReq.params.postId = 'p1';
             mockReq.body = { authorId: '1', content: 'new' };
-            const post = { authorId: '1', content: 'old', save: jest.fn() };
+            const post = { authorId: '1', content: 'old', mediaUrls: [], save: jest.fn() };
             Post.findById.mockResolvedValue(post);
 
             await postController.updatePost(mockReq, mockRes);
@@ -110,8 +170,25 @@ describe('Post Controller', () => {
             expect(post.save).toHaveBeenCalled();
             expect(mockRes.json).toHaveBeenCalled();
         });
+
+        it('should upload new files to Cloudinary on update', async () => {
+            mockReq.params.postId = 'p1';
+            mockReq.body = { authorId: '1', content: 'updated' };
+            mockReq.files = [{ buffer: Buffer.from('new-image'), mimetype: 'image/jpeg' }];
+            uploadToCloudinary.mockResolvedValue({ secure_url: 'https://res.cloudinary.com/new.jpg' });
+
+            const post = { authorId: '1', content: 'old', mediaUrls: ['old_url'], save: jest.fn() };
+            Post.findById.mockResolvedValue(post);
+
+            await postController.updatePost(mockReq, mockRes);
+
+            expect(uploadToCloudinary).toHaveBeenCalledWith(mockReq.files[0].buffer);
+            expect(post.mediaUrls).toEqual(['https://res.cloudinary.com/new.jpg']);
+            expect(post.save).toHaveBeenCalled();
+        });
     });
 
+    // ===== deletePost =====
     describe('deletePost', () => {
         it('should allow deletion by author', async () => {
             mockReq.params.postId = 'p1';
@@ -125,6 +202,7 @@ describe('Post Controller', () => {
         });
     });
 
+    // ===== likePost =====
     describe('likePost', () => {
         it('should emit event when someone else likes', async () => {
             mockReq.params.postId = 'p1';
@@ -150,6 +228,7 @@ describe('Post Controller', () => {
         });
     });
 
+    // ===== sharePost =====
     describe('sharePost', () => {
         it('should increment share count', async () => {
             mockReq.params.postId = '1';
@@ -162,6 +241,7 @@ describe('Post Controller', () => {
         });
     });
 
+    // ===== getTrendingFeed =====
     describe('getTrendingFeed', () => {
         it('should aggregate and sort', async () => {
             Post.aggregate.mockResolvedValue([{ id: 2 }]);
@@ -171,6 +251,7 @@ describe('Post Controller', () => {
         });
     });
 
+    // ===== searchByHashtag =====
     describe('searchByHashtag', () => {
         it('should search query by hashtag', async () => {
             mockReq.params.tag = 'LegalAid';
@@ -188,6 +269,7 @@ describe('Post Controller', () => {
         });
     });
 
+    // ===== votePoll =====
     describe('votePoll', () => {
         it('should 400 if user already voted', async () => {
             mockReq.params.postId = 'p1';
@@ -217,6 +299,7 @@ describe('Post Controller', () => {
         });
     });
 
+    // ===== reportPost =====
     describe('reportPost', () => {
         it('should increment report count and save report document', async () => {
             mockReq.params.postId = 'p1';

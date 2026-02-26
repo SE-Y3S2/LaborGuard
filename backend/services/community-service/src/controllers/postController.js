@@ -1,17 +1,41 @@
 const Post = require('../models/Post');
 const UserProfile = require('../models/UserProfile');
 const { emitEvent } = require('../utils/kafkaProducer');
+const { uploadToCloudinary } = require('../utils/cloudinaryConfig');
 
 exports.createPost = async (req, res) => {
     try {
-        const { authorId, content, mediaUrls, hashtags, poll } = req.body;
+        const { authorId, content, hashtags, poll } = req.body;
+
+
+        let mediaUrls = [];
+        if (req.files && req.files.length > 0) {
+            const uploadPromises = req.files.map(file => uploadToCloudinary(file.buffer));
+            const results = await Promise.all(uploadPromises);
+            mediaUrls = results.map(r => r.secure_url);
+        } else if (req.body.mediaUrls) {
+
+            mediaUrls = Array.isArray(req.body.mediaUrls) ? req.body.mediaUrls : [req.body.mediaUrls];
+        }
+
+
+        let parsedHashtags = hashtags || [];
+        if (typeof parsedHashtags === 'string') {
+            try { parsedHashtags = JSON.parse(parsedHashtags); } catch (e) { parsedHashtags = [parsedHashtags]; }
+        }
+
+
+        let parsedPoll = poll || undefined;
+        if (typeof parsedPoll === 'string') {
+            try { parsedPoll = JSON.parse(parsedPoll); } catch (e) { parsedPoll = undefined; }
+        }
 
         const post = new Post({
             authorId,
             content,
-            mediaUrls: mediaUrls || [],
-            hashtags: hashtags || [],
-            poll: poll || undefined
+            mediaUrls,
+            hashtags: parsedHashtags,
+            poll: parsedPoll
         });
 
         await post.save();
@@ -32,7 +56,7 @@ exports.getFeed = async (req, res) => {
             return res.status(404).json({ message: 'User profile not found' });
         }
 
-        // Get posts from followed users + own posts
+
         const userIds = [...profile.following, userId];
 
         const posts = await Post.find({ authorId: { $in: userIds } })
@@ -64,7 +88,7 @@ exports.getPostById = async (req, res) => {
 exports.updatePost = async (req, res) => {
     try {
         const { postId } = req.params;
-        const { authorId, content, mediaUrls } = req.body;
+        const { authorId, content } = req.body;
 
         const post = await Post.findById(postId);
 
@@ -72,13 +96,21 @@ exports.updatePost = async (req, res) => {
             return res.status(404).json({ message: 'Post not found' });
         }
 
-        // Basic authorization check
+
         if (post.authorId !== authorId) {
             return res.status(403).json({ message: 'Unauthorized to edit this post' });
         }
 
         if (content) post.content = content;
-        if (mediaUrls) post.mediaUrls = mediaUrls;
+
+
+        if (req.files && req.files.length > 0) {
+            const uploadPromises = req.files.map(file => uploadToCloudinary(file.buffer));
+            const results = await Promise.all(uploadPromises);
+            post.mediaUrls = results.map(r => r.secure_url);
+        } else if (req.body.mediaUrls) {
+            post.mediaUrls = Array.isArray(req.body.mediaUrls) ? req.body.mediaUrls : [req.body.mediaUrls];
+        }
 
         await post.save();
         res.json(post);
@@ -123,14 +155,13 @@ exports.likePost = async (req, res) => {
         const likeIndex = post.likes.indexOf(userId);
         let action = 'liked';
         if (likeIndex > -1) {
-            // Unlike
+
             post.likes.splice(likeIndex, 1);
             action = 'unliked';
         } else {
-            // Like
+
             post.likes.push(userId);
 
-            // Emit like event, but only if they are not the author
             if (post.authorId !== userId) {
                 emitEvent('community-events', 'post_liked', {
                     likerId: userId,
@@ -171,7 +202,7 @@ exports.getTrendingFeed = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 20;
 
-        // Trending algorithm (simple): sorting by number of likes + shares
+
         const posts = await Post.aggregate([
             {
                 $addFields: {
@@ -219,12 +250,12 @@ exports.votePoll = async (req, res) => {
             return res.status(400).json({ message: 'Post does not contain a poll' });
         }
 
-        // Validate option index
+
         if (optionIndex < 0 || optionIndex >= post.poll.options.length) {
             return res.status(400).json({ message: 'Invalid poll option' });
         }
 
-        // Check if user already voted to prevent multiple votes
+
         let hasVoted = false;
         post.poll.options.forEach(opt => {
             if (opt.votes.includes(userId)) hasVoted = true;
@@ -246,7 +277,7 @@ exports.votePoll = async (req, res) => {
 exports.reportPost = async (req, res) => {
     try {
         const { postId } = req.params;
-        const Report = require('../models/Report'); // require here or at top
+        const Report = require('../models/Report');
         const { reporterId, reason } = req.body;
 
         const post = await Post.findById(postId);

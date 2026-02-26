@@ -1,9 +1,11 @@
 const statusController = require('../src/controllers/statusController');
 const Status = require('../src/models/Status');
 const UserProfile = require('../src/models/UserProfile');
+const { uploadToCloudinary } = require('../src/utils/cloudinaryConfig');
 
 jest.mock('../src/models/Status');
 jest.mock('../src/models/UserProfile');
+jest.mock('../src/utils/cloudinaryConfig');
 
 describe('Status Controller', () => {
     let mockReq, mockRes;
@@ -11,7 +13,8 @@ describe('Status Controller', () => {
     beforeEach(() => {
         mockReq = {
             params: {},
-            body: {}
+            body: {},
+            file: null
         };
         mockRes = {
             status: jest.fn().mockReturnThis(),
@@ -20,9 +23,10 @@ describe('Status Controller', () => {
         jest.clearAllMocks();
     });
 
+    // ===== createStatus =====
     describe('createStatus', () => {
-        it('should save status doc', async () => {
-            mockReq.body = { authorId: '1', content: 'yes' };
+        it('should save status with JSON body (no file upload)', async () => {
+            mockReq.body = { authorId: '1', content: 'status text' };
             const mockSave = jest.fn();
             Status.mockImplementation(() => ({ save: mockSave }));
 
@@ -31,8 +35,43 @@ describe('Status Controller', () => {
             expect(mockSave).toHaveBeenCalled();
             expect(mockRes.status).toHaveBeenCalledWith(201);
         });
+
+        it('should upload file buffer to Cloudinary and store secure_url', async () => {
+            mockReq.body = { authorId: '1', content: 'with media' };
+            mockReq.file = { buffer: Buffer.from('fake-image'), mimetype: 'image/jpeg' };
+            uploadToCloudinary.mockResolvedValue({ secure_url: 'https://res.cloudinary.com/status.jpg' });
+
+            const mockSave = jest.fn();
+            Status.mockImplementation(function (data) {
+                Object.assign(this, data);
+                this.save = mockSave;
+            });
+
+            await statusController.createStatus(mockReq, mockRes);
+
+            expect(uploadToCloudinary).toHaveBeenCalledWith(mockReq.file.buffer);
+            expect(mockSave).toHaveBeenCalled();
+            expect(mockRes.status).toHaveBeenCalledWith(201);
+        });
+
+        it('should fallback to body mediaUrl when no file uploaded', async () => {
+            mockReq.body = { authorId: '1', content: 'link', mediaUrl: 'https://example.com/img.jpg' };
+            const mockSave = jest.fn();
+            Status.mockImplementation(function (data) {
+                Object.assign(this, data);
+                this.save = mockSave;
+            });
+
+            await statusController.createStatus(mockReq, mockRes);
+
+            expect(uploadToCloudinary).not.toHaveBeenCalled();
+            expect(Status).toHaveBeenCalledWith(
+                expect.objectContaining({ mediaUrl: 'https://example.com/img.jpg' })
+            );
+        });
     });
 
+    // ===== getStatuses =====
     describe('getStatuses', () => {
         it('should return 404 if profile not found', async () => {
             mockReq.params.userId = '1';
@@ -62,6 +101,7 @@ describe('Status Controller', () => {
         });
     });
 
+    // ===== deleteStatus =====
     describe('deleteStatus', () => {
         it('should 403 if unauthorized', async () => {
             mockReq.params.statusId = 's1';

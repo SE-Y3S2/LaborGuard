@@ -131,6 +131,41 @@ describe('UserProfile Controller', () => {
             expect(mockRes.status).toHaveBeenCalledWith(200);
         });
 
+        it('should create profile with employer role', async () => {
+            mockReq.body = { userId: '10', name: 'Employer User', role: 'employer' };
+            UserProfile.findOne.mockResolvedValue(null);
+            const mockSave = jest.fn();
+            UserProfile.mockImplementation(function (data) {
+                Object.assign(this, data);
+                this.save = mockSave;
+            });
+
+            await userProfileController.createOrUpdateProfile(mockReq, mockRes);
+
+            expect(UserProfile).toHaveBeenCalledWith(
+                expect.objectContaining({ role: 'employer' })
+            );
+            expect(mockSave).toHaveBeenCalled();
+            expect(mockRes.status).toHaveBeenCalledWith(200);
+        });
+
+        it('should create profile with admin role', async () => {
+            mockReq.body = { userId: '11', name: 'Admin User', role: 'admin' };
+            UserProfile.findOne.mockResolvedValue(null);
+            const mockSave = jest.fn();
+            UserProfile.mockImplementation(function (data) {
+                Object.assign(this, data);
+                this.save = mockSave;
+            });
+
+            await userProfileController.createOrUpdateProfile(mockReq, mockRes);
+
+            expect(UserProfile).toHaveBeenCalledWith(
+                expect.objectContaining({ role: 'admin' })
+            );
+            expect(mockSave).toHaveBeenCalled();
+        });
+
         it('should update existing profile', async () => {
             mockReq.body = { userId: '1', name: 'Updated' };
             const existingProfile = { userId: '1', name: 'Old', save: jest.fn() };
@@ -141,6 +176,17 @@ describe('UserProfile Controller', () => {
             expect(existingProfile.name).toBe('Updated');
             expect(existingProfile.save).toHaveBeenCalled();
             expect(mockRes.status).toHaveBeenCalledWith(200);
+        });
+
+        it('should update role on existing profile', async () => {
+            mockReq.body = { userId: '1', role: 'employer' };
+            const existingProfile = { userId: '1', name: 'User', role: 'worker', save: jest.fn() };
+            UserProfile.findOne.mockResolvedValue(existingProfile);
+
+            await userProfileController.createOrUpdateProfile(mockReq, mockRes);
+
+            expect(existingProfile.role).toBe('employer');
+            expect(existingProfile.save).toHaveBeenCalled();
         });
     });
 

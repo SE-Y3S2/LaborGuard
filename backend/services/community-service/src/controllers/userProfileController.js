@@ -38,7 +38,7 @@ exports.followUser = async (req, res) => {
             await currentUser.save();
             await targetUser.save();
 
-            // Emit follow event
+
             emitEvent('community-events', 'user_followed', {
                 followerId: currentUserId,
                 targetUserId: targetUserId
@@ -81,13 +81,11 @@ exports.createOrUpdateProfile = async (req, res) => {
         let profile = await UserProfile.findOne({ userId });
 
         if (profile) {
-            // Update
             if (name) profile.name = name;
             if (role) profile.role = role;
             if (avatarUrl) profile.avatarUrl = avatarUrl;
             if (bio) profile.bio = bio;
         } else {
-            // Create
             profile = new UserProfile({ userId, name, role, avatarUrl, bio });
         }
 
@@ -109,10 +107,8 @@ exports.toggleBookmark = async (req, res) => {
 
         const index = profile.bookmarks.indexOf(postId);
         if (index > -1) {
-            // Remove bookmark
             profile.bookmarks.splice(index, 1);
         } else {
-            // Add bookmark
             profile.bookmarks.push(postId);
         }
 
