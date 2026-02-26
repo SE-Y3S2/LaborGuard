@@ -21,7 +21,7 @@ const connectProducer = async () => {
     try {
         await producer.connect();
         isConnected = true;
-        console.log(`[${SERVICE_NAME}] Dedicated Kafka producer connected natively for events`);
+        console.log(`[${SERVICE_NAME}] Kafka producer connected`);
     } catch (error) {
         console.error(`[${SERVICE_NAME}] Event producer connection error:`, error.message);
     }

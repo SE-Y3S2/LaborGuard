@@ -7,24 +7,24 @@ exports.createPost = async (req, res) => {
     try {
         const { authorId, content, hashtags, poll } = req.body;
 
-        // Upload files to Cloudinary from memory buffers (after NSFWJS check)
+
         let mediaUrls = [];
         if (req.files && req.files.length > 0) {
             const uploadPromises = req.files.map(file => uploadToCloudinary(file.buffer));
             const results = await Promise.all(uploadPromises);
             mediaUrls = results.map(r => r.secure_url);
         } else if (req.body.mediaUrls) {
-            // Fallback: accept URLs directly from JSON body
+
             mediaUrls = Array.isArray(req.body.mediaUrls) ? req.body.mediaUrls : [req.body.mediaUrls];
         }
 
-        // Parse hashtags if sent as a JSON string (multipart/form-data)
+
         let parsedHashtags = hashtags || [];
         if (typeof parsedHashtags === 'string') {
             try { parsedHashtags = JSON.parse(parsedHashtags); } catch (e) { parsedHashtags = [parsedHashtags]; }
         }
 
-        // Parse poll if sent as a JSON string (multipart/form-data)
+
         let parsedPoll = poll || undefined;
         if (typeof parsedPoll === 'string') {
             try { parsedPoll = JSON.parse(parsedPoll); } catch (e) { parsedPoll = undefined; }
@@ -56,7 +56,7 @@ exports.getFeed = async (req, res) => {
             return res.status(404).json({ message: 'User profile not found' });
         }
 
-        // Get posts from followed users + own posts
+
         const userIds = [...profile.following, userId];
 
         const posts = await Post.find({ authorId: { $in: userIds } })
@@ -96,14 +96,14 @@ exports.updatePost = async (req, res) => {
             return res.status(404).json({ message: 'Post not found' });
         }
 
-        // Basic authorization check
+
         if (post.authorId !== authorId) {
             return res.status(403).json({ message: 'Unauthorized to edit this post' });
         }
 
         if (content) post.content = content;
 
-        // Handle new uploaded media — upload buffers to Cloudinary
+
         if (req.files && req.files.length > 0) {
             const uploadPromises = req.files.map(file => uploadToCloudinary(file.buffer));
             const results = await Promise.all(uploadPromises);
@@ -155,14 +155,13 @@ exports.likePost = async (req, res) => {
         const likeIndex = post.likes.indexOf(userId);
         let action = 'liked';
         if (likeIndex > -1) {
-            // Unlike
+
             post.likes.splice(likeIndex, 1);
             action = 'unliked';
         } else {
-            // Like
+
             post.likes.push(userId);
 
-            // Emit like event, but only if they are not the author
             if (post.authorId !== userId) {
                 emitEvent('community-events', 'post_liked', {
                     likerId: userId,
@@ -203,7 +202,7 @@ exports.getTrendingFeed = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 20;
 
-        // Trending algorithm (simple): sorting by number of likes + shares
+
         const posts = await Post.aggregate([
             {
                 $addFields: {
@@ -251,12 +250,12 @@ exports.votePoll = async (req, res) => {
             return res.status(400).json({ message: 'Post does not contain a poll' });
         }
 
-        // Validate option index
+
         if (optionIndex < 0 || optionIndex >= post.poll.options.length) {
             return res.status(400).json({ message: 'Invalid poll option' });
         }
 
-        // Check if user already voted to prevent multiple votes
+
         let hasVoted = false;
         post.poll.options.forEach(opt => {
             if (opt.votes.includes(userId)) hasVoted = true;
@@ -278,7 +277,7 @@ exports.votePoll = async (req, res) => {
 exports.reportPost = async (req, res) => {
     try {
         const { postId } = req.params;
-        const Report = require('../models/Report'); // require here or at top
+        const Report = require('../models/Report');
         const { reporterId, reason } = req.body;
 
         const post = await Post.findById(postId);
