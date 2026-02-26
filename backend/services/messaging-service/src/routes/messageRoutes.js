@@ -1,12 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('../controllers/messageController');
-const upload = require('../middleware/uploadMiddleware');
+const messageController = require('../controllers/messageController');
+const { upload } = require('../utils/cloudinaryConfig');
 
-router.post('/', upload.single('image'), controller.createMessage);
-router.get('/', controller.getAllMessages);
-router.get('/:id', controller.getMessage);
-router.put('/:id', controller.updateMessage);
-router.delete('/:id', controller.deleteMessage);
+router.post('/conversations', messageController.createConversation);
+router.get('/conversations/:userId', messageController.getConversations);
+
+router.get('/messages/:conversationId', messageController.getMessages);
+router.post('/messages', upload.array('media', 5), messageController.sendMessage);
+router.patch('/messages/:conversationId/read', messageController.markAsRead);
+router.delete('/messages/:messageId', messageController.deleteMessage);
 
 module.exports = router;
