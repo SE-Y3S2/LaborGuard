@@ -54,8 +54,9 @@ const connectKafka = async () => {
         // Start consuming messages
         await consumer.run({
             eachMessage: async ({ topic, partition, message }) => {
-                console.log(`[${SERVICE_NAME}] Received message from ${topic}:`, message.value.toString());
-                // TODO: Handle incoming messages
+                const msgValue = message.value.toString();
+                console.log(`[${SERVICE_NAME}] Received message from ${topic}:`, msgValue);
+                // Notification service handles the messaging-events, this is just for logging/extensibility here
             }
         });
     } catch (error) {
@@ -82,10 +83,9 @@ app.get('/', (req, res) => {
     });
 });
 
-// TODO: Add messaging routes
-// app.post('/api/messages', ...)
-// app.get('/api/messages/conversations', ...)
-// app.get('/api/messages/:conversationId', ...)
+// Routes
+const messageRoutes = require('./routes/messageRoutes');
+app.use('/api', messageRoutes);
 
 const messageRoutes = require('./routes/messageRoutes');
 
@@ -99,7 +99,11 @@ app.use('/api/messages', messageRoutes);
 // Start server
 const startServer = async () => {
     await connectMongoDB();
-    await connectKafka();
+
+    // Connect to Kafka but don't block server startup if it fails initially
+    connectKafka().catch(err => {
+        console.error(`[${SERVICE_NAME}] Kafka initial connection failed, will retry:`, err.message);
+    });
 
     app.listen(PORT, () => {
         console.log(`[${SERVICE_NAME}] Server running on port ${PORT}`);

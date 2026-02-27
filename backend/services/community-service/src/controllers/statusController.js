@@ -1,14 +1,24 @@
 const Status = require('../models/Status');
 const UserProfile = require('../models/UserProfile');
+const { uploadToCloudinary } = require('../utils/cloudinaryConfig');
 
 exports.createStatus = async (req, res) => {
     try {
-        const { authorId, content, mediaUrl } = req.body;
+        const { authorId, content } = req.body;
+
+
+        let mediaUrl = '';
+        if (req.file && req.file.buffer) {
+            const result = await uploadToCloudinary(req.file.buffer);
+            mediaUrl = result.secure_url;
+        } else if (req.body.mediaUrl) {
+            mediaUrl = req.body.mediaUrl;
+        }
 
         const status = new Status({
             authorId,
             content: content || '',
-            mediaUrl: mediaUrl || ''
+            mediaUrl
         });
 
         await status.save();
@@ -27,11 +37,10 @@ exports.getStatuses = async (req, res) => {
             return res.status(404).json({ message: 'User profile not found' });
         }
 
-        // Get statuses from followed users + own statuses
+
         const userIds = [...profile.following, userId];
 
-        // Since we have a TTL index on Status, expired items should automatically be deleted.
-        // We can add a fallback filter just in case TTL cleanup hasn't run yet.
+
         const activeStatuses = await Status.find({
             authorId: { $in: userIds },
             expiresAt: { $gt: new Date() }

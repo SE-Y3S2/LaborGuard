@@ -10,10 +10,10 @@ const postSchema = new mongoose.Schema({
         required: true
     },
     mediaUrls: [{
-        type: String // URLs for pictures/videos
+        type: String
     }],
     likes: [{
-        type: String // userIds
+        type: String
     }],
     shareCount: {
         type: Number,
@@ -26,7 +26,7 @@ const postSchema = new mongoose.Schema({
         question: String,
         options: [{
             text: String,
-            votes: [{ type: String }] // Array of userIds who voted for this option
+            votes: [{ type: String }]
         }]
     },
     isReported: {
@@ -41,9 +41,7 @@ const postSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Index for getting feeds ordered by creation date
 postSchema.index({ createdAt: -1 });
-// Index for hashtag search
 postSchema.index({ hashtags: 1 });
 
 module.exports = mongoose.model('Post', postSchema);

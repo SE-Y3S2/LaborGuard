@@ -11,7 +11,7 @@ const reportSchema = new mongoose.Schema({
         enum: ['Post', 'Comment', 'UserProfile']
     },
     targetId: {
-        type: String, // String to handle both String userIds and ObjectId posts/comments
+        type: String,
         required: true
     },
     reason: {
