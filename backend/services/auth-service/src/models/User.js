@@ -1,10 +1,19 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-    name: {
+    firstName: {
         type: String,
-        required: [true, 'Please provide your name'],
+        required: [true, 'Please provide your first name'],
         trim: true
+    },
+    lastName: {
+        type: String,
+        required: [true, 'Please provide your last name'],
+        trim: true
+    },
+    birthDate: {
+        type: Date,
+        required: [true, 'Please provide your birth date']
     },
     email: {
         type: String,
@@ -52,6 +61,13 @@ const userSchema = new mongoose.Schema({
             enum: ['en', 'si', 'ta'],
             default: 'en'
         }
+    },
+    documents: [{
+        type: String
+    }],
+    isApproved: {
+        type: Boolean,
+        default: false
     },
     isActive: {
         type: Boolean,

@@ -2,9 +2,16 @@ const { body } = require('express-validator');
 const { validatePasswordStrength } = require('./passwordHelper');
 
 const registerValidator = [
-    body('name')
+    body('firstName')
         .trim()
-        .notEmpty().withMessage('Name is required'),
+        .notEmpty().withMessage('First name is required'),
+
+    body('lastName')
+        .trim()
+        .notEmpty().withMessage('Last name is required'),
+
+    body('birthDate')
+        .isISO8601().withMessage('Please provide a valid birth date'),
 
     body('email')
         .trim()
@@ -24,9 +31,27 @@ const registerValidator = [
             return true;
         }),
 
+    body('confirmPassword')
+        .custom((value, { req }) => {
+            if (value !== req.body.password) {
+                throw new Error('Password confirmation does not match password');
+            }
+            return true;
+        }),
+
     body('role')
         .optional()
-        .isIn(['worker', 'lawyer', 'ngo', 'employer', 'admin']).withMessage('Invalid role')
+        .isIn(['worker', 'lawyer', 'ngo', 'employer', 'admin']).withMessage('Invalid role'),
+
+    body('documents')
+        .custom((value, { req }) => {
+            if (req.body.role && req.body.role !== 'worker' && req.body.role !== 'admin') {
+                if (!value || !Array.isArray(value) || value.length === 0) {
+                    throw new Error('Documents are required for this role for admin verification');
+                }
+            }
+            return true;
+        })
 ];
 
 const loginValidator = [

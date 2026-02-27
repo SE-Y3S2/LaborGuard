@@ -70,9 +70,26 @@ const deleteUser = async (userId) => {
     return { message: 'User deleted permanently' };
 };
 
+const approveUser = async (userId) => {
+    const user = await User.findById(userId);
+    if (!user) {
+        throw { statusCode: 404, message: 'User not found' };
+    }
+
+    if (user.isApproved) {
+        return { message: 'User is already approved' };
+    }
+
+    user.isApproved = true;
+    await user.save();
+
+    return { message: `${user.role} user has been approved successfully` };
+};
+
 module.exports = {
     getAllUsers,
     updateUserRole,
     updateAccountStatus,
-    deleteUser
+    deleteUser,
+    approveUser
 };

@@ -63,9 +63,23 @@ const deleteUser = async (req, res, next) => {
     }
 };
 
+const approveUser = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const result = await adminService.approveUser(id);
+        res.status(200).json({
+            success: true,
+            message: result.message
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getAllUsers,
     updateUserRole,
     deactivateUser,
-    deleteUser
+    deleteUser,
+    approveUser
 };
