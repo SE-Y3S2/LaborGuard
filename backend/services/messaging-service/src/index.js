@@ -2,6 +2,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const { Kafka } = require('kafkajs');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
+const path = require('path');
 
 const app = express();
 require('dotenv').config();
@@ -9,6 +12,10 @@ require('dotenv').config();
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Swagger Documentation
+const swaggerDocument = YAML.load(path.join(__dirname, '..', 'swagger.yaml'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Environment variables
 const PORT = process.env.PORT || 3005;

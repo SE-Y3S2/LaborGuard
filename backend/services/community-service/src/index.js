@@ -2,12 +2,19 @@ const express = require('express');
 const mongoose = require('mongoose');
 const { Kafka } = require('kafkajs');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
+const path = require('path');
 const UserProfile = require('./models/UserProfile');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Swagger Documentation
+const swaggerDocument = YAML.load(path.join(__dirname, '..', 'swagger.yaml'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 
 const PORT = process.env.PORT || 3002;

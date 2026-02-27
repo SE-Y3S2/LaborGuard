@@ -3,6 +3,9 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
+const path = require('path');
 
 // Load env vars (useful if app.js is imported directly for testing)
 dotenv.config();
@@ -26,6 +29,10 @@ app.use(express.urlencoded({ extended: true }));
 if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
 }
+
+// Swagger Documentation
+const swaggerDocument = YAML.load(path.join(__dirname, '..', 'swagger.yaml'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Routes
 app.get('/', (req, res) => {
