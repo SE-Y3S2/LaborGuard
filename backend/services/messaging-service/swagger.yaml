@@ -1,0 +1,83 @@
+openapi: 3.0.0
+info:
+  title: Messaging Service API
+  version: 1.0.0
+  description: API Documentation for the LaborGuard Messaging Service
+servers:
+  - url: http://localhost:3005/api
+    description: Local development server
+paths:
+  /messages:
+    post:
+      summary: Send a new message
+      tags: [Messages]
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                senderId:
+                  type: string
+                receiverId:
+                  type: string
+                content:
+                  type: string
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Message sent successfully
+    get:
+      summary: Get all messages
+      tags: [Messages]
+      responses:
+        '200':
+          description: List of messages
+  /messages/{id}:
+    get:
+      summary: Get message by ID
+      tags: [Messages]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Message retrieved successfully
+    put:
+      summary: Update message by ID
+      tags: [Messages]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+      responses:
+        '200':
+          description: Message updated successfully
+    delete:
+      summary: Delete message by ID
+      tags: [Messages]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Message deleted successfully

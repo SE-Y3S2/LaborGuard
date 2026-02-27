@@ -1,5 +1,9 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const path = require('path');
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
+const swaggerDocument = YAML.load(path.join(__dirname, '../swagger.yaml'));
 const { Kafka } = require('kafkajs');
 const cors = require('cors');
 
@@ -81,10 +85,24 @@ app.get('/', (req, res) => {
     });
 });
 
+<<<<<<< Updated upstream
 // TODO: Add complaint routes
 // app.post('/api/complaints', ...)
 // app.get('/api/complaints', ...)
 // app.patch('/api/complaints/:id/status', ...)
+=======
+// Swagger API Docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+// Routes
+app.use('/api/complaints', complaintRoutes);
+app.use('/api/appointments', appointmentRoutes);
+app.use('/api/registry', registryRoutes);
+
+// Error Handling
+app.use(notFound);
+app.use(errorHandler);
+>>>>>>> Stashed changes
 
 // Start server
 const startServer = async () => {

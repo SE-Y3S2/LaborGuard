@@ -1,5 +1,9 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const path = require('path');
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
+const swaggerDocument = YAML.load(path.join(__dirname, '../swagger.yaml'));
 const { Kafka } = require('kafkajs');
 const cors = require('cors');
 const UserProfile = require('./models/UserProfile');
@@ -100,6 +104,13 @@ const commentRoutes = require('./routes/commentRoutes');
 const statusRoutes = require('./routes/statusRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 
+<<<<<<< Updated upstream
+=======
+// Swagger API Docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+// Mount routes
+>>>>>>> Stashed changes
 app.use('/api/profiles', userProfileRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/comments', commentRoutes);

@@ -18,9 +18,14 @@
         "jpeg-js": "^0.4.4",
         "kafkajs": "^2.2.4",
         "mongoose": "^8.0.0",
+<<<<<<< Updated upstream
         "multer": "^2.0.2",
         "nsfwjs": "^4.2.1",
         "pngjs": "^7.0.0"
+=======
+        "swagger-ui-express": "^5.0.1",
+        "yamljs": "^0.3.0"
+>>>>>>> Stashed changes
     },
     "devDependencies": {
         "jest": "^30.2.0",

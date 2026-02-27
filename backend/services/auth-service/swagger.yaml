@@ -1,0 +1,313 @@
+openapi: 3.0.0
+info:
+  title: Auth Service API
+  version: 1.0.0
+  description: API Documentation for the LaborGuard Auth Service
+servers:
+  - url: http://localhost:3001/api
+    description: Local development server
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: jwt
+  schemas:
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        role:
+          type: string
+          enum: [worker, lawyer, ngo, employer, admin]
+        isEmailVerified:
+          type: boolean
+        isPhoneVerified:
+          type: boolean
+        profile:
+          type: object
+          properties:
+            occupation:
+              type: string
+            location:
+              type: string
+            preferredLanguage:
+              type: string
+              enum: [en, si, ta]
+        isActive:
+          type: boolean
+        lastLogin:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, phone, password]
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                phone:
+                  type: string
+                password:
+                  type: string
+                role:
+                  type: string
+                profile:
+                  type: object
+      responses:
+        '201':
+          description: User registered successfully
+  /auth/login:
+    post:
+      summary: Login user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+  /auth/verify:
+    post:
+      summary: Verify user account (email/phone)
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code:
+                  type: string
+                type:
+                  type: string
+                  enum: [email, phone]
+      responses:
+        '200':
+          description: Verification successful
+  /auth/logout:
+    post:
+      summary: Logout user
+      tags: [Auth]
+      responses:
+        '200':
+          description: Logout successful
+  /auth/forgot-password:
+    post:
+      summary: Request password reset
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+      responses:
+        '200':
+          description: Reset link sent
+  /auth/reset-password:
+    post:
+      summary: Reset password
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, newPassword]
+              properties:
+                token:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Password reset successful
+  /auth/refresh:
+    post:
+      summary: Refresh JWT token
+      tags: [Auth]
+      responses:
+        '200':
+          description: Token refreshed
+  /auth/change-password:
+    post:
+      summary: Change password for logged in user
+      tags: [Auth]
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Password changed successfully
+  /auth/google:
+    get:
+      summary: Initiate Google OAuth
+      tags: [OAuth]
+      responses:
+        '302':
+          description: Redirects to Google
+  /auth/google/callback:
+    get:
+      summary: Google OAuth Callback
+      tags: [OAuth]
+      responses:
+        '302':
+          description: Redirects on success/failure
+  /users/me:
+    get:
+      summary: Get current logged in user profile
+      tags: [Users]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    put:
+      summary: Update user profile
+      tags: [Users]
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: User profile updated
+  /admin/users:
+    get:
+      summary: Get all users (Admin only)
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+  /admin/users/{id}/role:
+    put:
+      summary: Update user role (Admin only)
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  type: string
+      responses:
+        '200':
+          description: User role updated
+  /admin/users/{id}/status:
+    put:
+      summary: Deactivate/Activate user (Admin only)
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isActive]
+              properties:
+                isActive:
+                  type: boolean
+      responses:
+        '200':
+          description: User status updated
+  /admin/users/{id}:
+    delete:
+      summary: Delete user (Admin only)
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User deleted

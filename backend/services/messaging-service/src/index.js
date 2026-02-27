@@ -1,5 +1,9 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const path = require('path');
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
+const swaggerDocument = YAML.load(path.join(__dirname, '../swagger.yaml'));
 const { Kafka } = require('kafkajs');
 const cors = require('cors');
 
@@ -82,7 +86,18 @@ app.get('/', (req, res) => {
     });
 });
 
+<<<<<<< Updated upstream
 // Routes
+=======
+// Swagger API Docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+// TODO: Add messaging routes
+// app.post('/api/messages', ...)
+// app.get('/api/messages/conversations', ...)
+// app.get('/api/messages/:conversationId', ...)
+
+>>>>>>> Stashed changes
 const messageRoutes = require('./routes/messageRoutes');
 app.use('/api', messageRoutes);
 

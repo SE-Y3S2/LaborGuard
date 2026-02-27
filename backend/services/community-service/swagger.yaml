@@ -1,0 +1,500 @@
+openapi: 3.0.0
+info:
+  title: Community Service API
+  version: 1.0.0
+  description: API Documentation for the LaborGuard Community Service
+servers:
+  - url: http://localhost:3002/api
+    description: Local development server
+paths:
+  /profiles/{userId}:
+    get:
+      summary: Get user profile
+      tags: [Profiles]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User profile retrieved
+  /profiles/{userId}/bookmarks:
+    get:
+      summary: Get user bookmarks
+      tags: [Profiles]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User bookmarks retrieved
+  /profiles/follow:
+    post:
+      summary: Follow a user
+      tags: [Profiles]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [followerId, targetId]
+              properties:
+                followerId:
+                  type: string
+                targetId:
+                  type: string
+      responses:
+        '200':
+          description: Successfully followed user
+  /profiles/unfollow:
+    post:
+      summary: Unfollow a user
+      tags: [Profiles]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [followerId, targetId]
+              properties:
+                followerId:
+                  type: string
+                targetId:
+                  type: string
+      responses:
+        '200':
+          description: Successfully unfollowed user
+  /profiles/bookmark:
+    post:
+      summary: Toggle bookmark for a post
+      tags: [Profiles]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, postId]
+              properties:
+                userId:
+                  type: string
+                postId:
+                  type: string
+      responses:
+        '200':
+          description: Bookmark toggled
+  /profiles:
+    post:
+      summary: Create or update a profile
+      tags: [Profiles]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                bio:
+                  type: string
+                location:
+                  type: string
+                occupation:
+                  type: string
+      responses:
+        '200':
+          description: Profile created/updated
+  /posts:
+    post:
+      summary: Create a new post
+      tags: [Posts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, content]
+              properties:
+                userId:
+                  type: string
+                content:
+                  type: string
+                hashtags:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: Post created successfully
+  /posts/feed/{userId}:
+    get:
+      summary: Get user feed
+      tags: [Posts]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Feed retrieved
+  /posts/trending:
+    get:
+      summary: Get trending posts
+      tags: [Posts]
+      responses:
+        '200':
+          description: Trending posts retrieved
+  /posts/hashtag/{tag}:
+    get:
+      summary: Search posts by hashtag
+      tags: [Posts]
+      parameters:
+        - name: tag
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Posts retrieved
+  /posts/{postId}:
+    get:
+      summary: Get post by ID
+      tags: [Posts]
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Post retrieved
+    put:
+      summary: Update a post
+      tags: [Posts]
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+      responses:
+        '200':
+          description: Post updated
+    delete:
+      summary: Delete a post
+      tags: [Posts]
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Post deleted
+  /posts/{postId}/like:
+    post:
+      summary: Like/Unlike a post
+      tags: [Posts]
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId:
+                  type: string
+      responses:
+        '200':
+          description: Like toggled
+  /posts/{postId}/share:
+    post:
+      summary: Share a post
+      tags: [Posts]
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId:
+                  type: string
+      responses:
+        '200':
+          description: Post shared
+  /posts/{postId}/poll:
+    post:
+      summary: Vote on a poll
+      tags: [Posts]
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, optionIndex]
+              properties:
+                userId:
+                  type: string
+                optionIndex:
+                  type: integer
+      responses:
+        '200':
+          description: Vote registered
+  /posts/{postId}/report:
+    post:
+      summary: Report a post
+      tags: [Posts]
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, reason]
+              properties:
+                userId:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Post reported
+  /comments/{postId}:
+    post:
+      summary: Add a comment
+      tags: [Comments]
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, text]
+              properties:
+                userId:
+                  type: string
+                text:
+                  type: string
+      responses:
+        '201':
+          description: Comment added
+    get:
+      summary: Get comments for a post
+      tags: [Comments]
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Comments retrieved
+  /comments/{commentId}:
+    delete:
+      summary: Delete a comment
+      tags: [Comments]
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Comment deleted
+  /comments/{commentId}/report:
+    post:
+      summary: Report a comment
+      tags: [Comments]
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, reason]
+              properties:
+                userId:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Comment reported
+  /statuses:
+    post:
+      summary: Create a status
+      tags: [Statuses]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, content]
+              properties:
+                userId:
+                  type: string
+                content:
+                  type: string
+      responses:
+        '201':
+          description: Status created
+  /statuses/feed/{userId}:
+    get:
+      summary: Get status feed for user
+      tags: [Statuses]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Status feed retrieved
+  /statuses/{statusId}:
+    delete:
+      summary: Delete a status
+      tags: [Statuses]
+      parameters:
+        - name: statusId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Status deleted
+  /reports:
+    post:
+      summary: Create a report
+      tags: [Reports]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reportedBy, targetId, targetType, reason]
+              properties:
+                reportedBy:
+                  type: string
+                targetId:
+                  type: string
+                targetType:
+                  type: string
+                  enum: [Post, Comment, User]
+                reason:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '201':
+          description: Report created
+    get:
+      summary: Get all reports (Admin only)
+      tags: [Reports]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, reviewed, dismissed, resolved]
+      responses:
+        '200':
+          description: Reports retrieved
+  /reports/{reportId}/status:
+    put:
+      summary: Update report status (Admin only)
+      tags: [Reports]
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [pending, reviewed, dismissed, resolved]
+                actionTaken:
+                  type: string
+      responses:
+        '200':
+          description: Report status updated

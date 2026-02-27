@@ -1,0 +1,359 @@
+openapi: 3.0.0
+info:
+  title: Complaint Service API
+  version: 1.0.0
+  description: API Documentation for the LaborGuard Complaint Service
+servers:
+  - url: http://localhost:3003/api
+    description: Local development server
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+paths:
+  /appointments/my:
+    get:
+      summary: Get user's appointments (Worker)
+      tags: [Appointments]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of appointments
+  /appointments/assigned:
+    get:
+      summary: Get assigned appointments (Legal Officer)
+      tags: [Appointments]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of appointments
+  /appointments:
+    get:
+      summary: Get all appointments (Admin)
+      tags: [Appointments]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of all appointments
+  /appointments/{id}:
+    get:
+      summary: Get appointment by ID
+      tags: [Appointments]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Appointment details
+  /appointments/{id}/confirm:
+    patch:
+      summary: Confirm an appointment (Admin)
+      tags: [Appointments]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Appointment confirmed
+  /appointments/{id}/reschedule:
+    patch:
+      summary: Reschedule an appointment (Admin, Legal Officer)
+      tags: [Appointments]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [date, time]
+              properties:
+                date:
+                  type: string
+                  format: date
+                time:
+                  type: string
+      responses:
+        '200':
+          description: Appointment rescheduled
+  /appointments/{id}/cancel:
+    patch:
+      summary: Cancel an appointment (Admin)
+      tags: [Appointments]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Appointment cancelled
+  /complaints/stats:
+    get:
+      summary: Get complaint statistics (Admin, Legal Officer)
+      tags: [Complaints]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Complaint statistics
+  /complaints/my:
+    get:
+      summary: Get user's complaints (Worker)
+      tags: [Complaints]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of complaints
+  /complaints:
+    post:
+      summary: Create a complaint (Worker)
+      tags: [Complaints]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, description, category]
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                category:
+                  type: string
+      responses:
+        '201':
+          description: Complaint created
+    get:
+      summary: Get all complaints (Admin)
+      tags: [Complaints]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of all complaints
+  /complaints/{id}:
+    get:
+      summary: Get complaint by ID
+      tags: [Complaints]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Complaint details
+    patch:
+      summary: Update a complaint (Worker)
+      tags: [Complaints]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '200':
+          description: Complaint updated
+    delete:
+      summary: Delete a complaint
+      tags: [Complaints]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Complaint deleted
+  /complaints/{id}/status:
+    patch:
+      summary: Update complaint status (Admin, Legal Officer)
+      tags: [Complaints]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+      responses:
+        '200':
+          description: Complaint status updated
+  /complaints/{id}/assign:
+    patch:
+      summary: Assign a complaint (Admin)
+      tags: [Complaints]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assigneeId]
+              properties:
+                assigneeId:
+                  type: string
+      responses:
+        '200':
+          description: Complaint assigned
+  /registry/stats:
+    get:
+      summary: Get registry statistics (Admin)
+      tags: [Registry]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Registry statistics
+  /registry:
+    get:
+      summary: Get all legal officers (Admin)
+      tags: [Registry]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of legal officers
+    post:
+      summary: Register a legal officer (Admin)
+      tags: [Registry]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, specialization]
+              properties:
+                userId:
+                  type: string
+                specialization:
+                  type: string
+      responses:
+        '201':
+          description: Legal officer registered
+  /registry/{officerId}:
+    get:
+      summary: Get legal officer by ID (Admin)
+      tags: [Registry]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: officerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Legal officer details
+    patch:
+      summary: Update legal officer (Admin)
+      tags: [Registry]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: officerId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                specialization:
+                  type: string
+      responses:
+        '200':
+          description: Legal officer updated
+  /registry/{officerId}/deactivate:
+    patch:
+      summary: Deactivate a legal officer (Admin)
+      tags: [Registry]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: officerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Legal officer deactivated
