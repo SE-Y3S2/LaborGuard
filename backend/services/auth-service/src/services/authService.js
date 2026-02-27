@@ -8,23 +8,32 @@ const emailService = require('./emailService');
 const smsService = require('./smsService');
 
 const registerUser = async (userData) => {
+    const { confirmPassword, ...validUserData } = userData;
+
+    // Set auto-approval for workers, others require admin approval
+    if (!validUserData.role || validUserData.role === 'worker') {
+        validUserData.isApproved = true;
+    } else {
+        validUserData.isApproved = false;
+    }
+
     // Check existing user
-    const existingEmail = await User.findOne({ email: userData.email });
+    const existingEmail = await User.findOne({ email: validUserData.email });
     if (existingEmail) {
         throw { statusCode: 400, message: 'Email already exists' };
     }
 
-    const existingPhone = await User.findOne({ phone: userData.phone });
+    const existingPhone = await User.findOne({ phone: validUserData.phone });
     if (existingPhone) {
         throw { statusCode: 400, message: 'Phone number already registered' };
     }
 
     // Hash password
-    const hashedPassword = await hashPassword(userData.password);
+    const hashedPassword = await hashPassword(validUserData.password);
 
     // Create user
     const user = await User.create({
-        ...userData,
+        ...validUserData,
         password: hashedPassword
     });
 
@@ -62,7 +71,8 @@ const registerUser = async (userData) => {
     return {
         userId: user._id,
         email: user.email,
-        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         role: user.role,
         message: 'User registered successfully. Please verify your email.'
     };
@@ -79,6 +89,16 @@ const loginUser = async (email, password) => {
     // Check if active
     if (!user.isActive) {
         throw { statusCode: 403, message: 'Account is deactivated' };
+    }
+
+    // Check if at least one contact method is verified
+    if (!user.isEmailVerified && !user.isPhoneVerified) {
+        throw { statusCode: 403, message: 'Please verify your email or phone number before logging in' };
+    }
+
+    // Check admin approval
+    if (!user.isApproved) {
+        throw { statusCode: 403, message: 'Please wait for the admin approval to login' };
     }
 
     // Verify password

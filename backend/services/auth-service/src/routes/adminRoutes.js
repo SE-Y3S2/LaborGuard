@@ -14,6 +14,9 @@ router.get('/users', adminController.getAllUsers);
 // PUT /api/admin/users/:id/role
 router.put('/users/:id/role', adminController.updateUserRole);
 
+// PUT /api/admin/users/:id/approve
+router.put('/users/:id/approve', adminController.approveUser);
+
 // PUT /api/admin/users/:id/status
 router.put('/users/:id/status', adminController.deactivateUser);
 
