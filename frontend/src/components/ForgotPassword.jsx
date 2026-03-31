@@ -34,31 +34,38 @@ const ForgotPassword = () => {
     };
 
     return (
-        <div style={{ border: '1px solid #ccc', padding: '2rem', borderRadius: '8px', maxWidth: '400px', margin: '2rem auto' }}>
-            <h2>Forgot Password</h2>
-            <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1rem' }}>
-                Enter your registered email address to receive a 6-digit password reset code.
-            </p>
+        <div className="auth-wrapper">
+            <div className="auth-card glass-container">
+                <div className="auth-header">
+                    <h2>Forgot Password</h2>
+                    <p>Enter your registered email address to receive a 6-digit password reset code.</p>
+                </div>
 
-            {error && <p style={{ color: 'red' }}>{error}</p>}
-            {success && <p style={{ color: 'green' }}>{success}</p>}
+                {error && <div style={{ color: 'var(--accent-danger)', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '0.8rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem', textAlign: 'center' }}>{error}</div>}
+                {success && <div style={{ color: 'var(--accent-success)', backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '0.8rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem', textAlign: 'center' }}>{success}</div>}
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <input
-                    type="email"
-                    placeholder="Your Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    style={{ padding: '0.5rem' }}
-                />
-                <button type="submit" disabled={loading} style={{ padding: '0.5rem', background: '#007bff', color: 'white', border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}>
-                    {loading ? 'Sending...' : 'Send Reset Code'}
-                </button>
-            </form>
+                <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <label className="form-label">Email Address</label>
+                        <input
+                            type="email"
+                            className="modern-input"
+                            placeholder="name@example.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
+                    </div>
 
-            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-                <Link to="/login">Back to Login</Link>
+                    <button type="submit" className="btn-primary" style={{ marginTop: '1rem' }} disabled={loading}>
+                        {loading ? 'Sending Request...' : 'Send Reset Code'}
+                    </button>
+                </form>
+
+                <div className="auth-footer" style={{ marginTop: '2rem' }}>
+                    Remember your password? 
+                    <Link to="/login">Back to log in</Link>
+                </div>
             </div>
         </div>
     );

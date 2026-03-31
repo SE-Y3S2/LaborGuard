@@ -5,23 +5,6 @@ services:
   # Infrastructure
   # ===================
 
-  mongodb:
-    image: mongo:7.0
-    container_name: laborguard-mongodb
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb_data:/data/db
-    environment:
-      - MONGO_INITDB_DATABASE=laborguard
-    networks:
-      - laborguard-network
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: laborguard-zookeeper
@@ -73,19 +56,22 @@ services:
       dockerfile: Dockerfile
     container_name: laborguard-auth-service
     ports:
-      - "3001:3001"
+      - "5001:5001"
+    env_file:
+      - ./.env
     environment:
-      - PORT=3001
+      - PORT=5001
       - SERVICE_NAME=auth-service
-      - MONGODB_URI=mongodb://mongodb:27017/laborguard
+      - MONGODB_URI=${MONGODB_ATLAS_BASE}/laborguard-auth?retryWrites=true&w=majority&appName=Cluster0&authSource=admin
       - KAFKA_BROKER=kafka:9092
     depends_on:
-      mongodb:
-        condition: service_healthy
       kafka:
         condition: service_healthy
     networks:
       - laborguard-network
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     restart: unless-stopped
 
   community-service:
@@ -95,10 +81,12 @@ services:
     container_name: laborguard-community-service
     ports:
       - "3002:3002"
+    env_file:
+      - ./.env
     environment:
       - PORT=3002
       - SERVICE_NAME=community-service
-      - MONGODB_URI=mongodb://mongodb:27017/laborguard
+      - MONGODB_URI=${MONGODB_ATLAS_BASE}/laborguard-community?retryWrites=true&w=majority&appName=Cluster0&authSource=admin
       - KAFKA_BROKER=kafka:9092
       - PERSPECTIVE_API_KEY=${PERSPECTIVE_API_KEY}
       - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
@@ -107,12 +95,13 @@ services:
       - TOXICITY_THRESHOLD=0.7
       - NSFW_THRESHOLD=0.5
     depends_on:
-      mongodb:
-        condition: service_healthy
       kafka:
         condition: service_healthy
     networks:
       - laborguard-network
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     restart: unless-stopped
 
   complaint-service:
@@ -122,19 +111,22 @@ services:
     container_name: laborguard-complaint-service
     ports:
       - "3003:3003"
+    env_file:
+      - ./.env
     environment:
       - PORT=3003
       - SERVICE_NAME=complaint-service
-      - MONGODB_URI=mongodb://mongodb:27017/laborguard
+      - MONGODB_URI=${MONGODB_ATLAS_BASE}/laborguard-complaint?retryWrites=true&w=majority&appName=Cluster0&authSource=admin
       - KAFKA_BROKER=kafka:9092
       - JWT_SECRET=mysecret123
     depends_on:
-      mongodb:
-        condition: service_healthy
       kafka:
         condition: service_healthy
     networks:
       - laborguard-network
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     restart: unless-stopped
 
   notification-service:
@@ -144,18 +136,21 @@ services:
     container_name: laborguard-notification-service
     ports:
       - "3004:3004"
+    env_file:
+      - ./.env
     environment:
       - PORT=3004
       - SERVICE_NAME=notification-service
-      - MONGODB_URI=mongodb://mongodb:27017/laborguard
+      - MONGODB_URI=${MONGODB_ATLAS_BASE}/laborguard-notification?retryWrites=true&w=majority&appName=Cluster0&authSource=admin
       - KAFKA_BROKER=kafka:9092
     depends_on:
-      mongodb:
-        condition: service_healthy
       kafka:
         condition: service_healthy
     networks:
       - laborguard-network
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     restart: unless-stopped
 
   messaging-service:
@@ -165,23 +160,24 @@ services:
     container_name: laborguard-messaging-service
     ports:
       - "3005:3005"
+    env_file:
+      - ./.env
     environment:
       - PORT=3005
       - SERVICE_NAME=messaging-service
-      - MONGODB_URI=mongodb://mongodb:27017/laborguard
+      - MONGODB_URI=${MONGODB_ATLAS_BASE}/laborguard-messaging?retryWrites=true&w=majority&appName=Cluster0&authSource=admin
       - KAFKA_BROKER=kafka:9092
     depends_on:
-      mongodb:
-        condition: service_healthy
       kafka:
         condition: service_healthy
     networks:
       - laborguard-network
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     restart: unless-stopped
 
 networks:
   laborguard-network:
     driver: bridge
 
-volumes:
-  mongodb_data:

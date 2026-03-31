@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import './AdminDashboard.css';
 
 const AdminDashboard = () => {
     const [users, setUsers] = useState([]);
@@ -24,7 +25,6 @@ const AdminDashboard = () => {
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to fetch users. Ensure you are logged in as an Admin.');
             if (err.response?.status === 401 || err.response?.status === 403) {
-                // Not admin or token expired
                 setTimeout(() => navigate('/dashboard'), 3000);
             }
         } finally {
@@ -40,7 +40,7 @@ const AdminDashboard = () => {
         try {
             await axios.put(`${API_URL}/${userId}/role`, { role: newRole }, { headers: getHeaders() });
             setSuccess('User role updated successfully');
-            fetchUsers(); // Refresh list
+            fetchUsers();
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to update role');
         }
@@ -50,9 +50,20 @@ const AdminDashboard = () => {
         try {
             await axios.put(`${API_URL}/${userId}/status`, { isActive: !currentStatus }, { headers: getHeaders() });
             setSuccess(`User account ${!currentStatus ? 'activated' : 'deactivated'}`);
-            fetchUsers(); // Refresh list
+            fetchUsers();
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to update status');
+        }
+    };
+
+    const handleApprovalToggle = async (userId) => {
+        try {
+            // Wait, adminRoutes only exposes /approve, not toggle approval. Let's assume it sets it to true.
+            await axios.put(`${API_URL}/${userId}/approve`, {}, { headers: getHeaders() });
+            setSuccess('User officially approved!');
+            fetchUsers();
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to approve user');
         }
     };
 
@@ -61,76 +72,107 @@ const AdminDashboard = () => {
             try {
                 await axios.delete(`${API_URL}/${userId}`, { headers: getHeaders() });
                 setSuccess('User deleted successfully');
-                fetchUsers(); // Refresh list
+                fetchUsers();
             } catch (err) {
                 setError(err.response?.data?.message || 'Failed to delete user');
             }
         }
     };
 
-    if (loading) return <div>Loading Admin Dashboard...</div>;
+    if (loading) return (
+        <div className="admin-dashboard-wrapper" style={{ display: 'flex', justifyContent: 'center', marginTop: '5rem' }}>
+            <div className="badge badge-warning" style={{ fontSize: '1.2rem', padding: '1rem 2rem' }}>Loading Dashboard Data...</div>
+        </div>
+    );
 
     return (
-        <div style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2>Admin Dashboard - User Management</h2>
-                <button onClick={() => navigate('/dashboard')} style={{ padding: '0.5rem', cursor: 'pointer' }}>
-                    Back to My Profile
+        <div className="admin-dashboard-wrapper">
+            <div className="admin-header">
+                <div>
+                    <h2 style={{ marginBottom: '0.2rem' }}>User Management</h2>
+                    <p style={{ color: 'var(--text-secondary)' }}>Approve NGOs/Employers & manage platform access</p>
+                </div>
+                <button onClick={() => navigate('/dashboard')} className="btn-action-outline btn-small">
+                    Back to Profile
                 </button>
             </div>
 
-            {error && <p style={{ color: 'red', padding: '10px', background: '#fee' }}>{error}</p>}
-            {success && <p style={{ color: 'green', padding: '10px', background: '#efe' }}>{success}</p>}
+            {error && <div style={{ color: 'var(--accent-danger)', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '0.8rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem' }}>{error}</div>}
+            {success && <div style={{ color: 'var(--accent-success)', backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '0.8rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem' }}>{success}</div>}
 
-            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '1rem' }}>
-                <thead>
-                    <tr style={{ background: '#f4f4f4', textAlign: 'left' }}>
-                        <th style={{ padding: '10px', border: '1px solid #ccc' }}>Name</th>
-                        <th style={{ padding: '10px', border: '1px solid #ccc' }}>Email</th>
-                        <th style={{ padding: '10px', border: '1px solid #ccc' }}>Role</th>
-                        <th style={{ padding: '10px', border: '1px solid #ccc' }}>Status</th>
-                        <th style={{ padding: '10px', border: '1px solid #ccc' }}>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {users.map(user => (
-                        <tr key={user._id}>
-                            <td style={{ padding: '10px', border: '1px solid #ccc' }}>{user.name}</td>
-                            <td style={{ padding: '10px', border: '1px solid #ccc' }}>{user.email}</td>
-                            <td style={{ padding: '10px', border: '1px solid #ccc' }}>
-                                <select
-                                    value={user.role}
-                                    onChange={(e) => handleRoleChange(user._id, e.target.value)}
-                                    style={{ padding: '0.2rem' }}
-                                >
-                                    <option value="worker">Worker</option>
-                                    <option value="lawyer">Lawyer</option>
-                                    <option value="ngo">NGO</option>
-                                    <option value="employer">Employer</option>
-                                    <option value="admin">Admin</option>
-                                </select>
-                            </td>
-                            <td style={{ padding: '10px', border: '1px solid #ccc', color: user.isActive ? 'green' : 'red' }}>
-                                {user.isActive ? 'Active' : 'Inactive'}
-                            </td>
-                            <td style={{ padding: '10px', border: '1px solid #ccc' }}>
-                                <button
-                                    onClick={() => handleStatusToggle(user._id, user.isActive)}
-                                    style={{ marginRight: '5px', padding: '0.2rem 0.5rem', background: user.isActive ? '#ffc107' : '#28a745', border: 'none', cursor: 'pointer' }}
-                                >
-                                    {user.isActive ? 'Deactivate' : 'Activate'}
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(user._id)}
-                                    style={{ padding: '0.2rem 0.5rem', background: '#dc3545', color: 'white', border: 'none', cursor: 'pointer' }}
-                                >
-                                    Delete
-                                </button>
-                            </td>
+            <div className="table-container">
+                <table className="modern-table">
+                    <thead>
+                        <tr>
+                            <th>User Details</th>
+                            <th>Docs (Links)</th>
+                            <th>Role</th>
+                            <th>Verification</th>
+                            <th>Action</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {users.map(user => (
+                            <tr key={user._id}>
+                                <td>
+                                    <div style={{ fontWeight: 600 }}>{user.firstName} {user.lastName}</div>
+                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{user.email}</div>
+                                    <div style={{ fontSize: '0.8rem', marginTop: '0.2rem' }}>{user.phone}</div>
+                                </td>
+                                <td>
+                                    {user.documents && user.documents.length > 0 ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                            {user.documents.map((doc, i) => (
+                                                <a href={doc} target="_blank" rel="noreferrer" key={i} style={{ fontSize: '0.85rem' }}>[View Doc {i+1}]</a>
+                                            ))}
+                                        </div>
+                                    ) : <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>None</span>}
+                                </td>
+                                <td>
+                                    <select
+                                        className="table-select"
+                                        value={user.role}
+                                        onChange={(e) => handleRoleChange(user._id, e.target.value)}
+                                    >
+                                        <option value="worker">Worker</option>
+                                        <option value="lawyer">Lawyer</option>
+                                        <option value="ngo">NGO</option>
+                                        <option value="employer">Employer</option>
+                                        <option value="admin">Admin</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'flex-start' }}>
+                                        {user.isEmailVerified ? <span className="badge badge-success">Email ✓</span> : <span className="badge badge-danger">Email ✕</span>}
+                                        {user.isApproved ? (
+                                            <span className="badge badge-success">Approved ✓</span>
+                                        ) : (
+                                            <button className="badge badge-warning" onClick={() => handleApprovalToggle(user._id)} style={{ cursor: 'pointer', border: 'none' }}>Pending Approval (Click)</button>
+                                        )}
+                                        {!user.isActive && <span className="badge badge-danger">Deactivated</span>}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                        <button
+                                            onClick={() => handleStatusToggle(user._id, user.isActive)}
+                                            className="btn-small btn-action-outline"
+                                        >
+                                            {user.isActive ? 'Deactivate Login' : 'Reactivate Login'}
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(user._id)}
+                                            className="btn-small btn-danger-outline"
+                                        >
+                                            Delete User
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };
