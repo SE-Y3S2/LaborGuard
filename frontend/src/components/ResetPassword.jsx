@@ -45,55 +45,69 @@ const ResetPassword = () => {
     };
 
     return (
-        <div style={{ border: '1px solid #ccc', padding: '2rem', borderRadius: '8px', maxWidth: '400px', margin: '2rem auto' }}>
-            <h2>Reset Password</h2>
-            <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1rem' }}>
-                Please enter the 6-digit code sent to your email, along with your new password.
-            </p>
+        <div className="auth-wrapper">
+            <div className="auth-card glass-container">
+                <div className="auth-header">
+                    <h2>Choose New Password</h2>
+                    <p>Enter the 6-digit code sent to your email and your new password.</p>
+                </div>
 
-            {error && <p style={{ color: 'red', fontSize: '0.9rem' }}>{error}</p>}
-            {success && <p style={{ color: 'green', fontSize: '0.9rem' }}>{success}</p>}
+                {error && <div style={{ color: 'var(--accent-danger)', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '0.8rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem', textAlign: 'center' }}>{error}</div>}
+                {success && <div style={{ color: 'var(--accent-success)', backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '0.8rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem', textAlign: 'center' }}>{success}</div>}
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <input
-                    type="email"
-                    name="email"
-                    placeholder="Your Email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    style={{ padding: '0.5rem' }}
-                />
-                <input
-                    maxLength={6}
-                    name="code"
-                    placeholder="6-digit Reset Code"
-                    value={formData.code}
-                    onChange={handleChange}
-                    required
-                    style={{ padding: '0.5rem', letterSpacing: '2px', textAlign: 'center', fontSize: '1.2rem' }}
-                />
-                <input
-                    type="password"
-                    name="newPassword"
-                    placeholder="New Strong Password"
-                    value={formData.newPassword}
-                    onChange={handleChange}
-                    required
-                    style={{ padding: '0.5rem' }}
-                />
+                <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <label className="form-label">Email Address</label>
+                        <input
+                            type="email"
+                            name="email"
+                            className="modern-input"
+                            placeholder="Your Email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            required
+                        />
+                    </div>
 
-                <p style={{ fontSize: '0.8rem', color: '#666', margin: 0 }}>
-                    * Needs 8 chars, 1 uppercase, 1 lowercase, 1 number, & 1 special char.
-                </p>
+                    <div className="form-group">
+                        <label className="form-label">6-Digit Reset Code</label>
+                        <input
+                            type="text"
+                            maxLength={6}
+                            name="code"
+                            className="modern-input"
+                            placeholder="000000"
+                            value={formData.code}
+                            onChange={handleChange}
+                            required
+                            style={{ letterSpacing: '8px', textAlign: 'center', fontSize: '1.5rem', fontWeight: '600' }}
+                        />
+                    </div>
 
-                <button type="submit" disabled={loading} style={{ padding: '0.5rem', background: '#e0a800', color: 'black', border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}>
-                    {loading ? 'Resetting...' : 'Reset Password'}
-                </button>
-            </form>
+                    <div className="form-group">
+                        <label className="form-label">New Password</label>
+                        <input
+                            type="password"
+                            name="newPassword"
+                            className="modern-input"
+                            placeholder="••••••••"
+                            value={formData.newPassword}
+                            onChange={handleChange}
+                            required
+                        />
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem', lineHeight: '1.4' }}>
+                            * Needs 8 chars, 1 uppercase, 1 lowercase, 1 number, & 1 special char.
+                        </p>
+                    </div>
 
-            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-                <Link to="/login">Back to Login</Link>
+                    <button type="submit" className="btn-primary" style={{ marginTop: '1rem' }} disabled={loading}>
+                        {loading ? 'Resetting Password...' : 'Reset Password'}
+                    </button>
+                </form>
+
+                <div className="auth-footer" style={{ marginTop: '2rem' }}>
+                    <Link to="/login">Back to log in</Link>
+                </div>
             </div>
         </div>
     );

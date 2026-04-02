@@ -1,0 +1,137 @@
+.admin-dashboard-wrapper {
+  animation: fadeIn 0.5s ease-out;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.table-container {
+  overflow-x: auto;
+  margin-top: 1.5rem;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  background-color: var(--glass-bg);
+}
+
+.modern-table th {
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 1rem 1.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+@media (prefers-color-scheme: light) {
+  .modern-table th {
+    background-color: #f8fafc;
+  }
+}
+
+.modern-table td {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.modern-table tr:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+@media (prefers-color-scheme: light) {
+  .modern-table tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75em;
+  font-weight: 600;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 9999px;
+}
+
+.badge-success {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.badge-danger {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.badge-warning {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.btn-small {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.btn-action-outline {
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+}
+
+.btn-action-outline:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.btn-danger-outline {
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--accent-danger);
+}
+
+.btn-danger-outline:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--accent-danger);
+}
+
+.table-select {
+  background-color: transparent;
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  padding: 0.4rem;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.table-select:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}

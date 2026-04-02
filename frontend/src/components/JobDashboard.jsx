@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import './Dashboard.css';
 
 const JobDashboard = () => {
     const [jobs, setJobs] = useState([]);
@@ -19,7 +20,7 @@ const JobDashboard = () => {
             setJobs(response.data.data);
             setError('');
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to fetch jobs. Make sure the job-service is running on port 5003.');
+            setError(err.response?.data?.message || 'Failed to fetch jobs. Make sure the job-service is running.');
         } finally {
             setLoading(false);
         }
@@ -43,52 +44,95 @@ const JobDashboard = () => {
         }
     };
 
-    if (loading) return <div>Loading Jobs...</div>;
-
     return (
-        <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h2>Available Jobs (SDG 8 Compliant)</h2>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                    {(userRole === 'employer' || userRole === 'admin') && (
-                        <button onClick={() => navigate('/jobs/new')} style={{ padding: '0.5rem', background: '#28a745', color: 'white', border: 'none', cursor: 'pointer' }}>
-                            + Post a Job
-                        </button>
-                    )}
-                    <button onClick={() => navigate('/dashboard')} style={{ padding: '0.5rem', cursor: 'pointer' }}>
-                        My Profile
-                    </button>
-                </div>
-            </div>
-
-            {error && <p style={{ color: 'red', background: '#fee', padding: '10px' }}>{error}</p>}
-
-            {jobs.length === 0 && !loading && <p>No jobs found.</p>}
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {jobs.map(job => (
-                    <div key={job._id} style={{ border: '1px solid #ccc', padding: '1rem', borderRadius: '8px', background: '#f9f9f9', position: 'relative' }}>
-                        <h3 style={{ margin: '0 0 0.5rem 0' }}>{job.title}</h3>
-                        {job.compliesWithMinimumWage && (
-                            <span style={{ background: '#d4edda', color: '#155724', padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem', position: 'absolute', top: '1rem', right: '1rem' }}>
-                                ✓ Minimum Wage Verified
-                            </span>
-                        )}
-                        <p style={{ margin: '0 0 0.5rem 0', color: '#555' }}>
-                            <strong>Wage:</strong> {job.wage.amount} {job.wage.currency} / {job.wage.frequency}
-                        </p>
-                        <p style={{ margin: '0 0 0.5rem 0', color: '#555' }}>
-                            <strong>Location:</strong> {job.location?.city}, {job.location?.country}
-                        </p>
-                        <p style={{ margin: '0' }}>{job.description}</p>
-
-                        {(userRole === 'admin') && (
-                            <button onClick={() => handleDelete(job._id)} style={{ marginTop: '1rem', background: '#dc3545', color: 'white', border: 'none', padding: '5px 10px', cursor: 'pointer' }}>
-                                [Admin] Delete
+        <div className="dashboard-wrapper">
+            <div className="dashboard-container">
+                <div className="dashboard-header">
+                    <div>
+                        <h1 className="dashboard-header-title">Job Board</h1>
+                        <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Browse SDG 8 Compliant Opportunities</p>
+                    </div>
+                    <div className="dashboard-header-actions">
+                        {(userRole === 'employer' || userRole === 'admin') && (
+                            <button className="btn-dashboard" onClick={() => navigate('/jobs/new')} style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#34d399', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
+                                <span style={{ marginRight: '8px' }}>+</span> Post a Job
                             </button>
                         )}
+                        <button className="btn-dashboard" onClick={() => navigate('/dashboard')}>
+                            My Profile
+                        </button>
                     </div>
-                ))}
+                </div>
+
+                {error && (
+                    <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', padding: '1rem 1.5rem', borderRadius: '12px', marginBottom: '2rem' }}>
+                        {error}
+                    </div>
+                )}
+
+                {loading ? (
+                    <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+                        <div style={{ margin: '0 auto 1.5rem auto', width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--primary-color)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                        <h3 style={{ color: 'var(--text-primary)' }}>Loading Jobs...</h3>
+                    </div>
+                ) : (
+                    <>
+                        {jobs.length === 0 ? (
+                            <div className="empty-state">
+                                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
+                                <h3>No Jobs Found</h3>
+                                <p>There are no jobs available right now. Please check back later.</p>
+                                {(userRole === 'employer' || userRole === 'admin') && (
+                                    <button className="btn-dashboard" style={{ marginTop: '1.5rem' }} onClick={() => navigate('/jobs/new')}>
+                                        Post the first job
+                                    </button>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="jobs-grid">
+                                {jobs.map(job => (
+                                    <div key={job._id} className="dashboard-card job-card">
+                                        <div className="job-header">
+                                            <h3 className="job-title">{job.title}</h3>
+                                            {job.compliesWithMinimumWage && (
+                                                <div className="job-badge-verified">
+                                                    <span>✓</span> Verified Wage
+                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        <div className="job-details">
+                                            <div className="job-detail-chip">
+                                                <span>💰</span> {job.wage.amount} {job.wage.currency} / {job.wage.frequency}
+                                            </div>
+                                            <div className="job-detail-chip">
+                                                <span>📍</span> {job.location?.city || 'Remote'}, {job.location?.country}
+                                            </div>
+                                            <div className="job-detail-chip">
+                                                <span>⏱️</span> <span style={{ textTransform: 'capitalize' }}>{job.jobType || 'Full-time'}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <p className="job-description">
+                                            {job.description.length > 150 
+                                                ? `${job.description.substring(0, 150)}...` 
+                                                : job.description}
+                                        </p>
+
+                                        <div className="job-actions">
+                                            {(userRole === 'admin' || userRole === 'employer') && (
+                                                <button className="btn-danger" onClick={() => handleDelete(job._id)}>
+                                                    Delete Job
+                                                </button>
+                                            )}
+                                            {/* Apply button placeholder for workers */}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </>
+                )}
             </div>
         </div>
     );
