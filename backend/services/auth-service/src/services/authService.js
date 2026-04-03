@@ -31,11 +31,20 @@ const registerUser = async (userData) => {
     // Hash password
     const hashedPassword = await hashPassword(validUserData.password);
 
-    // Create user
+    console.log('AuthService: Creating user doc...');
     const user = await User.create({
         ...validUserData,
         password: hashedPassword
     });
+
+    if (!user) {
+        console.error('AuthService Error: User.create returned null/undefined');
+        throw new Error('Failed to create user record');
+    }
+
+    // Some versions/plugins return [doc] instead of doc, ensure we have the document
+    const userDoc = Array.isArray(user) ? user[0] : user;
+    console.log('AuthService: User created successfully with ID:', userDoc?._id);
 
     // Generate two verification codes
     const emailCodeData = generateCodeWithExpiry();
@@ -43,7 +52,7 @@ const registerUser = async (userData) => {
 
     // Save Email verification code
     await VerificationCode.create({
-        userId: user._id,
+        userId: userDoc._id,
         code: emailCodeData.code,
         type: 'email',
         purpose: 'registration',
@@ -52,7 +61,7 @@ const registerUser = async (userData) => {
 
     // Save SMS verification code
     await VerificationCode.create({
-        userId: user._id,
+        userId: userDoc._id,
         code: smsCodeData.code,
         type: 'sms',
         purpose: 'registration',
@@ -69,7 +78,7 @@ const registerUser = async (userData) => {
     }
 
     return {
-        userId: user._id,
+        userId: userDoc._id,
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,

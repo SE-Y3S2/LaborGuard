@@ -7,6 +7,8 @@ const { registerValidator, loginValidator, verifyCodeValidator, forgotPasswordVa
 const validate = require('../middleware/validationMiddleware');
 const { protect } = require('../middleware/authMiddleware');
 
+const upload = require('../middleware/uploadMiddleware');
+
 const router = express.Router();
 
 // Rate limiting for login
@@ -19,7 +21,12 @@ const loginLimiter = rateLimit({
     }
 });
 
-router.post('/register', registerValidator, validate, authController.register);
+// Update register to handle file uploads
+router.post('/register', upload.array('documents', 5), registerValidator, validate, authController.register);
+
+// Get document from GridFS
+router.get('/documents/:filename', authController.getDocument);
+
 router.post('/login', loginLimiter, loginValidator, validate, authController.login);
 router.post('/verify', verifyCodeValidator, validate, authController.verify);
 router.post('/forgot-password', forgotPasswordValidator, validate, authController.forgotPassword);

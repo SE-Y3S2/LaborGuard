@@ -19,8 +19,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const PORT = process.env.PORT || 3002;
 const SERVICE_NAME = process.env.SERVICE_NAME || 'community-service';
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://nivakaran:8xFyIPweuxSHKJT3@cluster0.r4wbwo3.mongodb.net/laborguard-community?retryWrites=true&w=majority&appName=Cluster0';
-const KAFKA_BROKER = process.env.KAFKA_BROKER || 'localhost:9092';
+const MONGODB_URI = process.env.MONGODB_URI;
 
 
 const connectMongoDB = async () => {

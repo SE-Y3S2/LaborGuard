@@ -30,8 +30,8 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Please provide your phone number'],
         unique: true,
         match: [
-            /^\+947[0-9]{8}$/,
-            'Please provide a valid Sri Lankan phone number (+947XXXXXXXX)'
+            /^07[0-9]{8}$/,
+            'Please provide a valid 10-digit Sri Lankan phone number (07XXXXXXXX)'
         ]
     },
     password: {

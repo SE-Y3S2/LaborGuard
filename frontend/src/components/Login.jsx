@@ -33,8 +33,8 @@ const Login = () => {
     };
 
     return (
-        <div className="auth-wrapper">
-            <div className="auth-card glass-container">
+        <div className="auth-wrapper login-bg">
+            <div className="auth-card glass-container animate-fade-in">
                 <div className="auth-header">
                     <h2>Welcome Back</h2>
                     <p>Log in to your LaborGuard account</p>
