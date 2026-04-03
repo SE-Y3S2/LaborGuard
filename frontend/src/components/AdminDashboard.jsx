@@ -8,6 +8,7 @@ const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [filterPending, setFilterPending] = useState(false);
     const navigate = useNavigate();
 
     const API_URL = 'http://localhost:5001/api/admin/users';
@@ -40,6 +41,7 @@ const AdminDashboard = () => {
         try {
             await axios.put(`${API_URL}/${userId}/role`, { role: newRole }, { headers: getHeaders() });
             setSuccess('User role updated successfully');
+            setTimeout(() => setSuccess(''), 3000);
             fetchUsers();
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to update role');
@@ -50,17 +52,18 @@ const AdminDashboard = () => {
         try {
             await axios.put(`${API_URL}/${userId}/status`, { isActive: !currentStatus }, { headers: getHeaders() });
             setSuccess(`User account ${!currentStatus ? 'activated' : 'deactivated'}`);
+            setTimeout(() => setSuccess(''), 3000);
             fetchUsers();
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to update status');
         }
     };
 
-    const handleApprovalToggle = async (userId) => {
+    const handleApproval = async (userId) => {
         try {
-            // Wait, adminRoutes only exposes /approve, not toggle approval. Let's assume it sets it to true.
             await axios.put(`${API_URL}/${userId}/approve`, {}, { headers: getHeaders() });
             setSuccess('User officially approved!');
+            setTimeout(() => setSuccess(''), 3000);
             fetchUsers();
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to approve user');
@@ -72,6 +75,7 @@ const AdminDashboard = () => {
             try {
                 await axios.delete(`${API_URL}/${userId}`, { headers: getHeaders() });
                 setSuccess('User deleted successfully');
+                setTimeout(() => setSuccess(''), 3000);
                 fetchUsers();
             } catch (err) {
                 setError(err.response?.data?.message || 'Failed to delete user');
@@ -79,9 +83,12 @@ const AdminDashboard = () => {
         }
     };
 
+    const filteredUsers = filterPending ? users.filter(u => !u.isApproved && u.role !== 'worker' && u.role !== 'admin') : users;
+
     if (loading) return (
-        <div className="admin-dashboard-wrapper" style={{ display: 'flex', justifyContent: 'center', marginTop: '5rem' }}>
-            <div className="badge badge-warning" style={{ fontSize: '1.2rem', padding: '1rem 2rem' }}>Loading Dashboard Data...</div>
+        <div className="admin-dashboard-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '10rem' }}>
+            <div className="loader-ring"></div>
+            <p style={{ marginTop: '1.5rem', color: 'var(--text-secondary)', fontWeight: '600' }}>Loading Administrative Access...</p>
         </div>
     );
 
@@ -89,44 +96,68 @@ const AdminDashboard = () => {
         <div className="admin-dashboard-wrapper">
             <div className="admin-header">
                 <div>
-                    <h2 style={{ marginBottom: '0.2rem' }}>User Management</h2>
-                    <p style={{ color: 'var(--text-secondary)' }}>Approve NGOs/Employers & manage platform access</p>
+                    <h2>Platform Governance</h2>
+                    <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                        Manage platform access, roles, and registration approvals.
+                    </p>
                 </div>
-                <button onClick={() => navigate('/dashboard')} className="btn-action-outline btn-small">
-                    Back to Profile
-                </button>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginRight: '1rem' }}>
+                        <input 
+                            type="checkbox" 
+                            id="filterPending" 
+                            checked={filterPending} 
+                            onChange={() => setFilterPending(!filterPending)}
+                        />
+                        <label htmlFor="filterPending" style={{ fontSize: '0.9rem', fontWeight: '600', cursor: 'pointer' }}>Show Pending Only</label>
+                    </div>
+                    <button onClick={() => navigate('/dashboard')} className="btn-small btn-action-outline">
+                        My Profile
+                    </button>
+                </div>
             </div>
 
-            {error && <div style={{ color: 'var(--accent-danger)', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '0.8rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem' }}>{error}</div>}
-            {success && <div style={{ color: 'var(--accent-success)', backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '0.8rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem' }}>{success}</div>}
+            {error && <div className="alert-box alert-danger">{error}</div>}
+            {success && <div className="alert-box alert-success">{success}</div>}
 
             <div className="table-container">
                 <table className="modern-table">
                     <thead>
                         <tr>
-                            <th>User Details</th>
-                            <th>Docs (Links)</th>
-                            <th>Role</th>
-                            <th>Verification</th>
-                            <th>Action</th>
+                            <th>User Profile</th>
+                            <th>Verification Check</th>
+                            <th>Platform Role</th>
+                            <th>Approval Actions</th>
+                            <th>Account Management</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {users.map(user => (
+                        {filteredUsers.length === 0 ? (
+                            <tr>
+                                <td colSpan="5" style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
+                                    No users found matching current filters.
+                                </td>
+                            </tr>
+                        ) : filteredUsers.map(user => (
                             <tr key={user._id}>
                                 <td>
-                                    <div style={{ fontWeight: 600 }}>{user.firstName} {user.lastName}</div>
-                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{user.email}</div>
-                                    <div style={{ fontSize: '0.8rem', marginTop: '0.2rem' }}>{user.phone}</div>
+                                    <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)' }}>
+                                        {user.firstName} {user.lastName}
+                                    </div>
+                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>{user.email}</div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--accent-primary)', fontWeight: '600', marginTop: '0.2rem' }}>{user.phone}</div>
                                 </td>
                                 <td>
-                                    {user.documents && user.documents.length > 0 ? (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                                            {user.documents.map((doc, i) => (
-                                                <a href={doc} target="_blank" rel="noreferrer" key={i} style={{ fontSize: '0.85rem' }}>[View Doc {i+1}]</a>
-                                            ))}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                            <span className={`status-dot ${user.isEmailVerified ? 'bg-success' : 'bg-danger'}`}></span>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Email {user.isEmailVerified ? 'Verified' : 'Unverified'}</span>
                                         </div>
-                                    ) : <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>None</span>}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                            <span className={`status-dot ${user.isApproved ? 'bg-success' : 'bg-warning'}`}></span>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Status: {user.isApproved ? 'Approved' : 'Pending Approval'}</span>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td>
                                     <select
@@ -142,29 +173,35 @@ const AdminDashboard = () => {
                                     </select>
                                 </td>
                                 <td>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'flex-start' }}>
-                                        {user.isEmailVerified ? <span className="badge badge-success">Email ✓</span> : <span className="badge badge-danger">Email ✕</span>}
-                                        {user.isApproved ? (
-                                            <span className="badge badge-success">Approved ✓</span>
-                                        ) : (
-                                            <button className="badge badge-warning" onClick={() => handleApprovalToggle(user._id)} style={{ cursor: 'pointer', border: 'none' }}>Pending Approval (Click)</button>
-                                        )}
-                                        {!user.isActive && <span className="badge badge-danger">Deactivated</span>}
-                                    </div>
+                                    {user.isApproved ? (
+                                        <button className="badge badge-success" disabled style={{ border: 'none', opacity: 0.8 }}>
+                                            Validated ✓
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            className="badge badge-warning btn-hover-active" 
+                                            onClick={() => handleApproval(user._id)}
+                                            style={{ cursor: 'pointer', border: 'none', boxShadow: '0 4px 10px rgba(217, 119, 6, 0.2)' }}
+                                        >
+                                            APPROVE USER 🛡️
+                                        </button>
+                                    )}
                                 </td>
                                 <td>
-                                    <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                    <div style={{ display: 'flex', gap: '0.6rem' }}>
                                         <button
                                             onClick={() => handleStatusToggle(user._id, user.isActive)}
                                             className="btn-small btn-action-outline"
+                                            title={user.isActive ? 'Block Access' : 'Restore Access'}
                                         >
-                                            {user.isActive ? 'Deactivate Login' : 'Reactivate Login'}
+                                            {user.isActive ? 'Suspend' : 'Activate'}
                                         </button>
                                         <button
                                             onClick={() => handleDelete(user._id)}
                                             className="btn-small btn-danger-outline"
+                                            title="Permanently Delete"
                                         >
-                                            Delete User
+                                            Delete
                                         </button>
                                     </div>
                                 </td>

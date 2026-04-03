@@ -4,25 +4,19 @@ import './Home.css';
 const Home = () => {
     return (
         <div className="home-wrapper">
-            {/* Hero Section */}
+            {/* Immersive Hero Section */}
             <section className="hero-section">
-                <div className="hero-background"></div>
-                
                 <div className="hero-content">
-                    <div className="hero-badge">
-                        <span>🎯</span> SDG 8 Compliant Platform
-                    </div>
-                    
-                    <h1 className="hero-title">
+                    <h1 className="hero-title animate-fade-in">
                         Empowering Fair Labor Worldwide
                     </h1>
                     
-                    <p className="hero-subtitle">
+                    <p className="hero-subtitle animate-fade-in">
                         LaborGuard is a revolutionary platform ensuring transparent contracts, fair wages, 
                         and safe working conditions for global workers, driving sustainable economic growth.
                     </p>
                     
-                    <div className="hero-actions">
+                    <div className="hero-actions animate-fade-in">
                         <Link to="/register" className="hero-btn hero-btn-primary">
                             Get Started
                         </Link>

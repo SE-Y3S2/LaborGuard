@@ -20,7 +20,7 @@ const registerValidator = [
 
     body('phone')
         .trim()
-        .matches(/^\+947[0-9]{8}$/).withMessage('Please provide a valid Sri Lankan phone number (+947XXXXXXXX)'),
+        .matches(/^07[0-9]{8}$/).withMessage('Please provide a valid 10-digit Sri Lankan phone number (07XXXXXXXX)'),
 
     body('password')
         .custom((value) => {
@@ -46,8 +46,9 @@ const registerValidator = [
     body('documents')
         .custom((value, { req }) => {
             if (req.body.role && req.body.role !== 'worker' && req.body.role !== 'admin') {
-                if (!value || !Array.isArray(value) || value.length === 0) {
-                    throw new Error('Documents are required for this role for admin verification');
+                // If it's a multipart form, documents will be in req.files
+                if ((!value || value.length === 0) && (!req.files || req.files.length === 0)) {
+                    throw new Error('Verification documents are required for this role');
                 }
             }
             return true;

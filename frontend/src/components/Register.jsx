@@ -16,6 +16,7 @@ const Register = () => {
     });
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [selectedFiles, setSelectedFiles] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
@@ -25,33 +26,90 @@ const Register = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const handleFileChange = (e) => {
+        const files = Array.from(e.target.files);
+        setSelectedFiles(prev => [...prev, ...files]);
+    };
+
+    const removeFile = (index) => {
+        setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
     const handleRegister = async (e) => {
         e.preventDefault();
         setError('');
         setSuccess('');
         setIsLoading(true);
 
-        // Basic client-side validation
+        // Normalize phone number (Sri Lanka style)
+        let normalizedPhone = formData.phone.replace(/\D/g, ''); 
+        if (normalizedPhone.length === 9) {
+            normalizedPhone = '0' + normalizedPhone;
+        }
+
+        if (normalizedPhone.length !== 10) {
+            setError("Please enter a valid 10-digit phone number (e.g., 077... or 071...)");
+            setIsLoading(false);
+            return;
+        }
+
+        // Age validation
+        const birthDate = new Date(formData.birthDate);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+
+        if (age < 18) {
+            setError("You must be at least 18 years old to register");
+            setIsLoading(false);
+            return;
+        }
+
         if (formData.password !== formData.confirmPassword) {
             setError("Passwords do not match");
             setIsLoading(false);
             return;
         }
 
-        try {
-            const submitData = { ...formData };
-            if (submitData.documents) {
-                submitData.documents = submitData.documents.split(',').map(d => d.trim());
-            } else {
-                submitData.documents = [];
-            }
+        // Non-workers must upload documents
+        if (formData.role !== 'worker' && formData.role !== 'admin' && selectedFiles.length === 0) {
+            setError("Please upload at least one verification document (ID, License, etc.)");
+            setIsLoading(false);
+            return;
+        }
 
-            const response = await axios.post(`${API_URL}/register`, submitData);
+        try {
+            // Use FormData for file upload
+            const data = new FormData();
+            Object.keys(formData).forEach(key => {
+                if (key !== 'documents') {
+                    data.append(key, formData[key]);
+                }
+            });
+            
+            // Overwrite phone with normalized version
+            data.set('phone', normalizedPhone);
+
+            // Append each file to the 'documents' field
+            selectedFiles.forEach(file => {
+                data.append('documents', file);
+            });
+
+            const response = await axios.post(`${API_URL}/register`, data);
+            
             setSuccess(response.data.message);
-            // Redirect to verification UI and pass the newly created userId
             setTimeout(() => navigate('/verify', { state: { userId: response.data.data.userId } }), 1000);
         } catch (err) {
-            setError(err.response?.data?.message || err.response?.data?.errors?.[0]?.msg || 'Registration failed');
+            const data = err.response?.data;
+            if (data?.errors && data.errors.length > 0) {
+                // Show the specific validation error if available
+                setError(data.errors[0].message);
+            } else {
+                setError(data?.message || 'Registration failed');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -61,9 +119,19 @@ const Register = () => {
         window.location.href = `${API_URL}/google`;
     };
 
+    const handleDrop = (e) => {
+        e.preventDefault();
+        const files = Array.from(e.dataTransfer.files);
+        setSelectedFiles(prev => [...prev, ...files]);
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+    };
+
     return (
-        <div className="auth-wrapper">
-            <div className="auth-card glass-container">
+        <div className="auth-wrapper register-bg">
+            <div className={`auth-card glass-container ${formData.role === 'worker' ? 'register-card-wide' : 'register-card-extra-wide'}`}>
                 <div className="auth-header">
                     <h2>Join LaborGuard</h2>
                     <p>Create an account to access the platform</p>
@@ -73,59 +141,96 @@ const Register = () => {
                 {success && <div style={{ color: 'var(--accent-success)', backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '0.8rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem', textAlign: 'center' }}>{success}</div>}
 
                 <form onSubmit={handleRegister}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        <div className="form-group" style={{ marginBottom: '0' }}>
+                    <div className="form-grid">
+                        {/* Row 1: Names */}
+                        <div className="form-group">
                             <label className="form-label">First Name</label>
                             <input name="firstName" className="modern-input" placeholder="First Name" onChange={handleChange} required />
                         </div>
-                        <div className="form-group" style={{ marginBottom: '0' }}>
+                        <div className="form-group">
                             <label className="form-label">Last Name</label>
                             <input name="lastName" className="modern-input" placeholder="Last Name" onChange={handleChange} required />
                         </div>
-                    </div>
 
-                    <div className="form-group">
-                        <label className="form-label">Role</label>
-                        <select name="role" className="modern-select" onChange={handleChange}>
-                            <option value="worker">Worker</option>
-                            <option value="lawyer">Lawyer / Legal Officer</option>
-                            <option value="ngo">NGO Member</option>
-                            <option value="employer">Employer</option>
-                            <option value="admin">Admin</option>
-                        </select>
-                    </div>
+                        {/* Row 2: Role & DOB */}
+                        <div className="form-group">
+                            <label className="form-label">Role</label>
+                            <select name="role" className="modern-select" onChange={handleChange}>
+                                <option value="worker">Worker</option>
+                                <option value="lawyer">Lawyer / Legal Officer</option>
+                                <option value="ngo">NGO Member</option>
+                                <option value="employer">Employer</option>
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Date of Birth</label>
+                            <input name="birthDate" type="date" className="modern-input" onChange={handleChange} required />
+                            <small style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>You must be at least 18 years old.</small>
+                        </div>
 
-                    <div className="form-group">
-                        <label className="form-label">Date of Birth</label>
-                        <input name="birthDate" type="date" className="modern-input" onChange={handleChange} required />
-                    </div>
+                        {/* Row 3: Email & Phone */}
+                        <div className="form-group">
+                            <label className="form-label">Email Address</label>
+                            <input name="email" type="email" className="modern-input" placeholder="name@example.com" onChange={handleChange} required />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Phone Number (Sri Lanka)</label>
+                            <input name="phone" className="modern-input" placeholder="07XXXXXXXX" onChange={handleChange} required />
+                        </div>
 
-                    <div className="form-group">
-                        <label className="form-label">Email Address</label>
-                        <input name="email" type="email" className="modern-input" placeholder="name@example.com" onChange={handleChange} required />
-                    </div>
-
-                    <div className="form-group">
-                        <label className="form-label">Phone Number</label>
-                        <input name="phone" className="modern-input" placeholder="+947..." onChange={handleChange} required />
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        <div className="form-group" style={{ marginBottom: '0' }}>
+                        {/* Row 4: Passwords */}
+                        <div className="form-group">
                             <label className="form-label">Password</label>
                             <input name="password" type="password" className="modern-input" placeholder="••••••••" onChange={handleChange} required />
                         </div>
-                        <div className="form-group" style={{ marginBottom: '0' }}>
+                        <div className="form-group">
                             <label className="form-label">Confirm Password</label>
                             <input name="confirmPassword" type="password" className="modern-input" placeholder="••••••••" onChange={handleChange} required />
                         </div>
                     </div>
 
                     {['lawyer', 'employer', 'ngo'].includes(formData.role) && (
-                        <div className="form-group animate-fade-in" style={{ marginTop: '1rem' }}>
-                            <label className="form-label" style={{ color: 'var(--accent-primary)' }}>Verification Documents Required</label>
-                            <input name="documents" className="modern-input" placeholder="Drive URLs (comma separated)" onChange={handleChange} required />
-                            <small style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Admins will review these documents before approving your account.</small>
+                        <div className="form-group animate-fade-in full-width" style={{ marginTop: '1rem' }}>
+                            <label className="form-label" style={{ color: 'var(--accent-primary)' }}>Verification Documents Required (PDF/Images)</label>
+                            
+                            <div 
+                                className="drop-zone"
+                                onDragOver={handleDragOver}
+                                onDrop={handleDrop}
+                                onClick={() => document.getElementById('fileInput').click()}
+                            >
+                                <div className="drop-zone-content">
+                                    <span className="drop-zone-icon">📁</span>
+                                    <p>Drag & drop files here or <strong>click to browse</strong></p>
+                                    <small>Upload your ID, Professional License, or NGO Certificate</small>
+                                </div>
+                                <input 
+                                    id="fileInput"
+                                    type="file" 
+                                    multiple 
+                                    accept=".pdf,.jpg,.jpeg,.png"
+                                    style={{ display: 'none' }}
+                                    onChange={handleFileChange}
+                                />
+                            </div>
+
+                            {selectedFiles.length > 0 && (
+                                <div className="file-list">
+                                    {selectedFiles.map((file, index) => (
+                                        <div key={index} className="file-item">
+                                            <span className="file-icon">
+                                                {file.type.includes('pdf') ? '📄' : '🖼️'}
+                                            </span>
+                                            <span className="file-name">{file.name}</span>
+                                            <button 
+                                                type="button" 
+                                                className="file-remove" 
+                                                onClick={(e) => { e.stopPropagation(); removeFile(index); }}
+                                            >✕</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
