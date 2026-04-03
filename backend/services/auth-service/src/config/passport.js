@@ -13,21 +13,38 @@ passport.use(new GoogleStrategy({
             let user = await User.findOne({ email: profile.emails[0].value });
 
             if (user) {
+                // If the user is NOT a worker, reject the Google Login
+                if (user.role !== 'worker' && user.role !== 'admin') { // Allow admin or only workers? User said "only workers"
+                    // Let's stick strictly to what the user said: "google login can be use only for workers"
+                    if (user.role !== 'worker') {
+                         return done(null, false, { message: 'Google login is restricted to Worker accounts only. Please use the login form.' });
+                    }
+                }
                 return done(null, user);
             } else {
-                // Generate a random 8-digit phone number strictly to pass validation for OAuth users
-                const dummyPhone = '+947' + Math.floor(10000000 + Math.random() * 90000000).toString();
+                // Split displayName into firstName and lastName for our schema
+                const nameParts = profile.displayName ? profile.displayName.split(' ') : ['Google', 'User'];
+                const firstName = nameParts[0];
+                const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User';
 
-                // If not, create a new user
+                // Generate a random 10-digit Sri Lankan phone number (07XXXXXXXX) strictly to pass validation
+                const dummyPhone = '07' + Math.floor(10000000 + Math.random() * 90000000).toString();
+
+                // If not found, create a new worker account (Workers are auto-approved per policy)
                 const newUser = {
-                    name: profile.displayName,
+                    firstName,
+                    lastName,
                     email: profile.emails[0].value,
                     phone: dummyPhone,
-                    password: 'google_oauth_placeholder_' + Date.now(), // Generate a placeholder password
-                    isEmailVerified: true, // Google emails are already verified
-                    role: 'worker' // Default role
+                    birthDate: new Date('1990-01-01'), // Mandatory placeholder
+                    password: 'google_oauth_placeholder_' + Date.now(), // Random placeholder
+                    isEmailVerified: true, // Google emails are verified
+                    isPhoneVerified: false,
+                    isApproved: true, // Workers are auto-approved
+                    role: 'worker' // Google login is strictly restricted to Workers
                 };
 
+                console.log('Passport: Creating new OAuth worker user:', newUser.email);
                 user = await User.create(newUser);
                 return done(null, user);
             }

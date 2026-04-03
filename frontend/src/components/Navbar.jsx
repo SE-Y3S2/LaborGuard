@@ -36,11 +36,6 @@ const Navbar = () => {
                     <Link to="/" className="drawer-link" onClick={closeDrawer}>Home</Link>
                     <Link to="/jobs" className="drawer-link" onClick={closeDrawer}>Jobs</Link>
                     
-                    {/* Admin Dashboard link in drawer */}
-                    {token && userRole === 'admin' && (
-                        <Link to="/admin" className="drawer-link" onClick={closeDrawer} style={{ color: 'var(--accent-primary)', fontWeight: '700' }}>🛡️ Admin Panel</Link>
-                    )}
-                    
                     <Link to="#" className="drawer-link" onClick={closeDrawer}>News</Link>
                     <Link to="#" className="drawer-link" onClick={closeDrawer}>About</Link>
                     
@@ -76,20 +71,6 @@ const Navbar = () => {
                     <div className="navbar-menu">
                         <Link to="/" className="nav-item">Home</Link>
                         <Link to="/jobs" className="nav-item">Jobs</Link>
-                        
-                        {/* Conditional Admin Panel Link */}
-                        {token && userRole === 'admin' && (
-                            <Link to="/admin" className="nav-item" style={{ 
-                                background: 'rgba(37, 137, 245, 0.08)',
-                                padding: '0.5rem 1rem',
-                                borderRadius: 'var(--radius-pill)',
-                                color: 'var(--accent-primary)',
-                                fontWeight: '700'
-                            }}>
-                                🛡️ Admin
-                            </Link>
-                        )}
-                        
                         <Link to="#" className="nav-item">News</Link>
                         
                         {token ? (
@@ -112,7 +93,7 @@ const Navbar = () => {
                                     }}
                                     onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(37, 137, 245, 0.4)'; }}
                                     onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 137, 245, 0.2)'; }}
-                                    title="My Profile"
+                                    title="My Dashboard"
                                     >
                                         {userRole ? userRole.charAt(0).toUpperCase() : 'U'}
                                     </div>
@@ -124,18 +105,20 @@ const Navbar = () => {
                                     color: 'var(--text-secondary)',
                                     cursor: 'pointer',
                                     padding: '0.4rem',
-                                    fontSize: '1.2rem',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    borderRadius: '50%',
                                     transition: 'color 0.2s'
                                 }}
                                 onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent-danger)'}
                                 onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
                                 title="Log Out"
                                 >
-                                    ⎋
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                        <polyline points="16 17 21 12 16 7"></polyline>
+                                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                                    </svg>
                                 </button>
                             </div>
                         ) : (
