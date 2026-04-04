@@ -20,8 +20,8 @@ const googleCallback = async (req, res, next) => {
         user.lastLogin = Date.now();
         await user.save({ validateBeforeSave: false });
 
-        // Redirect to Frontend with tokens in URL
-        const redirectUrl = `${process.env.FRONTEND_URL}/oauth-success?token=${accessToken}&refreshToken=${refreshToken}`;
+        // Redirect to Frontend with tokens and role in URL
+        const redirectUrl = `${process.env.FRONTEND_URL}/oauth-success?token=${accessToken}&refreshToken=${refreshToken}&role=${user.role}`;
         res.redirect(redirectUrl);
     } catch (error) {
         console.error('OAuth Callback Error:', error);

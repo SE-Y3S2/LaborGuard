@@ -20,13 +20,15 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // Environment variables
 const PORT = process.env.PORT || 3005;
 const SERVICE_NAME = process.env.SERVICE_NAME || 'messaging-service';
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/laborguard';
+const MONGODB_URI = process.env.MONGODB_URI;
 const KAFKA_BROKER = process.env.KAFKA_BROKER || 'localhost:9092';
 
 // MongoDB Connection
 const connectMongoDB = async () => {
     try {
-        await mongoose.connect(MONGODB_URI);
+        await mongoose.connect(MONGODB_URI, {
+            dbName: process.env.MONGODB_DB_NAME || 'laborguard-messaging'
+        });
         console.log(`[${SERVICE_NAME}] Connected to MongoDB`);
     } catch (error) {
         console.error(`[${SERVICE_NAME}] MongoDB connection error:`, error.message);
@@ -93,6 +95,13 @@ app.get('/', (req, res) => {
 // Routes
 const messageRoutes = require('./routes/messageRoutes');
 app.use('/api', messageRoutes);
+
+app.use((req, res, next) => {
+    req.producer = producer;
+    next();
+});
+
+app.use('/api/messages', messageRoutes);
 
 // Start server
 const startServer = async () => {

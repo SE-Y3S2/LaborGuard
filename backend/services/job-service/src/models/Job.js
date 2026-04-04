@@ -53,6 +53,10 @@ const JobSchema = new mongoose.Schema({
         enum: ['open', 'closed', 'filled', 'pending_review'],
         default: 'open'
     },
+    imageUrl: {
+        type: String,
+        default: 'https://images.unsplash.com/photo-1541913057-25e11409ee10?q=80&w=2070&auto=format&fit=crop' // Industrial placeholder
+    },
     createdAt: {
         type: Date,
         default: Date.now

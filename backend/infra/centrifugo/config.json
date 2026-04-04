@@ -1,0 +1,23 @@
+{
+  "token_shared_secret": "my-secret",
+  "api_key": "my-api-key",
+  "presence": true,
+  "history_size": 100,
+  "history_ttl": "24h",
+  "namespaces": [
+    {
+      "name": "messaging",
+      "presence": true,
+      "history_size": 100,
+      "history_ttl": "24h",
+      "publish": true,
+      "subscribe": true
+    },
+    {
+      "name": "notifications",
+      "presence": true,
+      "publish": true,
+      "subscribe": true
+    }
+  ]
+}

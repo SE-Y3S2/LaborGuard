@@ -1,14 +1,15 @@
 const Job = require('../models/Job');
+const Application = require('../models/Application');
 
 // @desc    Create a new Job Posting
 // @route   POST /api/jobs
 // @access  Private/Employer
 const createJob = async (req, res, next) => {
     try {
-        // Automatically assign the user ID from the token as the employer ID
         const jobData = {
             ...req.body,
-            employerId: req.user.userId
+            employerId: req.user.userId,
+            imageUrl: req.body.imageUrl || undefined // Use default if empty
         };
 
         const job = await Job.create(jobData);
@@ -28,8 +29,6 @@ const createJob = async (req, res, next) => {
 const getJobs = async (req, res, next) => {
     try {
         const query = {};
-
-        // Optional filters
         if (req.query.status) query.status = req.query.status;
         if (req.query.employerId) query.employerId = req.query.employerId;
         if (req.query.jobType) query.jobType = req.query.jobType;
@@ -77,7 +76,6 @@ const updateJob = async (req, res, next) => {
             return res.status(404).json({ success: false, message: 'Job not found' });
         }
 
-        // Ensure user is the employer who posted it OR an admin
         if (job.employerId.toString() !== req.user.userId && req.user.role !== 'admin') {
             return res.status(403).json({ success: false, message: 'User not authorized to update this job' });
         }
@@ -107,7 +105,6 @@ const deleteJob = async (req, res, next) => {
             return res.status(404).json({ success: false, message: 'Job not found' });
         }
 
-        // Ensure user is the employer who posted it OR an admin
         if (job.employerId.toString() !== req.user.userId && req.user.role !== 'admin') {
             return res.status(403).json({ success: false, message: 'User not authorized to delete this job' });
         }
@@ -123,10 +120,124 @@ const deleteJob = async (req, res, next) => {
     }
 };
 
+// @desc    Apply for a job
+// @route   POST /api/jobs/:id/apply
+// @access  Private/Worker
+const applyToJob = async (req, res, next) => {
+    try {
+        const job = await Job.findById(req.params.id);
+
+        if (!job) {
+            return res.status(404).json({ success: false, message: 'Job not found' });
+        }
+
+        // Check if already applied
+        const existingApp = await Application.findOne({
+            jobId: req.params.id,
+            workerId: req.user.userId
+        });
+
+        if (existingApp) {
+            return res.status(400).json({ success: false, message: 'You have already applied for this job' });
+        }
+
+        const application = await Application.create({
+            jobId: req.params.id,
+            workerId: req.user.userId,
+            workerName: req.user.email.split('@')[0], // Fallback name
+            workerEmail: req.user.email,
+            workerExperience: req.body.workerExperience,
+            additionalDetails: req.body.additionalDetails || ''
+        });
+
+        res.status(201).json({
+            success: true,
+            data: application
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Get worker's applications
+// @route   GET /api/jobs/my-applications
+// @access  Private/Worker
+const getWorkerApplications = async (req, res, next) => {
+    try {
+        const applications = await Application.find({ workerId: req.user.userId })
+            .populate('jobId')
+            .sort({ appliedDate: -1 });
+
+        res.status(200).json({
+            success: true,
+            count: applications.length,
+            data: applications
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Update application status
+// @route   PUT /api/jobs/applications/:appId/status
+// @access  Private/Employer or Admin
+const updateApplicationStatus = async (req, res, next) => {
+    try {
+        const application = await Application.findByIdAndUpdate(
+            req.params.appId,
+            { status: req.body.status },
+            { new: true, runValidators: true }
+        );
+
+        if (!application) {
+            return res.status(404).json({ success: false, message: 'Application not found' });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: application
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Get all applications for a specific job
+// @route   GET /api/jobs/:id/applications
+// @access  Private/Employer or Admin
+const getJobApplications = async (req, res, next) => {
+    try {
+        const job = await Job.findById(req.params.id);
+
+        if (!job) {
+            return res.status(404).json({ success: false, message: 'Job not found' });
+        }
+
+        // Only owner or admin
+        if (job.employerId.toString() !== req.user.userId && req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, message: 'Not authorized' });
+        }
+
+        const applications = await Application.find({ jobId: req.params.id }).sort({ appliedDate: -1 });
+
+        res.status(200).json({
+            success: true,
+            count: applications.length,
+            data: applications
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     createJob,
     getJobs,
     getJobById,
     updateJob,
-    deleteJob
+    deleteJob,
+    applyToJob,
+    getWorkerApplications,
+    updateApplicationStatus,
+    getJobApplications
 };
