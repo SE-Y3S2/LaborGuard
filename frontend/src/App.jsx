@@ -29,7 +29,7 @@ import JobFormPage from './pages/employer/JobFormPage';
 import JobApplicantsPage from './pages/employer/JobApplicantsPage';
 import LegalDashboard from './pages/legal/LegalDashboard';
 import LegalAppointments from './pages/legal/LegalAppointments';
-import NGODashboard from './pages/ngo/NGODashboard'; 
+import NGODashboard from './pages/ngo/NGODashboard';
 
 // Shared
 import CommunityFeedPage from './pages/community/CommunityFeedPage';
@@ -38,6 +38,10 @@ import ChatPage from './pages/messaging/ChatPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 
 import { ProtectedRoute, PublicRoute } from './components/auth/ProtectedRoute';
+
+// FIX: All 'lawyer' role references replaced with 'legal_officer' to match
+// the role name issued by the backend JWT (auth-service) and enforced by
+// the complaint-service authorize() middleware.
 
 function App() {
   return (
@@ -49,7 +53,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/jobs" element={<JobBoardPage />} />
           <Route path="/advocacy" element={<AdvocacyHub />} />
-          
+
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
@@ -84,8 +88,8 @@ function App() {
           </Route>
         </Route>
 
-        {/* Legal Portal */}
-        <Route element={<ProtectedRoute allowedRoles={['lawyer']} />}>
+        {/* Legal Portal — FIX: was 'lawyer', now 'legal_officer' */}
+        <Route element={<ProtectedRoute allowedRoles={['legal_officer']} />}>
           <Route element={<DashboardLayout />}>
             <Route path="/legal/dashboard" element={<LegalDashboard />} />
             <Route path="/legal/cases" element={<LegalDashboard />} />
@@ -108,12 +112,12 @@ function App() {
           </Route>
         </Route>
 
-        {/* Common Shared Authenticated Routes */}
-        <Route element={<ProtectedRoute allowedRoles={['worker', 'admin', 'lawyer', 'employer', 'ngo']} />}>
-           <Route element={<DashboardLayout />}>
-              <Route path="/community" element={<CommunityFeedPage />} />
-              <Route path="/messages" element={<ChatPage />} />
-           </Route>
+        {/* Common Shared Authenticated Routes — FIX: 'lawyer' → 'legal_officer' */}
+        <Route element={<ProtectedRoute allowedRoles={['worker', 'admin', 'legal_officer', 'employer', 'ngo']} />}>
+          <Route element={<DashboardLayout />}>
+            <Route path="/community" element={<CommunityFeedPage />} />
+            <Route path="/messages" element={<ChatPage />} />
+          </Route>
         </Route>
 
         {/* Fallback */}
