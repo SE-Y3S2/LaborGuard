@@ -15,9 +15,18 @@ const OAuthSuccess = () => {
             // Store tokens
             localStorage.setItem('accessToken', token);
             if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+            
+            const role = params.get('role');
+            if (role) localStorage.setItem('userRole', role);
 
-            // Redirect to dashboard
-            setTimeout(() => navigate('/dashboard'), 1500); // Give user a moment to see success state
+            // Redirect based on role: Workers to Home, others to Dashboard
+            setTimeout(() => {
+                if (role === 'worker') {
+                    navigate('/');
+                } else {
+                    navigate('/dashboard');
+                }
+            }, 1000); // Give user a moment to see success state
         } else {
             navigate('/login?error=oauth_failed');
         }

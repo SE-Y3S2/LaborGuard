@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import './AdminDashboard.css';
 
 const AdminDashboard = () => {
     const [users, setUsers] = useState([]);
@@ -86,82 +85,84 @@ const AdminDashboard = () => {
     const filteredUsers = filterPending ? users.filter(u => !u.isApproved && u.role !== 'worker' && u.role !== 'admin') : users;
 
     if (loading) return (
-        <div className="admin-dashboard-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '10rem' }}>
-            <div className="loader-ring"></div>
-            <p style={{ marginTop: '1.5rem', color: 'var(--text-secondary)', fontWeight: '600' }}>Loading Administrative Access...</p>
+        <div className="p-12 max-w-[1400px] mx-auto my-8 animate-[fadeIn_0.5s_ease-out] flex flex-col items-center mt-40">
+            <div className="w-[60px] h-[60px] border-4 border-[#f3f3f3] border-t-accent-primary rounded-full animate-spin"></div>
+            <p className="mt-6 text-text-secondary font-semibold">Loading Administrative Access...</p>
         </div>
     );
 
     return (
-        <div className="admin-dashboard-wrapper">
-            <div className="admin-header">
+        <div className="p-[3rem_2rem] sm:p-12 max-w-[1400px] mx-auto my-8 animate-[fadeIn_0.5s_ease-out]">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 pb-8 border-b border-black/5 gap-6">
                 <div>
-                    <h2>Platform Governance</h2>
-                    <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                    <h2 className="text-[2.2rem] font-extrabold text-text-primary tracking-[-1px] m-0">Platform Governance</h2>
+                    <p className="text-text-secondary mt-2">
                         Manage platform access, roles, and registration approvals.
                     </p>
                 </div>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginRight: '1rem' }}>
+                <div className="flex gap-4 items-center flex-wrap">
+                    <div className="flex items-center gap-2 mr-4">
                         <input 
                             type="checkbox" 
                             id="filterPending" 
                             checked={filterPending} 
                             onChange={() => setFilterPending(!filterPending)}
+                            className="w-4 h-4 text-accent-primary rounded border-slate-300 focus:ring-accent-primary"
                         />
-                        <label htmlFor="filterPending" style={{ fontSize: '0.9rem', fontWeight: '600', cursor: 'pointer' }}>Show Pending Only</label>
+                        <label htmlFor="filterPending" className="text-[0.9rem] font-semibold cursor-pointer">Show Pending Only</label>
                     </div>
-                    <button onClick={() => navigate('/dashboard')} className="btn-small btn-action-outline">
+                    <button onClick={() => navigate('/dashboard')} className="py-2.5 px-5 rounded-[50px] text-[0.85rem] font-bold cursor-pointer transition-all duration-200 bg-white border-[1.5px] border-[#e2e8f0] text-text-primary hover:border-accent-primary hover:text-accent-primary">
                         My Profile
                     </button>
                 </div>
             </div>
 
-            {error && <div className="alert-box alert-danger">{error}</div>}
-            {success && <div className="alert-box alert-success">{success}</div>}
+            {error && <div className="p-5 rounded-[20px] mb-8 font-semibold text-[0.95rem] bg-[#fef2f2] text-accent-danger border-[1.5px] border-[#ef444444] animate-[fadeIn_0.3s_ease]">{error}</div>}
+            {success && <div className="p-5 rounded-[20px] mb-8 font-semibold text-[0.95rem] bg-[#ecfdf5] text-accent-success border-[1.5px] border-[#10b98144] animate-[fadeIn_0.3s_ease]">{success}</div>}
 
-            <div className="table-container">
-                <table className="modern-table">
+            <div className="bg-white rounded-[20px] shadow-[0_20px_60px_rgba(0,0,0,0.04)] border border-black/5 overflow-x-auto w-full">
+                <table className="w-full border-collapse min-w-[800px]">
                     <thead>
                         <tr>
-                            <th>User Profile</th>
-                            <th>Verification Check</th>
-                            <th>Platform Role</th>
-                            <th>Approval Actions</th>
-                            <th>Account Management</th>
+                            <th className="bg-[#f8fafc] p-6 text-left text-[0.85rem] font-bold uppercase text-text-secondary border-b border-[#edf2f7]">User Profile</th>
+                            <th className="bg-[#f8fafc] p-6 text-left text-[0.85rem] font-bold uppercase text-text-secondary border-b border-[#edf2f7]">Verification Check</th>
+                            <th className="bg-[#f8fafc] p-6 text-left text-[0.85rem] font-bold uppercase text-text-secondary border-b border-[#edf2f7]">Platform Role</th>
+                            <th className="bg-[#f8fafc] p-6 text-left text-[0.85rem] font-bold uppercase text-text-secondary border-b border-[#edf2f7]">Approval Actions</th>
+                            <th className="bg-[#f8fafc] p-6 text-left text-[0.85rem] font-bold uppercase text-text-secondary border-b border-[#edf2f7]">Account Management</th>
                         </tr>
                     </thead>
                     <tbody>
                         {filteredUsers.length === 0 ? (
                             <tr>
-                                <td colSpan="5" style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
+                                <td colSpan="5" className="text-center p-16 text-text-secondary font-medium">
                                     No users found matching current filters.
                                 </td>
                             </tr>
                         ) : filteredUsers.map(user => (
-                            <tr key={user._id}>
-                                <td>
-                                    <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)' }}>
+                            <tr key={user._id} className="hover:bg-slate-50 transition-colors">
+                                <td className="p-6 border-b border-[#f8fafc] align-middle">
+                                    <div className="font-bold text-[1.05rem] text-text-primary">
                                         {user.firstName} {user.lastName}
                                     </div>
-                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>{user.email}</div>
-                                    <div style={{ fontSize: '0.8rem', color: 'var(--accent-primary)', fontWeight: '600', marginTop: '0.2rem' }}>{user.phone}</div>
+                                    <div className="text-[0.85rem] text-text-secondary mt-1">{user.email}</div>
+                                    <div className="text-[0.8rem] text-accent-primary font-semibold mt-1">{user.phone}</div>
                                 </td>
-                                <td>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                            <span className={`status-dot ${user.isEmailVerified ? 'bg-success' : 'bg-danger'}`}></span>
-                                            <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Email {user.isEmailVerified ? 'Verified' : 'Unverified'}</span>
+                                <td className="p-6 border-b border-[#f8fafc] align-middle">
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className={`w-2 h-2 rounded-full inline-block ${user.isEmailVerified ? 'bg-accent-success shadow-[0_0_10px_rgba(16,185,129,0.27)]' : 'bg-accent-danger shadow-[0_0_10px_rgba(239,68,68,0.27)]'}`}></span>
+                                            <span className="text-[0.8rem] font-semibold">Email {user.isEmailVerified ? 'Verified' : 'Unverified'}</span>
                                         </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                            <span className={`status-dot ${user.isApproved ? 'bg-success' : 'bg-warning'}`}></span>
-                                            <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Status: {user.isApproved ? 'Approved' : 'Pending Approval'}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`w-2 h-2 rounded-full inline-block ${user.isApproved ? 'bg-accent-success shadow-[0_0_10px_rgba(16,185,129,0.27)]' : 'bg-[#f59e0b] shadow-[0_0_10px_rgba(245,158,11,0.27)]'}`}></span>
+                                            <span className="text-[0.8rem] font-semibold">Status: {user.isApproved ? 'Approved' : 'Pending Approval'}</span>
                                         </div>
                                     </div>
                                 </td>
-                                <td>
+                                <td className="p-6 border-b border-[#f8fafc] align-middle">
                                     <select
-                                        className="table-select"
+                                        className="py-2.5 pr-8 pl-4 rounded-xl border border-slate-200 text-[0.9rem] font-semibold text-text-primary cursor-pointer appearance-none outline-none focus:border-accent-primary focus:shadow-[0_0_0_3px_rgba(37,137,245,0.1)] bg-white bg-no-repeat bg-[position:right_0.8rem_center]"
+                                        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'%3E%3C/path%3E%3C/svg%3E")` }}
                                         value={user.role}
                                         onChange={(e) => handleRoleChange(user._id, e.target.value)}
                                     >
@@ -172,33 +173,32 @@ const AdminDashboard = () => {
                                         <option value="admin">Admin</option>
                                     </select>
                                 </td>
-                                <td>
+                                <td className="p-6 border-b border-[#f8fafc] align-middle">
                                     {user.isApproved ? (
-                                        <button className="badge badge-success" disabled style={{ border: 'none', opacity: 0.8 }}>
+                                        <button className="py-2 px-5 rounded-[10px] text-[0.75rem] font-extrabold uppercase tracking-[0.5px] transition-all duration-200 bg-[#d1fae5] text-[#065f46] border-none opacity-80 cursor-default">
                                             Validated ✓
                                         </button>
                                     ) : (
                                         <button 
-                                            className="badge badge-warning btn-hover-active" 
+                                            className="py-2 px-5 rounded-[10px] text-[0.75rem] font-extrabold uppercase tracking-[0.5px] transition-all duration-200 bg-[#ffedd5] text-[#9a3412] cursor-pointer border-none shadow-[0_4px_10px_rgba(217,119,6,0.2)] hover:-translate-y-[2px] hover:shadow-[0_8px_15px_rgba(0,0,0,0.1)] hover:brightness-95" 
                                             onClick={() => handleApproval(user._id)}
-                                            style={{ cursor: 'pointer', border: 'none', boxShadow: '0 4px 10px rgba(217, 119, 6, 0.2)' }}
                                         >
                                             APPROVE USER 🛡️
                                         </button>
                                     )}
                                 </td>
-                                <td>
-                                    <div style={{ display: 'flex', gap: '0.6rem' }}>
+                                <td className="p-6 border-b border-[#f8fafc] align-middle">
+                                    <div className="flex gap-2.5">
                                         <button
                                             onClick={() => handleStatusToggle(user._id, user.isActive)}
-                                            className="btn-small btn-action-outline"
+                                            className="py-2.5 px-5 rounded-[50px] text-[0.85rem] font-bold cursor-pointer transition-all duration-200 bg-white border-[1.5px] border-[#e2e8f0] text-text-primary hover:border-accent-primary hover:text-accent-primary"
                                             title={user.isActive ? 'Block Access' : 'Restore Access'}
                                         >
                                             {user.isActive ? 'Suspend' : 'Activate'}
                                         </button>
                                         <button
                                             onClick={() => handleDelete(user._id)}
-                                            className="btn-small btn-danger-outline"
+                                            className="py-2.5 px-5 rounded-[50px] text-[0.85rem] font-bold cursor-pointer transition-all duration-200 bg-white border-[1.5px] border-[#fee2e2] text-accent-danger hover:bg-accent-danger hover:text-white hover:border-accent-danger"
                                             title="Permanently Delete"
                                         >
                                             Delete

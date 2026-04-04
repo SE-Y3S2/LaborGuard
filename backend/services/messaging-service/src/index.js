@@ -26,7 +26,9 @@ const KAFKA_BROKER = process.env.KAFKA_BROKER || 'localhost:9092';
 // MongoDB Connection
 const connectMongoDB = async () => {
     try {
-        await mongoose.connect(MONGODB_URI);
+        await mongoose.connect(MONGODB_URI, {
+            dbName: process.env.MONGODB_DB_NAME || 'laborguard-messaging'
+        });
         console.log(`[${SERVICE_NAME}] Connected to MongoDB`);
     } catch (error) {
         console.error(`[${SERVICE_NAME}] MongoDB connection error:`, error.message);

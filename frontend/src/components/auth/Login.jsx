@@ -20,7 +20,13 @@ const Login = () => {
             const response = await axios.post(`${API_URL}/login`, { email, password });
             localStorage.setItem('accessToken', response.data.data.accessToken);
             localStorage.setItem('userRole', response.data.data.user.role);
-            navigate('/dashboard');
+            
+            // Navigate based on role: Workers to Home, others to Dashboard
+            if (response.data.data.user.role === 'worker') {
+                navigate('/');
+            } else {
+                navigate('/dashboard');
+            }
         } catch (err) {
             setError(err.response?.data?.message || 'Login failed');
         } finally {
