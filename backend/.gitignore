@@ -1,8 +1,13 @@
 # Dependencies
 node_modules/
 
-# Environment variables
+# Environment variables — NEVER commit real .env to git
 .env
+.env.*
+!.env.example
+*/.env
+*/*/.env
+*/*/*/.env
 
 # Logs
 npm-debug.log*
