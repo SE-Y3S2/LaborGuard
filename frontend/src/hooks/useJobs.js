@@ -29,49 +29,62 @@ export const useJobs = (id) => {
     });
   };
 
-  // Create job (Employer/Admin)
-  const createJobMutation = useMutation({
-    mutationFn: (data) => jobApi.createJob(data),
-    onSuccess: (res) => {
-      queryClient.invalidateQueries(["jobs"]);
-      toast.success("Job vacancy posted successfully!");
-      return res.data.data;
-    },
-    onError: (err) => {
-      toast.error(err.response?.data?.message || "Failed to post job");
-    },
-  });
+  // Fetch applications for a job (Employer)
+  const useGetJobApplications = (jobId) => {
+    return useQuery({
+      queryKey: ["job-applicants", jobId],
+      queryFn: async () => {
+        const res = await jobApi.getJobApplications(jobId);
+        return res.data.data || [];
+      },
+      enabled: !!jobId,
+    });
+  };
 
-  // Update job
-  const updateJobMutation = useMutation({
-    mutationFn: ({ jobId, data }) => jobApi.updateJob(jobId, data),
-    onSuccess: (res, { jobId }) => {
-      queryClient.invalidateQueries(["job", jobId]);
-      queryClient.invalidateQueries(["jobs"]);
-      toast.success("Job updated successfully");
-    },
-    onError: (err) => {
-      toast.error(err.response?.data?.message || "Failed to update job");
-    },
-  });
+  // Fetch my applications (Worker)
+  const useGetMyApplications = () => {
+    return useQuery({
+      queryKey: ["my-applications"],
+      queryFn: async () => {
+        const res = await jobApi.getMyApplications();
+        return res.data.data || [];
+      },
+    });
+  };
 
-  // Delete job
-  const deleteJobMutation = useMutation({
-    mutationFn: ({ jobId }) => jobApi.deleteJob(jobId),
+  // Apply for job
+  const applyForJobMutation = useMutation({
+    mutationFn: ({ jobId, data }) => jobApi.applyForJob(jobId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(["jobs"]);
-      toast.success("Job deleted successfully");
+      queryClient.invalidateQueries(["my-applications"]);
+      toast.success("Application submitted successfully!");
     },
     onError: (err) => {
-      toast.error(err.response?.data?.message || "Failed to delete job");
+      toast.error(err.response?.data?.message || "Failed to apply");
+    },
+  });
+
+  // Update application status (Employer)
+  const updateApplicationStatusMutation = useMutation({
+    mutationFn: ({ appId, status }) => jobApi.updateApplicationStatus(appId, status),
+    onSuccess: (res, { jobId }) => {
+      queryClient.invalidateQueries(["job-applicants", jobId]);
+      toast.success("Application status updated");
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Failed to update status");
     },
   });
 
   return {
     useGetJobs,
     useGetJob,
+    useGetJobApplications,
+    useGetMyApplications,
     createJob: createJobMutation,
     updateJob: updateJobMutation,
     deleteJob: deleteJobMutation,
+    applyForJob: applyForJobMutation,
+    updateApplicationStatus: updateApplicationStatusMutation,
   };
 };

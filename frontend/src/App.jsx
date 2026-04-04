@@ -28,10 +28,12 @@ import EmployerDashboard from './pages/employer/EmployerDashboard';
 import JobFormPage from './pages/employer/JobFormPage';
 import JobApplicantsPage from './pages/employer/JobApplicantsPage';
 import LegalDashboard from './pages/legal/LegalDashboard';
+import LegalAppointments from './pages/legal/LegalAppointments';
 import NGODashboard from './pages/ngo/NGODashboard'; 
 
 // Shared
 import CommunityFeedPage from './pages/community/CommunityFeedPage';
+import AdvocacyHub from './pages/community/AdvocacyHub';
 import ChatPage from './pages/messaging/ChatPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 
@@ -46,6 +48,7 @@ function App() {
         <Route element={<PublicLayout />}>
           <Route path="/" element={<LandingPage />} />
           <Route path="/jobs" element={<JobBoardPage />} />
+          <Route path="/advocacy" element={<AdvocacyHub />} />
           
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<LoginPage />} />
@@ -87,6 +90,7 @@ function App() {
             <Route path="/legal/dashboard" element={<LegalDashboard />} />
             <Route path="/legal/cases" element={<LegalDashboard />} />
             <Route path="/legal/cases/:id" element={<ComplaintDetailsPage />} />
+            <Route path="/legal/appointments" element={<LegalAppointments />} />
           </Route>
         </Route>
 

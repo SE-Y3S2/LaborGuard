@@ -1,6 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { jobApi } from "@/api/jobApi";
+import { useJobs } from "@/hooks/useJobs";
 import { 
   Users, 
   ChevronLeft, 
@@ -10,170 +9,197 @@ import {
   XCircle,
   AlertCircle,
   FileText,
-  BadgeCheck
+  BadgeCheck,
+  MessageSquare,
+  Briefcase,
+  UserCheck,
+  ArrowRight,
+  TrendingDown
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/common/Button";
+import { Badge } from "@/components/common/Badge";
+import { Spinner } from "@/components/common/Spinner";
+import { Avatar, AvatarFallback } from "@/components/common/Avatar";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const JobApplicantsPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const queryClient = useQueryClient();
+    const { useGetJob, useGetJobApplications, updateApplicationStatus } = useJobs();
 
-    // Fetch Job Details
-    const { data: job, isLoading: jobLoading } = useQuery({
-        queryKey: ['job', id],
-        queryFn: async () => {
-            const res = await jobApi.getJobById(id);
-            return res.data.data;
+    const { data: job, isLoading: jobLoading } = useGetJob(id);
+    const { data: applicants, isLoading: appsLoading } = useGetJobApplications(id);
+
+    const handleStatusUpdate = async (appId, status) => {
+        try {
+            await updateApplicationStatus.mutateAsync({ appId, status, jobId: id });
+        } catch (error) {
+            // Handled in hook
         }
-    });
+    };
 
-    // Fetch Applicants
-    const { data: applicants, isLoading: appsLoading } = useQuery({
-        queryKey: ['job-applicants', id],
-        queryFn: async () => {
-            const res = await jobApi.getJobApplications(id);
-            return res.data.data || [];
-        }
-    });
-
-    const statusMutation = useMutation({
-        mutationFn: ({ appId, status }) => jobApi.updateApplicationStatus(appId, status),
-        onSuccess: () => {
-            queryClient.invalidateQueries(['job-applicants', id]);
-            toast.success("Application status updated!");
-        }
-    });
-
-    if (jobLoading || appsLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh]">
-                <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-                <p className="mt-4 font-bold text-lg text-muted-foreground">Retrieving Applicant Profiles...</p>
-            </div>
-        );
-    }
+    if (jobLoading || appsLoading) return (
+        <div className="p-32 flex flex-col items-center">
+            <Spinner size="lg" />
+            <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-slate-400 font-mono">SCANNING VERIFIED PROFILES...</p>
+        </div>
+    );
 
     return (
-        <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 animate-fade-in">
-            <Button variant="ghost" onClick={() => navigate(-1)} className="group mb-4">
-                <ChevronLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-                Back to Dashboard
-            </Button>
-
-            {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b pb-8">
-                <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                        <Badge variant="outline" className="uppercase font-bold px-3 bg-primary/5">
-                            Applicant Review
-                        </Badge>
-                        <span className="text-sm text-muted-foreground font-mono">#{job._id.substring(18)}</span>
-                    </div>
-                    <h1 className="text-4xl font-extrabold tracking-tight">{job.title}</h1>
-                    <p className="text-muted-foreground text-lg italic">
-                        Viewing {applicants?.length || 0} applications for this position.
-                    </p>
+        <div className="space-y-12 animate-fade-in pb-20 mt-4">
+            {/* Navigation & Header */}
+            <div className="flex justify-between items-center px-4">
+                <Button variant="ghost" onClick={() => navigate(-1)} className="rounded-full font-black uppercase tracking-widest text-[9px] text-slate-400 hover:text-primary transition-all">
+                    <ChevronLeft className="h-4 w-4 mr-2" />
+                    Back to Command Center
+                </Button>
+                <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">Tracking Code:</span>
+                    <Badge className="bg-slate-100 text-slate-500 border-none font-black text-[10px] tracking-widest uppercase py-1">APPS-REVIEW-v3</Badge>
                 </div>
             </div>
 
-            {/* Applicants List */}
-            {applicants?.length === 0 ? (
-                <div className="text-center py-24 bg-slate-50 rounded-3xl border-2 border-dashed">
-                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                        <Users className="text-slate-300 w-8 h-8" />
+            <header className="space-y-3 px-4">
+                <Badge variant="outline" className="text-primary border-primary/20 font-black uppercase tracking-[0.2em] text-[9px] px-4 py-1.5 rounded-full bg-primary/5">Talent Acquisition</Badge>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                    <div className="space-y-1">
+                        <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 leading-tight">
+                            Review <br />
+                            <span className="text-primary italic">Applications.</span>
+                        </h1>
+                        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                             <Briefcase className="h-4 w-4" /> 
+                             {job?.title}
+                        </p>
                     </div>
-                    <h3 className="text-xl font-bold">No applications yet</h3>
-                    <p className="text-muted-foreground max-w-xs mx-auto mt-1">Check back later or promote your job posting.</p>
                 </div>
-            ) : (
-                <div className="grid grid-cols-1 gap-6">
-                    {applicants.map((app) => (
-                        <Card key={app._id} className="hover:shadow-lg transition-all border-slate-200/60 overflow-hidden">
-                            <CardHeader className="bg-slate-50/50 border-b flex flex-row justify-between items-center py-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                                        {app.workerName.charAt(0).toUpperCase()}
-                                    </div>
-                                    <div>
-                                        <CardTitle className="text-lg">{app.workerName}</CardTitle>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                            <Mail className="w-3 h-3" /> {app.workerEmail}
+            </header>
+
+            {/* Main Applicant List */}
+            <div className="space-y-8 px-2">
+                {applicants?.length === 0 ? (
+                    <div className="p-32 bg-slate-50 rounded-[56px] border-2 border-dashed border-slate-100 flex flex-col items-center text-center space-y-6">
+                        <div className="h-20 w-20 rounded-full bg-white flex items-center justify-center text-slate-200 shadow-sm border border-slate-100">
+                            <Users className="h-10 w-10" />
+                        </div>
+                        <div className="space-y-2">
+                            <p className="text-xl font-black text-slate-800 tracking-tight">No Candidates have Applied Yet.</p>
+                            <p className="text-sm font-bold text-slate-400 max-w-xs leading-relaxed uppercase italic">Our engine is currently promoting this listing to verified workers in your region.</p>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 gap-6">
+                        {applicants.map((app) => (
+                            <div key={app._id} className="bg-white p-8 md:p-12 rounded-[56px] border border-slate-100 shadow-xl shadow-slate-200/20 group hover:border-primary/20 transition-all duration-500 overflow-hidden relative">
+                                <div className="absolute top-0 right-0 w-20 h-full bg-slate-50/50 -mr-10 -skew-x-12 opacity-0 group-hover:opacity-100 transition-all" />
+                                
+                                <div className="relative z-10 flex flex-col lg:flex-row gap-12">
+                                    {/* Left: Bio & Identity */}
+                                    <div className="lg:w-1/3 space-y-8">
+                                        <div className="flex items-center gap-5">
+                                            <Avatar className="h-20 w-20 ring-8 ring-slate-50 shadow-inner">
+                                                <AvatarFallback className="bg-primary/20 text-primary text-2xl font-black uppercase">{app.workerName.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <h3 className="text-2xl font-black text-slate-900 leading-tight">{app.workerName}</h3>
+                                                <div className="flex items-center gap-1.5 mt-1">
+                                                    <BadgeCheck className="h-4 w-4 text-blue-500" />
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Identity Verified</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-6">
+                                            <div className="p-5 bg-slate-50 rounded-3xl space-y-1">
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Communication</p>
+                                                <p className="text-sm font-bold text-slate-700 truncate">{app.workerEmail}</p>
+                                            </div>
+                                            <div className="flex items-center gap-3 ml-2">
+                                                <Clock className="h-4 w-4 text-primary" />
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">File Date: {new Date(app.appliedDate).toLocaleDateString()}</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <Badge className={`uppercase font-bold ${
-                                    app.status === 'accepted' ? 'bg-green-100 text-green-700' : 
-                                    app.status === 'rejected' ? 'bg-destructive/10 text-destructive' : 
-                                    'bg-amber-100 text-amber-700'
-                                }`}>
-                                    {app.status}
-                                </Badge>
-                            </CardHeader>
-                            <CardContent className="pt-6 space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div className="space-y-4">
-                                        <div className="space-y-1">
-                                            <Label className="text-[10px] uppercase font-extrabold text-muted-foreground tracking-wider">Relevant Experience</Label>
-                                            <p className="text-sm font-medium leading-relaxed whitespace-pre-wrap">{app.workerExperience}</p>
+
+                                    {/* Center: Experience & Narrative */}
+                                    <div className="flex-1 space-y-8 lg:px-10 lg:border-x lg:border-slate-100">
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-3">
+                                                <TrendingDown className="h-4 w-4 text-primary" />
+                                                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Experience Statement</h4>
+                                            </div>
+                                            <p className="text-sm font-bold text-slate-600 leading-relaxed whitespace-pre-wrap italic">"{app.workerExperience}"</p>
                                         </div>
+
                                         {app.additionalDetails && (
-                                            <div className="space-y-1">
-                                                <Label className="text-[10px] uppercase font-extrabold text-muted-foreground tracking-wider">Additional Info</Label>
-                                                <p className="text-sm text-muted-foreground italic">{app.additionalDetails}</p>
+                                            <div className="space-y-2">
+                                                <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-400">Notes & Availability</h4>
+                                                <p className="text-xs font-bold text-slate-500 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-100">{app.additionalDetails}</p>
                                             </div>
                                         )}
                                     </div>
 
-                                    <div className="flex flex-col justify-between border-l md:pl-8 space-y-4">
-                                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                            <Clock className="w-4 h-4" />
-                                            Applied on {new Date(app.appliedDate).toLocaleDateString()}
+                                    {/* Right: Actions & Status */}
+                                    <div className="lg:w-1/4 flex flex-col justify-between gap-8 pt-4">
+                                        <div className="space-y-2 text-right lg:text-left">
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Application Status</p>
+                                            <Badge className={cn(
+                                                "px-4 py-1.5 rounded-full font-black uppercase tracking-widest text-[10px]",
+                                                app.status === 'accepted' ? 'bg-green-100 text-green-700' : 
+                                                app.status === 'rejected' ? 'bg-red-100 text-red-700' : 
+                                                'bg-amber-100 text-amber-700'
+                                            )}>
+                                                {app.status}
+                                            </Badge>
                                         </div>
-                                        
-                                        <div className="flex gap-2">
+
+                                        <div className="space-y-3">
                                             {app.status === 'pending' ? (
-                                                <>
+                                                <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
                                                     <Button 
-                                                        className="flex-1 bg-green-600 hover:bg-green-700 font-bold"
-                                                        onClick={() => statusMutation.mutate({ appId: app._id, status: 'accepted' })}
-                                                        disabled={statusMutation.isPending}
+                                                        className="w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[9px] bg-green-600 hover:bg-green-700 shadow-lg shadow-green-100"
+                                                        onClick={() => handleStatusUpdate(app._id, 'accepted')}
+                                                        disabled={updateApplicationStatus.isPending}
                                                     >
-                                                        <CheckCircle2 className="w-4 h-4 mr-2" />
-                                                        Accept
+                                                        <UserCheck className="h-4 w-4 mr-2" />
+                                                        Accept & Hire
                                                     </Button>
                                                     <Button 
-                                                        variant="destructive" 
-                                                        className="flex-1 font-bold"
-                                                        onClick={() => statusMutation.mutate({ appId: app._id, status: 'rejected' })}
-                                                        disabled={statusMutation.isPending}
+                                                        variant="ghost" 
+                                                        className="w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[9px] text-red-500 hover:bg-red-50"
+                                                        onClick={() => handleStatusUpdate(app._id, 'rejected')}
+                                                        disabled={updateApplicationStatus.isPending}
                                                     >
-                                                        <XCircle className="w-4 h-4 mr-2" />
-                                                        Reject
+                                                        <XCircle className="h-4 w-4 mr-2" />
+                                                        Decline
                                                     </Button>
-                                                </>
+                                                </div>
                                             ) : (
                                                 <Button 
                                                     variant="outline" 
-                                                    className="w-full font-bold"
-                                                    onClick={() => statusMutation.mutate({ appId: app._id, status: 'pending' })}
-                                                    disabled={statusMutation.isPending}
+                                                    className="w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[9px] border-2 border-slate-100"
+                                                    onClick={() => handleStatusUpdate(app._id, 'pending')}
+                                                    disabled={updateApplicationStatus.isPending}
                                                 >
-                                                    <AlertCircle className="w-4 h-4 mr-2" />
+                                                    <AlertCircle className="h-4 w-4 mr-2" />
                                                     Revert to Pending
                                                 </Button>
                                             )}
+                                            
+                                            <Button variant="outline" className="w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[9px] border-2 border-primary/10 text-primary hover:bg-primary/5 transition-all group">
+                                                <MessageSquare className="h-4 w-4 mr-2" />
+                                                Direct Message
+                                                <ArrowRight className="ml-2 h-3 w-3 transition-transform group-hover:translate-x-1" />
+                                            </Button>
                                         </div>
                                     </div>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

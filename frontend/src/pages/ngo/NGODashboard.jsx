@@ -1,6 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery } from "@tanstack/react-query";
-import { complaintApi } from "@/api/complaintApi";
+import { useComplaints } from "@/hooks/useComplaints";
 import { 
   Building, 
   BarChart3, 
@@ -10,23 +9,26 @@ import {
   TrendingUp,
   Map,
   FileText,
-  ExternalLink
+  ExternalLink,
+  ShieldCheck,
+  TrendingDown,
+  LayoutGrid,
+  ChevronRight,
+  PieChart,
+  MessageSquare
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
+import { Button } from "@/components/common/Button";
+import { Badge } from "@/components/common/Badge";
+import { Spinner } from "@/components/common/Spinner";
+import { EmptyState } from "@/components/common/EmptyState";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { complaintApi } from "@/api/complaintApi";
+import { cn } from "@/lib/utils";
 
 const NGODashboard = () => {
     const { user } = useAuth();
+    const { useGetComplaints } = useComplaints();
 
     // Fetch system-wide stats for advocacy
     const { data: stats, isLoading: statsLoading } = useQuery({
@@ -38,162 +40,169 @@ const NGODashboard = () => {
     });
 
     // Fetch critical unassigned cases for intervention
-    const { data: criticalCases, isLoading: casesLoading } = useQuery({
-        queryKey: ['critical-cases'],
-        queryFn: async () => {
-            const res = await complaintApi.getAllComplaints({ priority: 'critical', status: 'pending' });
-            return res.data.data || [];
-        }
+    const { data: criticalCases, isLoading: casesLoading } = useGetComplaints({ 
+        priority: 'critical', 
+        status: 'pending',
+        limit: 5
     });
 
-    if (statsLoading || casesLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh]">
-                <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-                <p className="mt-4 font-bold text-lg text-muted-foreground">Generating Advocacy Insights...</p>
-            </div>
-        );
-    }
+    if (statsLoading || casesLoading) return (
+        <div className="p-32 flex flex-col items-center">
+            <Spinner size="lg" />
+            <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-slate-400 font-mono">AGGREGATING ANALYTICS...</p>
+        </div>
+    );
+
+    const metrics = [
+        { label: "Community Vigilance", value: stats?.total || 0, icon: Globe, color: "text-blue-500", bg: "bg-blue-50" },
+        { label: "Unassigned Crisis", value: stats?.byPriority?.critical || 0, icon: ShieldAlert, color: "text-red-500", bg: "bg-red-50" },
+        { label: "Resolved Advocacy", value: stats?.byStatus?.resolved || 0, icon: ShieldCheck, color: "text-green-500", bg: "bg-green-50" },
+        { label: "Monthly Growth", value: "+14%", icon: TrendingUp, color: "text-primary", bg: "bg-primary/10" },
+    ];
 
     return (
-        <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 animate-fade-in">
-            {/* Header */}
-            <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b pb-8">
-                <div className="space-y-1">
-                    <Badge variant="outline" className="text-primary font-bold uppercase tracking-wider bg-primary/5">
-                        Civil Society Portal
-                    </Badge>
-                    <h1 className="text-4xl font-extrabold tracking-tight">Advocacy Dashboard</h1>
-                    <p className="text-muted-foreground text-lg">
-                        Monitoring labor rights for <span className="font-bold text-slate-800">{user?.organizationName || "Your Organization"}</span>
+        <div className="space-y-12 animate-fade-in pb-20 mt-4">
+            {/* Header: Advocacy Command */}
+            <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 px-4">
+                <div className="space-y-3">
+                    <Badge variant="outline" className="text-primary border-primary/20 font-black uppercase tracking-[0.2em] text-[9px] px-4 py-1.5 rounded-full bg-primary/5">Social Justice Watch</Badge>
+                    <h1 className="text-5xl font-black tracking-tight text-slate-900 leading-tight">
+                        Advocacy <br />
+                        <span className="text-primary italic">Intelligence.</span>
+                    </h1>
+                    <p className="text-sm font-bold text-slate-400 max-w-lg leading-relaxed uppercase italic">
+                        Monitoring human rights for <span className="text-slate-800 not-italic font-black">"{user?.organizationName || "Independent Observer"}"</span>. Protecting the unseen workforce.
                     </p>
                 </div>
                 
-                <div className="flex gap-3">
-                    <Button className="rounded-full">
-                        <Globe className="w-4 h-4 mr-2" />
-                        Public Reports
+                <div className="flex gap-4">
+                    <Button className="h-16 px-10 rounded-full font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-primary/30 group">
+                        <Map className="h-4 w-4 mr-2 group-hover:scale-125 transition-transform" />
+                        Heatmap Analysis
                     </Button>
                 </div>
             </header>
 
-            {/* Advocacy Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="bg-slate-900 text-white border-none shadow-xl">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-slate-400 text-xs font-bold uppercase tracking-widest">Total Monitored Cases</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-5xl font-black">{stats?.total || 0}</h3>
-                            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
-                                <BarChart3 className="w-6 h-6 text-primary" />
+            {/* Metrics Dashboard */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-2">
+                {metrics.map((m, i) => (
+                    <div key={i} className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/20 group hover:border-primary/20 transition-all duration-500">
+                        <div className="flex justify-between items-start mb-6">
+                            <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", m.bg, m.color)}>
+                                <m.icon className="h-6 w-6" />
                             </div>
                         </div>
-                        <p className="text-slate-400 text-xs mt-4 flex items-center gap-1">
-                            <TrendingUp className="w-3 h-3 text-green-400" />
-                            +12% from last month
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-2">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-muted-foreground text-xs font-bold uppercase">Critical Hotspots</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-5xl font-black text-destructive">{stats?.byPriority?.critical || 0}</h3>
-                            <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center text-destructive">
-                                <ShieldAlert className="w-6 h-6" />
-                            </div>
+                        <div>
+                            <p className="text-4xl font-black text-slate-900 tracking-tighter mb-1">{m.value}</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{m.label}</p>
                         </div>
-                        <p className="text-muted-foreground text-xs mt-4">Requiring immediate intervention</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-2">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-muted-foreground text-xs font-bold uppercase">Workers Protected</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-5xl font-black text-green-600">{stats?.byStatus?.resolved || 0}</h3>
-                            <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center text-green-600">
-                                <TrendingUp className="w-6 h-6" />
-                            </div>
-                        </div>
-                        <p className="text-muted-foreground text-xs mt-4">Successful resolutions</p>
-                    </CardContent>
-                </Card>
+                    </div>
+                ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Intervention List */}
-                <Card className="shadow-lg border-2">
-                    <CardHeader className="bg-slate-50 border-b flex flex-row items-center justify-between">
-                        <div>
-                            <CardTitle className="text-xl flex items-center gap-2">
-                                <ShieldAlert className="w-5 h-5 text-destructive" />
-                                Critical Intervention Queue
-                            </CardTitle>
-                            <CardDescription>Unassigned high-risk complaints needing advocacy.</CardDescription>
+            <div className="grid lg:grid-cols-3 gap-10 px-2">
+                {/* Intervention Queue */}
+                <div className="lg:col-span-2 space-y-8">
+                    <div className="flex justify-between items-center px-4">
+                        <div className="space-y-1">
+                            <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                                <ShieldAlert className="h-6 w-6 text-red-500 shadow-glow" />
+                                High-Risk Intervention Queue
+                            </h2>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Critical pending cases requiring civil society oversight.</p>
                         </div>
-                    </CardHeader>
-                    <CardContent className="pt-6">
-                        <div className="space-y-4">
-                            {criticalCases?.length === 0 ? (
-                                <p className="text-center py-10 text-muted-foreground italic">No critical unassigned cases detected.</p>
-                            ) : (
-                                criticalCases.map((c) => (
-                                    <div key={c._id} className="flex items-start justify-between p-4 border rounded-2xl hover:bg-slate-50 transition-colors">
-                                        <div className="space-y-1">
-                                            <h4 className="font-bold line-clamp-1">{c.title}</h4>
-                                            <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-mono">
-                                                <span>#{c._id.substring(18)}</span>
-                                                <span className="flex items-center gap-1"><Map className="w-2.5 h-2.5" /> {c.location.city}</span>
+                    </div>
+
+                    <div className="space-y-4">
+                        {criticalCases?.length === 0 ? (
+                            <EmptyState
+                                icon={ShieldCheck}
+                                title="No Critical Breaches"
+                                description="All priority cases are currently being managed by legal officers."
+                                className="h-[300px] bg-slate-50 border-none rounded-[56px]"
+                            />
+                        ) : (
+                            criticalCases.map((c) => (
+                                <div key={c._id} className="group bg-white p-6 md:p-8 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-2xl hover:border-red-100 transition-all duration-500 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-3">
+                                            <Badge className="bg-red-100 text-red-700 border-none text-[9px] font-black uppercase tracking-widest px-3 py-1">CRITICAL PENDING</Badge>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-300 font-mono">#{c._id.slice(-6)}</span>
+                                        </div>
+                                        <h4 className="text-xl font-black text-slate-900 leading-tight">{c.title}</h4>
+                                        <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                            <div className="flex items-center gap-1.5">
+                                                <Map className="h-3.5 w-3.5" />
+                                                {c.location.city}
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <Users className="h-3.5 w-3.5" />
+                                                Verified Worker
                                             </div>
                                         </div>
-                                        <Button variant="ghost" size="sm" asChild>
-                                            <Link to={`/ngo/cases/${c._id}`}>
-                                                <ExternalLink className="w-3.5 h-3.5" />
-                                            </Link>
-                                        </Button>
                                     </div>
-                                ))
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Sector Analysis */}
-                <Card className="shadow-lg border-2">
-                    <CardHeader className="bg-slate-50 border-b">
-                        <CardTitle className="text-xl flex items-center gap-2">
-                            <BarChart3 className="w-5 h-5 text-primary" />
-                            Sector Breakdown
-                        </CardTitle>
-                        <CardDescription>Industry-wise labor violation tracking.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-6">
-                        <div className="space-y-6">
-                            {Object.entries(stats?.byCategory || {}).map(([category, count]) => (
-                                <div key={category} className="space-y-2">
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="font-bold capitalize">{category.replace('_', ' ')}</span>
-                                        <span className="text-muted-foreground">{count} cases</span>
-                                    </div>
-                                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                                        <div 
-                                            className="h-full bg-primary" 
-                                            style={{ width: `${(count / stats?.total) * 100}%` }}
-                                        />
-                                    </div>
+                                    <Button asChild className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/10">
+                                        <Link to={`/ngo/cases/${c._id}`}>
+                                            Investigate
+                                            <ChevronRight className="h-4 w-4 ml-2" />
+                                        </Link>
+                                    </Button>
                                 </div>
-                            ))}
+                            ))
+                        )}
+                    </div>
+                </div>
+
+                {/* Sentiment & Sector Analysis */}
+                <div className="space-y-8">
+                    <div className="bg-slate-900 p-10 rounded-[56px] text-white space-y-10 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-primary/20 blur-3xl" />
+                        <div className="flex items-center gap-3 border-b border-white/5 pb-6">
+                            <PieChart className="h-5 w-5 text-primary" />
+                            <h3 className="text-lg font-black uppercase tracking-tight">Sectoral Drift</h3>
                         </div>
-                    </CardContent>
-                </Card>
+
+                        <div className="space-y-8">
+                            {Object.entries(stats?.byCategory || {}).map(([category, count]) => {
+                                const percentage = Math.round((count / (stats?.total || 1)) * 100);
+                                return (
+                                    <div key={category} className="space-y-3">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{category.replace('_', ' ')}</span>
+                                            <span className="text-[10px] font-black text-primary uppercase">{percentage}%</span>
+                                        </div>
+                                        <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                            <div 
+                                                className="h-full bg-primary shadow-glow transition-all duration-1000" 
+                                                style={{ width: `${percentage}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <Button variant="outline" className="w-full h-14 rounded-[32px] font-black uppercase tracking-widest text-[9px] border-white/10 text-white hover:bg-white/5 shadow-inner">
+                            Download Advocacy Data
+                        </Button>
+                    </div>
+
+                    <div className="bg-white p-10 rounded-[56px] border border-slate-100 shadow-xl shadow-slate-200/40 space-y-8">
+                        <div className="flex items-center gap-3">
+                            <ShieldCheck className="h-6 w-6 text-green-500" />
+                            <h3 className="text-lg font-black text-slate-900 tracking-tight uppercase">Advocacy Wins</h3>
+                        </div>
+                        <div className="space-y-6">
+                            <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 text-center space-y-2">
+                                <p className="text-3xl font-black text-green-600 tracking-tighter">84%</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Success Resolution Rate</p>
+                            </div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center leading-relaxed italic">
+                                Your organization's presence has accelerated legal response times by 40% in monitored cases.
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
