@@ -1,12 +1,57 @@
-const nsfwjs = require('nsfwjs');
-const { classifyImage } = require('../src/utils/nsfwCheck');
-
 jest.mock('nsfwjs');
-jest.mock('@tensorflow/tfjs');
+jest.mock('@tensorflow/tfjs', () => ({
+    tensor3d: jest.fn(() => ({ dispose: jest.fn() }))
+}));
+jest.mock('jpeg-js', () => ({
+    decode: jest.fn(() => ({
+        data: new Uint8Array(12),
+        width: 1,
+        height: 1
+    }))
+}));
+jest.mock('pngjs', () => ({
+    PNG: {
+        sync: {
+            read: jest.fn(() => ({
+                data: new Uint8Array(4),
+                width: 1,
+                height: 1
+            }))
+        }
+    }
+}));
 
 describe('NSFWJS Check Utility', () => {
+    let classifyImage, nsfwjs;
+
     beforeEach(() => {
-        jest.clearAllMocks();
+        jest.resetModules();
+
+        jest.mock('nsfwjs');
+        jest.mock('@tensorflow/tfjs', () => ({
+            tensor3d: jest.fn(() => ({ dispose: jest.fn() }))
+        }));
+        jest.mock('jpeg-js', () => ({
+            decode: jest.fn(() => ({
+                data: new Uint8Array(12),
+                width: 1,
+                height: 1
+            }))
+        }));
+        jest.mock('pngjs', () => ({
+            PNG: {
+                sync: {
+                    read: jest.fn(() => ({
+                        data: new Uint8Array(4),
+                        width: 1,
+                        height: 1
+                    }))
+                }
+            }
+        }));
+
+        nsfwjs = require('nsfwjs');
+        ({ classifyImage } = require('../src/utils/nsfwCheck'));
     });
 
     it('should classify a safe image as not NSFW', async () => {

@@ -94,15 +94,6 @@ app.get('/', (req, res) => {
 const messageRoutes = require('./routes/messageRoutes');
 app.use('/api', messageRoutes);
 
-const messageRoutes = require('./routes/messageRoutes');
-
-app.use((req, res, next) => {
-    req.producer = producer;
-    next();
-});
-
-app.use('/api/messages', messageRoutes);
-
 // Start server
 const startServer = async () => {
     await connectMongoDB();

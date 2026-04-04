@@ -1,12 +1,11 @@
 const axios = require('axios');
 
-const PERSPECTIVE_API_KEY = process.env.PERSPECTIVE_API_KEY || '';
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const TOXICITY_THRESHOLD = parseFloat(process.env.TOXICITY_THRESHOLD) || 0.7;
-const API_URL = 'https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze';
 
 const analyzeText = async (text) => {
-    if (!PERSPECTIVE_API_KEY) {
-        console.warn('[community-service] PERSPECTIVE_API_KEY not set, skipping toxicity check');
+    if (!OPENAI_API_KEY) {
+        console.warn('[community-service] OPENAI_API_KEY not set, skipping toxicity check');
         return { isToxic: false, score: 0 };
     }
 
@@ -15,21 +14,27 @@ const analyzeText = async (text) => {
     }
 
     try {
-        const response = await axios.post(`${API_URL}?key=${PERSPECTIVE_API_KEY}`, {
-            comment: { text },
-            languages: ['en'],
-            requestedAttributes: {
-                TOXICITY: {}
+        const response = await axios.post(
+            'https://api.openai.com/v1/moderations',
+            { input: text },
+            {
+                headers: {
+                    'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                    'Content-Type': 'application/json'
+                }
             }
-        });
+        );
 
-        const score = response.data.attributeScores.TOXICITY.summaryScore.value;
+        const result = response.data.results[0];
+        const maxScore = Math.max(...Object.values(result.category_scores));
+
         return {
-            isToxic: score >= TOXICITY_THRESHOLD,
-            score
+            isToxic: result.flagged || maxScore >= TOXICITY_THRESHOLD,
+            score: maxScore,
+            categories: result.categories
         };
     } catch (error) {
-        console.error('[community-service] Perspective API error:', error.message);
+        console.error('[community-service] OpenAI Moderation API error:', error.message);
         return { isToxic: false, score: 0 };
     }
 };
