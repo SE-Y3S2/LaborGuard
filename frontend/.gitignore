@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# FIX: Added .vite cache folder — this was being tracked in the repo
+.vite
+
 # Environment variables — NEVER commit real .env to git
 .env
 .env.*

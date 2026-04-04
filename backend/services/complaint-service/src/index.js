@@ -6,9 +6,6 @@ const YAML = require('yamljs');
 const swaggerDocument = YAML.load(path.join(__dirname, '../swagger.yaml'));
 const { Kafka } = require('kafkajs');
 const cors = require('cors');
-const swaggerUi = require('swagger-ui-express');
-const YAML = require('yamljs');
-const path = require('path');
 
 const complaintRoutes = require('./routes/complaintRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
@@ -22,7 +19,6 @@ app.use(cors());
 app.use(express.json());
 
 // Swagger Documentation
-const swaggerDocument = YAML.load(path.join(__dirname, '..', 'swagger.yaml'));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Environment variables
@@ -99,9 +95,6 @@ app.get('/', (req, res) => {
     });
 });
 
-
-// Swagger API Docs
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 
 // Routes

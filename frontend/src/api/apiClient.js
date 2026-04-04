@@ -11,6 +11,7 @@ const attachAuthToken = (config) => {
 };
 
 // Common Interceptor for Token Refresh
+// FIX: Unified the refresh body key to { refreshToken } to match authApi.js
 const handleTokenRefresh = async (error) => {
   const originalRequest = error.config;
   if (error.response?.status === 401 && !originalRequest._retry) {
@@ -20,11 +21,14 @@ const handleTokenRefresh = async (error) => {
       if (!refreshToken) throw new Error('No refresh token');
 
       // Always use Auth Service URL for refresh
-      const response = await axios.post(`${import.meta.env.VITE_AUTH_SERVICE_URL}/api/auth/refresh`, {
-        token: refreshToken,
-      });
+      // FIX: Changed body key from { token: refreshToken } → { refreshToken }
+      const response = await axios.post(
+        `${import.meta.env.VITE_AUTH_SERVICE_URL}/api/auth/refresh`,
+        { refreshToken }
+      );
 
-      const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data.data;
+      const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+        response.data.data;
       setTokens(newAccessToken, newRefreshToken);
 
       originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
@@ -40,37 +44,47 @@ const handleTokenRefresh = async (error) => {
 // Create Service-Specific Clients
 export const authClient = axios.create({
   baseURL: `${import.meta.env.VITE_AUTH_SERVICE_URL}/api`,
-  headers: { 'Content-Type': 'application/json' }
+  headers: { 'Content-Type': 'application/json' },
 });
 
 export const communityClient = axios.create({
   baseURL: `${import.meta.env.VITE_COMMUNITY_SERVICE_URL}/api`,
-  headers: { 'Content-Type': 'application/json' }
+  headers: { 'Content-Type': 'application/json' },
 });
 
 export const complaintClient = axios.create({
   baseURL: `${import.meta.env.VITE_COMPLAINT_SERVICE_URL}/api`,
-  headers: { 'Content-Type': 'application/json' }
+  headers: { 'Content-Type': 'application/json' },
 });
 
 export const jobClient = axios.create({
   baseURL: `${import.meta.env.VITE_JOB_SERVICE_URL}/api`,
-  headers: { 'Content-Type': 'application/json' }
+  headers: { 'Content-Type': 'application/json' },
 });
 
 export const messageClient = axios.create({
   baseURL: `${import.meta.env.VITE_MESSAGING_SERVICE_URL}/api`,
-  headers: { 'Content-Type': 'application/json' }
+  headers: { 'Content-Type': 'application/json' },
 });
 
 export const notificationClient = axios.create({
   baseURL: `${import.meta.env.VITE_NOTIFICATION_SERVICE_URL}/api`,
-  headers: { 'Content-Type': 'application/json' }
+  headers: { 'Content-Type': 'application/json' },
 });
 
 // Attach Interceptors to ALL Clients
-const clients = [authClient, communityClient, complaintClient, jobClient, messageClient, notificationClient];
-clients.forEach(client => {
-  client.interceptors.request.use(attachAuthToken, (error) => Promise.reject(error));
+const clients = [
+  authClient,
+  communityClient,
+  complaintClient,
+  jobClient,
+  messageClient,
+  notificationClient,
+];
+
+clients.forEach((client) => {
+  client.interceptors.request.use(attachAuthToken, (error) =>
+    Promise.reject(error)
+  );
   client.interceptors.response.use((response) => response, handleTokenRefresh);
 });
