@@ -21,7 +21,7 @@ import { Button } from "@/components/common/Button";
 import { Badge } from "@/components/common/Badge";
 import { Input } from "@/components/common/Input";
 import { Spinner } from "@/components/common/Spinner";
-import { Textarea } from "@/components/ui/textarea"; // Assuming from UI for now
+import { Textarea } from "@/components/ui/Textarea"; // Assuming from UI for now
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/common/Avatar";
 import { StoryCard } from "@/components/community/StoryCard";
 import { PollCard } from "@/components/community/PollCard";

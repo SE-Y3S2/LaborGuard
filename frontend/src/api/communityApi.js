@@ -1,22 +1,15 @@
-import axiosInstance from './axiosInstance';
+import { communityClient } from './apiClient';
 
 export const communityApi = {
-  // Posts
-  getPosts: (params) => axiosInstance.get('/community/posts', { params }),
-  createPost: (data) => axiosInstance.post('/community/posts', data, {
+  getPosts: (params) => communityClient.get('/posts', { params }),
+  getPostById: (id) => communityClient.get(`/posts/${id}`),
+  createPost: (formData) => communityClient.post('/posts', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
-  getPostById: (id) => axiosInstance.get(`/community/posts/${id}`),
-  updatePost: (id, data) => axiosInstance.put(`/community/posts/${id}`, data),
-  deletePost: (id) => axiosInstance.delete(`/community/posts/${id}`),
-  likePost: (id) => axiosInstance.post(`/community/posts/${id}/like`),
-  
-  // Comments
-  getComments: (postId) => axiosInstance.get(`/community/posts/${postId}/comments`),
-  addComment: (postId, data) => axiosInstance.post(`/community/posts/${postId}/comments`, data),
-  deleteComment: (postId, commentId) => axiosInstance.delete(`/community/posts/${postId}/comments/${commentId}`),
-  
-  // Profiles
-  getProfile: (userId) => axiosInstance.get(`/community/profiles/${userId}`),
-  updateProfile: (data) => axiosInstance.put('/community/profiles/me', data),
+  likePost: (id) => communityClient.post(`/posts/${id}/like`),
+  addComment: (postId, content) => communityClient.post(`/posts/${postId}/comments`, { content }),
+  reportPost: (id, reason) => communityClient.post(`/posts/${id}/report`, { reason }),
+  deletePost: (id) => communityClient.delete(`/posts/${id}`),
+  getProfile: (userId) => communityClient.get(`/profiles/${userId}`),
+  updateProfile: (data) => communityClient.patch('/profiles/me', data),
 };

@@ -17,11 +17,12 @@ import {
   AlertTriangle,
   Building2,
   Calendar,
-  MessageSquare
+  MessageSquare,
+  FileBarChart2 as FileBarChart
 } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { Badge } from "@/components/common/Badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 
 const AdvocacyHub = () => {

@@ -1,23 +1,12 @@
-import axiosInstance from './axiosInstance';
+import { authClient } from './apiClient';
 
 export const authApi = {
-  register: (formData) => axiosInstance.post('/auth/register', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
-
-  login: (email, password) => axiosInstance.post('/auth/login', { email, password }),
-
-  verify: (userId, code, type) => axiosInstance.post('/auth/verify', { userId, code, type }),
-
-  forgotPassword: (email) => axiosInstance.post('/auth/forgot-password', { email }),
-
-  resetPassword: (email, code, password) => axiosInstance.post('/auth/reset-password', { email, code, password }),
-
-  logout: () => axiosInstance.post('/auth/logout'),
-
-  changePassword: (currentPassword, newPassword) => axiosInstance.post('/auth/change-password', { currentPassword, newPassword }),
-
-  getProfile: () => axiosInstance.get('/users/me'),
-
-  updateProfile: (data) => axiosInstance.put('/users/me', data),
+  login: (data) => authClient.post('/auth/login', data),
+  register: (data) => authClient.post('/auth/register', data),
+  verifyEmail: (code) => authClient.post('/auth/verify-email', { code }),
+  resendVerification: (email) => authClient.post('/auth/resend-verification', { email }),
+  forgotPassword: (email) => authClient.post('/auth/forgot-password', { email }),
+  resetPassword: (token, password) => authClient.post(`/auth/reset-password/${token}`, { password }),
+  getProfile: () => authClient.get('/auth/me'),
+  updateProfile: (data) => authClient.patch('/auth/me', data),
 };

@@ -51,8 +51,8 @@ export const useRealtime = () => {
         console.log('Centrifugo disconnected');
     });
 
-    // Subscribe to personal notification channel
-    const subNotification = centrifuge.newSubscription(`notifications#${user.userId}`);
+    // Subscribe to personal notification channel (Standard colon separator)
+    const subNotification = centrifuge.newSubscription(`notifications:${user._id || user.userId}`);
     subNotification.on('publication', (ctx) => {
         handleNotification(ctx.data);
     });
@@ -61,7 +61,7 @@ export const useRealtime = () => {
     // Subscribe to active conversation channel if exists
     let subChat = null;
     if (activeConversationId) {
-        subChat = centrifuge.newSubscription(`chat#${activeConversationId}`);
+        subChat = centrifuge.newSubscription(`chat:${activeConversationId}`);
         subChat.on('publication', (ctx) => {
             handleNewMessage({ conversationId: activeConversationId, message: ctx.data });
         });

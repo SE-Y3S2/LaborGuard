@@ -13,7 +13,7 @@ import {
   Briefcase,
   FileText
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,8 +21,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/DropdownMenu";
+import { Badge } from '@/components/common/Badge';
 
 const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -51,7 +51,7 @@ const Navbar = () => {
 
                     <div className="hidden md:flex gap-6">
                         <Link to="/" className="text-sm font-semibold transition-colors hover:text-primary">Home</Link>
-                        <Link to="/worker/jobs" className="text-sm font-semibold transition-colors hover:text-primary">Job Board</Link>
+                        <Link to="/jobs" className="text-sm font-semibold transition-colors hover:text-primary">Job Board</Link>
                         <Link to="/community" className="text-sm font-semibold transition-colors hover:text-primary">Community</Link>
                     </div>
                 </div>
@@ -133,7 +133,7 @@ const Navbar = () => {
                 <div className="md:hidden border-t bg-background p-4 space-y-4 animate-in slide-in-from-top duration-300">
                     <nav className="flex flex-col gap-4">
                         <Link to="/" className="text-lg font-semibold px-2 py-1" onClick={() => setIsMenuOpen(false)}>Home</Link>
-                        <Link to="/worker/jobs" className="text-lg font-semibold px-2 py-1" onClick={() => setIsMenuOpen(false)}>Job Board</Link>
+                        <Link to="/jobs" className="text-lg font-semibold px-2 py-1" onClick={() => setIsMenuOpen(false)}>Job Board</Link>
                         <Link to="/community" className="text-lg font-semibold px-2 py-1" onClick={() => setIsMenuOpen(false)}>Community</Link>
                         <DropdownMenuSeparator />
                         {!isAuthenticated && (

@@ -2,8 +2,12 @@ import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 import { cn } from "@/lib/utils";
+import { useRealtime } from "@/hooks/useRealtime";
 
 const DashboardLayout = ({ className }) => {
+    // Initialize Real-time Pipeline (WebSockets)
+    useRealtime();
+    
     return (
         <div className="flex h-screen w-full overflow-hidden bg-slate-50/50">
             {/* Sidebar - Desktop Only */}

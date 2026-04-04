@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useJobs } from "@/hooks/useJobs";
 import { 
@@ -29,13 +30,14 @@ import {
     DialogTitle, 
     DialogDescription,
     DialogFooter 
-} from "@/components/ui/dialog"; // Using UI dialog for now as it's standard
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+} from "@/components/ui/Dialog"; // Using UI dialog for now as it's standard
+import { Textarea } from "@/components/ui/Textarea";
+import { Label } from "@/components/ui/Label";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const JobBoardPage = () => {
+    const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth();
     const { useGetJobs, useGetMyApplications, applyForJob } = useJobs();
     
@@ -50,6 +52,15 @@ const JobBoardPage = () => {
 
     const { data: jobs, isLoading: jobsLoading } = useGetJobs(params);
     const { data: myApplications } = useGetMyApplications();
+
+    const handleOpenApply = (job) => {
+        if (!isAuthenticated) {
+            toast.error("Please login to apply for jobs");
+            navigate("/login");
+            return;
+        }
+        setSelectedJob(job);
+    };
 
     const handleApply = async () => {
         if (!selectedJob) return;
@@ -121,8 +132,8 @@ const JobBoardPage = () => {
                                 key={job._id} 
                                 job={job} 
                                 hasApplied={hasApplied(job._id)} 
-                                onApply={(j) => setSelectedJob(j)}
-                                onDetail={(id) => navigate(`/worker/jobs/${id}`)}
+                                onApply={handleOpenApply}
+                                onDetail={handleOpenApply}
                             />
                         ))}
                     </div>

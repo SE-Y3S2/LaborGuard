@@ -1,9 +1,9 @@
-import axiosInstance from './axiosInstance';
+import { messageClient } from './apiClient';
 
 export const messageApi = {
-  getConversations: () => axiosInstance.get('/messaging/conversations'),
-  getMessages: (conversationId) => axiosInstance.get(`/messaging/conversations/${conversationId}/messages`),
-  sendMessage: (data) => axiosInstance.post('/messaging/messages', data),
-  markAsRead: (messageId) => axiosInstance.patch(`/messaging/messages/${messageId}/read`),
-  deleteMessage: (messageId) => axiosInstance.delete(`/messaging/messages/${messageId}`),
+  getConversations: () => messageClient.get('/conversations'),
+  getMessages: (conversationId) => messageClient.get(`/conversations/${conversationId}/messages`),
+  sendMessage: (data) => messageClient.post('/messages', data),
+  getUnreadCount: () => messageClient.get('/messages/unread-count'),
+  markAsRead: (conversationId) => messageClient.patch(`/conversations/${conversationId}/read`),
 };

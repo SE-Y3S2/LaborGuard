@@ -27,8 +27,10 @@ import { cn } from "@/lib/utils";
 import { Button } from "../common/Button";
 import { Badge } from "../common/Badge";
 import { Avatar, AvatarFallback } from "../common/Avatar";
+import { useTranslation } from "react-i18next";
 
 const Sidebar = ({ className }) => {
+    const { t } = useTranslation();
     const { user, logout } = useAuth();
     const location = useLocation();
 
@@ -37,37 +39,37 @@ const Sidebar = ({ className }) => {
         
         const links = {
             worker: [
-                { title: "Command Center", href: "/worker/dashboard", icon: LayoutDashboard },
-                { title: "Job Board", href: "/worker/jobs", icon: Briefcase },
-                { title: "My Case Files", href: "/worker/complaints", icon: FileText },
-                { title: "New Complaint", href: "/worker/complaints/new", icon: PlusCircle },
-                { title: "Consultations", href: "/worker/appointments", icon: Calendar },
+                { title: t("nav.dashboard", "Command Center"), href: "/worker/dashboard", icon: LayoutDashboard },
+                { title: t("nav.jobs", "Job Board"), href: "/worker/jobs", icon: Briefcase },
+                { title: t("nav.complaints", "My Case Files"), href: "/worker/complaints", icon: FileText },
+                { title: t("nav.new_complaint", "New Complaint"), href: "/worker/complaints/new", icon: PlusCircle },
+                { title: t("nav.appointments", "Consultations"), href: "/worker/appointments", icon: Calendar },
             ],
             employer: [
-                { title: "Recruitment Hub", href: "/employer/dashboard", icon: LayoutDashboard },
-                { title: "Post Vacancy", href: "/employer/jobs/new", icon: PlusCircle },
-                { title: "Active Listings", href: "/employer/jobs", icon: Briefcase },
+                { title: t("nav.dashboard", "Recruitment Hub"), href: "/employer/dashboard", icon: LayoutDashboard },
+                { title: t("nav.new_job", "Post Vacancy"), href: "/employer/jobs/new", icon: PlusCircle },
+                { title: t("nav.jobs", "Active Listings"), href: "/employer/jobs", icon: Briefcase },
             ],
             lawyer: [
-                { title: "Legal Command", href: "/legal/dashboard", icon: Gavel },
-                { title: "Active Docket", href: "/legal/cases", icon: ShieldCheck },
-                { title: "Consultations", href: "/legal/appointments", icon: Calendar },
+                { title: t("nav.dashboard", "Legal Command"), href: "/legal/dashboard", icon: Gavel },
+                { title: t("nav.cases", "Active Docket"), href: "/legal/cases", icon: ShieldCheck },
+                { title: t("nav.appointments", "Consultations"), href: "/legal/appointments", icon: Calendar },
             ],
             ngo: [
-                { title: "Advocacy Dashboard", href: "/ngo/dashboard", icon: LayoutDashboard },
-                { title: "Impact Hub", href: "/advocacy", icon: Globe },
-                { title: "Community Feed", href: "/community", icon: Activity },
+                { title: t("nav.dashboard", "Advocacy Dashboard"), href: "/ngo/dashboard", icon: LayoutDashboard },
+                { title: t("nav.impact", "Impact Hub"), href: "/advocacy", icon: Globe },
+                { title: t("nav.community", "Community Feed"), href: "/community", icon: Activity },
             ],
             admin: [
-                { title: "System Governance", href: "/admin/dashboard", icon: ShieldAlert },
-                { title: "User Registry", href: "/admin/dashboard?tab=users", icon: Users },
-                { title: "Global Analytics", href: "/admin/dashboard?tab=analytics", icon: BarChart3 },
+                { title: t("nav.dashboard", "System Governance"), href: "/admin/dashboard", icon: ShieldAlert },
+                { title: t("nav.users", "User Registry"), href: "/admin/dashboard?tab=users", icon: Users },
+                { title: t("nav.analytics", "Global Analytics"), href: "/admin/dashboard?tab=analytics", icon: BarChart3 },
             ]
         };
 
         const commonLinks = [
-            { title: "Community", href: "/community", icon: Users },
-            { title: "Messaging", href: "/messages", icon: MessageSquare, badge: "Live" },
+            { title: t("nav.community", "Community"), href: "/community", icon: Users },
+            { title: t("nav.messaging", "Messaging"), href: "/messages", icon: MessageSquare, badge: "Live" },
         ];
 
         return [...(links[role] || []), ...commonLinks];

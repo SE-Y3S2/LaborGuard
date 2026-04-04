@@ -32,13 +32,13 @@ import {
   SelectItem, 
   SelectTrigger, 
   SelectValue 
-} from "@/components/common/Select"; // Assuming using UI select for now
+} from "@/components/ui/Select"; // Redirected from common to ui
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/components/ui/DropdownMenu";
 import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
