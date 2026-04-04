@@ -20,11 +20,13 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 const PORT = process.env.PORT || 3002;
 const SERVICE_NAME = process.env.SERVICE_NAME || 'community-service';
 const MONGODB_URI = process.env.MONGODB_URI;
-
+const KAFKA_BROKER = process.env.KAFKA_BROKER || 'kafka:9092';
 
 const connectMongoDB = async () => {
     try {
-        await mongoose.connect(MONGODB_URI);
+        await mongoose.connect(MONGODB_URI, {
+            dbName: process.env.MONGODB_DB_NAME || 'laborguard-community'
+        });
         console.log(`[${SERVICE_NAME}] Connected to MongoDB`);
     } catch (error) {
         console.error(`[${SERVICE_NAME}] MongoDB connection error:`, error.message);
