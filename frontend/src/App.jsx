@@ -1,16 +1,16 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Home from './components/Home';
-import Login from './components/Login';
-import Register from './components/Register';
-import Dashboard from './components/Dashboard';
-import OAuthSuccess from './components/OAuthSuccess';
-import VerifyOTP from './components/VerifyOTP';
-import ForgotPassword from './components/ForgotPassword';
-import ResetPassword from './components/ResetPassword';
-import AdminDashboard from './components/AdminDashboard';
-import JobDashboard from './components/JobDashboard';
-import JobForm from './components/JobForm';
-import Navbar from './components/Navbar';
+import Home from './components/core/Home';
+import Login from './components/auth/Login';
+import Register from './components/auth/Register';
+import Dashboard from './components/dashboards/Dashboard';
+import OAuthSuccess from './components/auth/OAuthSuccess';
+import VerifyOTP from './components/auth/VerifyOTP';
+import ForgotPassword from './components/auth/ForgotPassword';
+import ResetPassword from './components/auth/ResetPassword';
+import AdminDashboard from './components/dashboards/AdminDashboard';
+import JobDashboard from './components/jobs/JobDashboard';
+import JobForm from './components/jobs/JobForm';
+import Navbar from './components/core/Navbar';
 
 function App() {
   return (
