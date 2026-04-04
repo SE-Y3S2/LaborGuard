@@ -1,356 +1,196 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
-:root {
-  /* Color Palette - Formal Corporate Light Theme */
-  --bg-primary: #ffffff; /* Stark White for components */
-  --bg-secondary: #f4f7fb; /* Very pale blue/grey for backgrounds */
-  
-  --text-primary: #0f172a; /* Deep Navy Blue for Headings */
-  --text-secondary: #475569; /* Slate Grey for body text */
-  
-  --accent-primary: #2589f5; /* Bright Formal Blue */
-  --accent-hover: #1d4ed8;
-  --accent-secondary: #f05b5b; /* Coral Red for accents */
-  
-  --accent-success: #059669; /* Formal Green */
-  --accent-danger: #e11d48;
+@import "tailwindcss";
 
-  /* Card and Form settings (Replacing Glassmorphism) */
-  --glass-bg: #ffffff; /* Solid white background */
-  --glass-border: rgba(0, 0, 0, 0.06); /* Very subtle grey border */
-  --glass-shadow: rgba(0, 0, 0, 0.02);
-  --glass-blur: none; /* No blur in formal design */
+@theme {
+  --font-sans: "Outfit", sans-serif;
 
-  /* Shadows & Layout */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f4f7fb;
+  
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  
+  --color-accent-primary: #2589f5;
+  --color-accent-hover: #1d4ed8;
+  --color-accent-secondary: #f05b5b;
+  --color-accent-success: #059669;
+  --color-accent-danger: #e11d48;
+
   --shadow-main: 0 8px 30px rgba(0, 0, 0, 0.04);
-  --shadow-hover: 0 15px 40px rgba(0, 0, 0, 0.08); /* Deeper shadow for cards on hover */
+  --shadow-hover: 0 15px 40px rgba(0, 0, 0, 0.08);
+
+  --radius-pill: 50px;
+}
+
+@layer base {
+  body {
+    @apply font-sans bg-bg-secondary text-text-secondary leading-relaxed min-h-screen flex flex-col;
+  }
+
+  #root {
+    @apply flex flex-col min-h-screen w-full;
+  }
+
+  a {
+    @apply text-accent-primary font-medium transition-colors duration-200;
+  }
+
+  a:hover {
+    @apply text-accent-hover;
+  }
+
+  h1, h2, h3, h4, .text-heading {
+    @apply font-bold mb-4 text-text-primary;
+  }
+}
+
+@layer components {
+  /* Legacy Components mapped to Tailwind */
   
-  --radius-sm: 8px; /* For inputs */
-  --radius-md: 12px; /* For cards */
-  --radius-lg: 20px; /* For large sections */
-  --radius-pill: 50px; /* For Buttons */
-}
+  .glass-container {
+    @apply bg-bg-primary border border-slate-200/80 rounded-md p-10 shadow-main transition-shadow duration-300;
+  }
 
-/* Notice: We explicitly removed the @media prefers-color-scheme: dark rule to enforce this clean, light theme for all users! */
+  .modern-input {
+    @apply w-full px-5 py-3.5 bg-slate-50 border border-black/5 text-slate-800 rounded-sm font-sans text-base font-medium transition-all duration-300 mb-4;
+  }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+  .modern-input:focus {
+    @apply outline-none bg-white border-accent-primary shadow-[0_0_0_4px_rgba(37,137,245,0.15)];
+  }
 
-body {
-  font-family: 'Outfit', sans-serif;
-  background-color: var(--bg-secondary); /* Give body the pale background */
-  color: var(--text-secondary); /* Default body text to slate grey */
-  line-height: 1.6;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
+  .modern-select {
+    @apply w-full px-5 py-3.5 bg-slate-50 border border-black/5 text-slate-800 rounded-sm font-sans text-base cursor-pointer mb-4 transition-all duration-300 appearance-none;
+  }
 
-#root {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  width: 100%;
-}
+  .modern-select:focus {
+    @apply outline-none bg-white border-accent-primary shadow-[0_0_0_4px_rgba(37,137,245,0.15)];
+  }
 
-a {
-  color: var(--accent-primary);
-  text-decoration: none;
-  font-weight: 500;
-  transition: color 0.2s ease;
-}
+  .btn-primary {
+    @apply bg-accent-primary text-white border-none py-3.5 px-8 rounded-pill font-sans text-[1.05rem] font-semibold cursor-pointer transition-all duration-300 w-full flex justify-center items-center gap-2 shadow-[0_4px_15px_rgba(37,137,245,0.2)];
+  }
 
-a:hover {
-  color: var(--accent-hover);
-}
+  .btn-primary:hover {
+    @apply bg-accent-hover -translate-y-0.5 shadow-[0_6px_20px_rgba(37,137,245,0.3)];
+  }
 
-/* Typography elements */
-h1, h2, h3, h4, .text-heading {
-  font-weight: 700;
-  margin-bottom: 1rem;
-  color: var(--text-primary); /* Deep Navy */
-}
+  .btn-primary:active {
+    @apply translate-y-0;
+  }
 
-/* Formal Center Card (Replacing glass-container) */
-.glass-container {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-md);
-  padding: 2.5rem;
-  box-shadow: var(--shadow-main);
-  transition: box-shadow 0.3s ease;
-}
+  .btn-google {
+    @apply bg-white text-text-primary border border-black/10 py-3.5 px-8 rounded-pill font-sans text-[1.05rem] font-semibold cursor-pointer transition-all duration-300 w-full flex justify-center items-center gap-3 shadow-[0_2px_5px_rgba(0,0,0,0.02)];
+  }
 
-/* Modern Inputs */
-.modern-input {
-  width: 100%;
-  padding: 0.9rem 1.2rem;
-  background-color: #f8fafc; /* Very light fill */
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  color: #1e293b;
-  border-radius: var(--radius-sm);
-  font-family: 'Outfit', sans-serif;
-  font-size: 1rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  margin-bottom: 1rem;
-}
+  .btn-google:hover {
+    @apply bg-slate-50 border-black/20 -translate-y-0.5 shadow-[0_6px_15px_rgba(0,0,0,0.05)];
+  }
 
-.modern-input:focus {
-  outline: none;
-  background-color: #ffffff;
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 0 4px rgba(37, 137, 245, 0.15); /* Soft blue ring */
-}
+  .auth-wrapper {
+    @apply flex items-center justify-center min-h-[calc(100vh-74px)] w-full p-8;
+  }
 
-/* Modern Select */
-.modern-select {
-  width: 100%;
-  padding: 0.9rem 1.2rem;
-  background-color: #f8fafc;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  color: #1e293b;
-  border-radius: var(--radius-sm);
-  font-family: 'Outfit', sans-serif;
-  font-size: 1rem;
-  appearance: none;
-  cursor: pointer;
-  margin-bottom: 1rem;
-  transition: all 0.3s ease;
-}
+  .auth-wrapper.register-bg,
+  .auth-wrapper.login-bg {
+    @apply bg-cover bg-center bg-fixed;
+    background-image: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.7)), url('./assets/auth-bg.jpg');
+  }
 
-.modern-select:focus {
-  outline: none;
-  background-color: #ffffff;
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 0 4px rgba(37, 137, 245, 0.15);
-}
+  .auth-card {
+    @apply w-full max-w-[480px] bg-bg-primary border border-slate-200/80 rounded-md p-10 shadow-main;
+  }
 
-/* Formal Pill Buttons */
-.btn-primary {
-  background-color: var(--accent-primary);
-  color: #ffffff;
-  border: none;
-  padding: 0.9rem 2rem;
-  border-radius: var(--radius-pill); /* Essential for the pill look */
-  font-family: 'Outfit', sans-serif;
-  font-size: 1.05rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
-  box-shadow: 0 4px 15px rgba(37, 137, 245, 0.2);
-}
+  .register-card-wide, 
+  .register-card-extra-wide {
+    @apply !max-w-[1000px];
+  }
 
-.btn-primary:hover {
-  background-color: var(--accent-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(37, 137, 245, 0.3);
-}
-
-.btn-primary:active {
-  transform: translateY(0);
-}
-
-.btn-google {
-  background-color: #ffffff;
-  color: var(--text-primary);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  padding: 0.9rem 2rem;
-  border-radius: var(--radius-pill);
-  font-family: 'Outfit', sans-serif;
-  font-size: 1.05rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.8rem;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
-}
-
-.btn-google:hover {
-  background-color: #f8fafc;
-  border-color: rgba(0, 0, 0, 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05);
-}
-
-/* Authentication Wrappers */
-.auth-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: calc(100vh - 74px); /* Full height minus Navbar */
-  width: 100%;
-  padding: 2rem;
-}
-
-.auth-wrapper.register-bg,
-.auth-wrapper.login-bg {
-  background-image: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.7)), url('./assets/auth-bg.jpg');
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-}
-
-.auth-card {
-  width: 100%;
-  max-width: 480px;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-md);
-  padding: 2.5rem;
-  box-shadow: var(--shadow-main);
-}
-
-.register-card-wide, 
-.register-card-extra-wide {
-  max-width: 1000px !important;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 1.5rem;
-}
-
-@media (max-width: 768px) {
   .form-grid {
-    grid-template-columns: 1fr;
+    @apply grid grid-cols-2 gap-x-6;
   }
-  
-  .register-card-wide, .register-card-extra-wide {
-    max-width: 480px;
+
+  @media (max-width: 768px) {
+    .form-grid {
+      @apply grid-cols-1;
+    }
+    
+    .register-card-wide, .register-card-extra-wide {
+      @apply !max-w-[480px];
+    }
+  }
+
+  .full-width {
+    @apply col-span-full;
+  }
+
+  .drop-zone {
+    @apply border-2 border-dashed border-accent-primary/20 rounded-md p-8 text-center bg-accent-primary/5 cursor-pointer transition-all duration-300 mt-2;
+  }
+
+  .drop-zone:hover {
+    @apply border-accent-primary bg-accent-primary/10;
+  }
+
+  .drop-zone-icon {
+    @apply text-3xl mb-2 block;
+  }
+
+  .drop-zone-content p {
+    @apply font-semibold text-text-primary mb-1;
+  }
+
+  .drop-zone-content small {
+    @apply text-text-secondary;
+  }
+
+  .file-list {
+    @apply mt-4 flex flex-col gap-2;
+  }
+
+  .file-item {
+    @apply flex items-center px-4 py-3 bg-white border border-black/5 rounded-lg animate-[fadeIn_0.4s_ease-out];
+  }
+
+  .file-icon {
+    @apply text-xl mr-3;
+  }
+
+  .file-name {
+    @apply flex-1 text-[0.9rem] text-text-primary font-medium whitespace-nowrap overflow-hidden text-ellipsis;
+  }
+
+  .file-remove {
+    @apply bg-transparent border-none text-accent-danger cursor-pointer px-2 py-1 font-bold opacity-60 transition-opacity duration-200 hover:opacity-100;
+  }
+
+  .auth-header {
+    @apply text-center mb-8;
+  }
+
+  .auth-header h2 {
+    @apply text-4xl;
+  }
+
+  .auth-footer {
+    @apply text-center mt-6 text-[0.95rem];
+  }
+
+  .form-group {
+    @apply mb-6;
+  }
+
+  .form-label {
+    @apply block text-[0.9rem] font-semibold text-text-primary mb-2;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease forwards;
   }
 }
 
-.full-width {
-  grid-column: 1 / -1;
-}
-
-/* Drag & Drop Area */
-.drop-zone {
-  border: 2px dashed rgba(37, 137, 245, 0.2);
-  border-radius: var(--radius-md);
-  padding: 2rem;
-  text-align: center;
-  background-color: rgba(37, 137, 245, 0.02);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 0.5rem;
-}
-
-.drop-zone:hover {
-  border-color: var(--accent-primary);
-  background-color: rgba(37, 137, 245, 0.05);
-}
-
-.drop-zone-icon {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
-  display: block;
-}
-
-.drop-zone-content p {
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 0.2rem;
-}
-
-.drop-zone-content small {
-  color: var(--text-secondary);
-}
-
-.file-list {
-  margin-top: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.file-item {
-  display: flex;
-  align-items: center;
-  padding: 0.8rem 1rem;
-  background: white;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  border-radius: 8px;
-  animation: fadeIn 0.3s ease forwards;
-}
-
-.file-icon {
-  font-size: 1.2rem;
-  margin-right: 0.8rem;
-}
-
-.file-name {
-  flex: 1;
-  font-size: 0.9rem;
-  color: var(--text-primary);
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.file-remove {
-  background: none;
-  border: none;
-  color: var(--accent-danger);
-  cursor: pointer;
-  padding: 0.2rem 0.5rem;
-  font-weight: bold;
-  opacity: 0.6;
-  transition: opacity 0.2s;
-}
-
-.file-remove:hover {
-  opacity: 1;
-}
-
-.auth-header {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.auth-header h2 {
-  font-size: 2.2rem;
-}
-
-.auth-footer {
-  text-align: center;
-  margin-top: 1.5rem;
-  font-size: 0.95rem;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-label {
-  display: block;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 0.5rem;
-}
-
-/* Utility Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.5s ease forwards;
 }

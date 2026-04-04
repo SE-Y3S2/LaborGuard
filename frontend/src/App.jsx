@@ -11,14 +11,13 @@ import AdminDashboard from './components/AdminDashboard';
 import JobDashboard from './components/JobDashboard';
 import JobForm from './components/JobForm';
 import Navbar from './components/Navbar';
-import './App.css';
 
 function App() {
   return (
     <Router>
-      <div className="app-container">
+      <div className="flex flex-col min-h-screen w-full">
         <Navbar />
-        <main className="main-content">
+        <main className="flex-1 flex flex-col w-full">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
