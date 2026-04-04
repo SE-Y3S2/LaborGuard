@@ -1,0 +1,352 @@
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useNavigate, useParams } from "react-router-dom";
+import { useJobs } from "@/hooks/useJobs";
+import { 
+  Briefcase, 
+  DollarSign, 
+  MapPin, 
+  Type, 
+  Image as ImageIcon,
+  CheckCircle2,
+  ChevronLeft,
+  Loader2,
+  AlertCircle,
+  Building2,
+  Users,
+  ShieldCheck,
+  PlusCircle,
+  ArrowRight
+} from "lucide-react";
+import { Button } from "@/components/common/Button";
+import { Input } from "@/components/common/Input";
+import { Badge } from "@/components/common/Badge";
+import { Spinner } from "@/components/common/Spinner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select"; // Redirected from common to ui
+import { Textarea } from "@/components/ui/Textarea";
+import { Checkbox } from "@/components/ui/Checkbox";
+import { Label } from "@/components/ui/Label";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+const jobSchema = z.object({
+  title: z.string().min(5, "Title must be at least 5 characters").max(100),
+  description: z.string().min(20, "Description must be at least 20 characters").max(2000),
+  wageAmount: z.preprocess((val) => Number(val), z.number().min(100, "Minimum wage requirement not met")),
+  wageFrequency: z.enum(['hourly', 'daily', 'weekly', 'monthly', 'per_task']),
+  jobType: z.enum(['full_time', 'part_time', 'contract', 'temporary', 'daily_wage']),
+  city: z.string().min(2, "City is required"),
+  address: z.string().min(5, "Address is required"),
+  compliesWithMinimumWage: z.boolean().default(true),
+  imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal('')),
+  status: z.enum(['open', 'closed', 'filled']).default('open')
+});
+
+const JobFormPage = () => {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const isEdit = !!id;
+    const { useGetJob, createJob, updateJob } = useJobs();
+
+    const { data: job, isLoading: jobLoading } = useGetJob(id, { enabled: isEdit });
+
+    const {
+        register,
+        handleSubmit,
+        setValue,
+        reset,
+        watch,
+        formState: { errors }
+    } = useForm({
+        resolver: zodResolver(jobSchema),
+        defaultValues: {
+            wageFrequency: 'daily',
+            jobType: 'contract',
+            compliesWithMinimumWage: true,
+            status: 'open'
+        }
+    });
+
+    useEffect(() => {
+        if (job) {
+            reset({
+                title: job.title,
+                description: job.description,
+                wageAmount: job.wage.amount,
+                wageFrequency: job.wage.frequency,
+                jobType: job.jobType,
+                city: job.location.city,
+                address: job.location.address,
+                compliesWithMinimumWage: job.compliesWithMinimumWage,
+                imageUrl: job.imageUrl,
+                status: job.status
+            });
+        }
+    }, [job, reset]);
+
+    const onSubmit = async (data) => {
+        const payload = {
+            title: data.title,
+            description: data.description,
+            wage: {
+                amount: data.wageAmount,
+                frequency: data.wageFrequency,
+                currency: 'LKR'
+            },
+            location: {
+                city: data.city,
+                address: data.address,
+                country: 'Sri Lanka'
+            },
+            jobType: data.jobType,
+            compliesWithMinimumWage: data.compliesWithMinimumWage,
+            imageUrl: data.imageUrl || undefined,
+            status: data.status
+        };
+
+        try {
+            if (isEdit) {
+                await updateJob.mutateAsync({ id, data: payload });
+            } else {
+                await createJob.mutateAsync(payload);
+            }
+            navigate("/employer/dashboard");
+        } catch (error) {
+            // Error handled in hook/toast
+        }
+    };
+
+    if (isEdit && jobLoading) return (
+        <div className="p-32 flex flex-col items-center">
+            <Spinner size="lg" />
+            <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-slate-400 font-mono">PULLING VACANCY DOCS...</p>
+        </div>
+    );
+
+    return (
+        <div className="space-y-12 animate-fade-in pb-20 mt-4">
+             {/* Navigation & Header */}
+             <div className="flex justify-between items-center px-4">
+                <Button variant="ghost" onClick={() => navigate(-1)} className="rounded-full font-black uppercase tracking-widest text-[9px] text-slate-400 hover:text-primary transition-all">
+                    <ChevronLeft className="h-4 w-4 mr-2" />
+                    Discard & Exit
+                </Button>
+                <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">Form ID:</span>
+                    <Badge className="bg-slate-100 text-slate-500 border-none font-black text-[10px] tracking-widest uppercase py-1">EMP-PUBLISH-v2</Badge>
+                </div>
+            </div>
+
+            <header className="space-y-3 px-4">
+                <Badge variant="outline" className="text-primary border-primary/20 font-black uppercase tracking-[0.2em] text-[9px] px-4 py-1.5 rounded-full bg-primary/5">Recruitment Wizard</Badge>
+                <h1 className="text-5xl font-black tracking-tight text-slate-900 leading-tight">
+                    {isEdit ? "Update" : "Publish"} <br />
+                    <span className="text-primary italic">Labor Listing.</span>
+                </h1>
+                <p className="text-sm font-bold text-slate-400 max-w-lg leading-relaxed uppercase italic">Every listing must comply with the LaborGuard fair wage and safety standards.</p>
+            </header>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="grid lg:grid-cols-3 gap-12 px-4">
+                <div className="lg:col-span-2 space-y-10">
+                    {/* Primary Details */}
+                    <div className="bg-white p-10 md:p-14 rounded-[56px] border border-slate-100 shadow-xl shadow-slate-200/40 space-y-10">
+                        <div className="flex items-center gap-4">
+                             <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                                <Briefcase className="h-5 w-5" />
+                             </div>
+                             <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Job Fundamentals</h2>
+                        </div>
+
+                        <div className="space-y-8">
+                            <div className="space-y-3">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Vacancy Title</Label>
+                                <Input 
+                                    placeholder="e.g. Lead Construction Supervisor" 
+                                    className={cn("h-16 rounded-3xl bg-slate-50 border-none px-6 text-sm font-bold shadow-inner focus:bg-white transition-all", errors.title && "ring-2 ring-red-100")} 
+                                    {...register("title")} 
+                                />
+                                {errors.title && <p className="text-[9px] font-black uppercase text-red-500 tracking-widest ml-1">{errors.title.message}</p>}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-3">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Job Category</Label>
+                                    <select 
+                                        className="w-full h-16 rounded-3xl bg-slate-50 border-none px-6 text-xs font-black uppercase tracking-widest text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-inner transition-all appearance-none"
+                                        onChange={(e) => setValue("jobType", e.target.value)}
+                                        value={watch("jobType")}
+                                    >
+                                        <option value="full_time">Full Time</option>
+                                        <option value="part_time">Part Time</option>
+                                        <option value="contract">Contract</option>
+                                        <option value="temporary">Temporary</option>
+                                        <option value="daily_wage">Daily Wage</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-3">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Current Status</Label>
+                                    <select 
+                                        className="w-full h-16 rounded-3xl bg-slate-50 border-none px-6 text-xs font-black uppercase tracking-widest text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-inner transition-all appearance-none"
+                                        onChange={(e) => setValue("status", e.target.value)}
+                                        value={watch("status")}
+                                    >
+                                        <option value="open">Open - Active Hiring</option>
+                                        <option value="filled">Filled - Candidate Found</option>
+                                        <option value="closed">Closed - Archive Only</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Role Description & Requirements</Label>
+                                <Textarea 
+                                    placeholder="Describe the responsibilities, safety requirements, and skills..." 
+                                    className={cn("min-h-[220px] rounded-[32px] border-none bg-slate-50 p-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-primary/20 shadow-inner transition-all placeholder:text-slate-300", errors.description && "ring-2 ring-red-100")}
+                                    {...register("description")}
+                                />
+                                {errors.description && <p className="text-[9px] font-black uppercase text-red-500 tracking-widest ml-1">{errors.description.message}</p>}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Secondary Details Container */}
+                    <div className="grid md:grid-cols-2 gap-8">
+                         <div className="bg-white p-10 rounded-[56px] border border-slate-100 shadow-xl shadow-slate-200/40 space-y-8">
+                            <div className="flex items-center gap-3">
+                                < DollarSign className="h-4 w-4 text-primary" />
+                                <h3 className="text-lg font-black text-slate-900 tracking-tight uppercase">Wages</h3>
+                            </div>
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Amount (LKR)</Label>
+                                    <Input 
+                                        type="number" 
+                                        placeholder="5000" 
+                                        className="h-14 rounded-2xl bg-slate-50 border-none px-6 text-sm font-bold shadow-inner" 
+                                        {...register("wageAmount")} 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Payment Frequency</Label>
+                                    <select 
+                                        className="w-full h-14 rounded-2xl bg-slate-50 border-none px-6 text-[10px] font-black uppercase tracking-widest text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-inner appearance-none"
+                                        onChange={(e) => setValue("wageFrequency", e.target.value)}
+                                        value={watch("wageFrequency")}
+                                    >
+                                        <option value="per_task">Per Task</option>
+                                        <option value="hourly">Hourly</option>
+                                        <option value="daily">Daily</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                    </select>
+                                </div>
+                            </div>
+                         </div>
+
+                         <div className="bg-white p-10 rounded-[56px] border border-slate-100 shadow-xl shadow-slate-200/40 space-y-8">
+                            <div className="flex items-center gap-3">
+                                < MapPin className="h-4 w-4 text-primary" />
+                                <h3 className="text-lg font-black text-slate-900 tracking-tight uppercase">Geography</h3>
+                            </div>
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">City / District</Label>
+                                    <Input 
+                                        placeholder="e.g. Colombo 07" 
+                                        className="h-14 rounded-2xl bg-slate-50 border-none px-6 text-sm font-bold shadow-inner" 
+                                        {...register("city")} 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Exact Worksite Address</Label>
+                                    <Input 
+                                        placeholder="123, Galle Road" 
+                                        className="h-14 rounded-2xl bg-slate-50 border-none px-6 text-sm font-bold shadow-inner" 
+                                        {...register("address")} 
+                                    />
+                                </div>
+                            </div>
+                         </div>
+                    </div>
+                </div>
+
+                <div className="space-y-8">
+                    {/* Image / Branding Container */}
+                    <div className="bg-slate-900 p-10 rounded-[56px] text-white space-y-8 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-primary/20 blur-3xl" />
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-3">
+                                <ImageIcon className="h-5 w-5 text-primary" />
+                                <h3 className="text-lg font-black uppercase tracking-tight">Visual Identity</h3>
+                            </div>
+                            <div className="space-y-3">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Job Banner URL</Label>
+                                <Input 
+                                    placeholder="https://..." 
+                                    className="h-14 rounded-2xl bg-white/5 border-none px-6 text-sm font-bold text-white shadow-inner focus:bg-white/10" 
+                                    {...register("imageUrl")} 
+                                />
+                            </div>
+                            <div className="p-6 bg-white/5 rounded-3xl border border-white/10 flex gap-4 items-center">
+                                <div className="h-10 w-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary">
+                                    <Users className="h-5 w-5" />
+                                </div>
+                                <p className="text-[10px] font-bold text-slate-400 leading-relaxed uppercase italic">Visuals help informal workers recognize worksites and trust your professional listing.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Trust / Submission Sidebar */}
+                    <div className="bg-white p-10 rounded-[56px] border border-slate-100 shadow-xl shadow-slate-200/40 space-y-10">
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3">
+                                <ShieldCheck className="h-5 w-5 text-primary" />
+                                <h3 className="text-lg font-black text-slate-900 uppercase">Verification</h3>
+                            </div>
+                            
+                            <div className="space-y-6">
+                                <div className="flex items-center space-x-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 group transition-all hover:border-primary/20">
+                                    <Checkbox 
+                                        id="wageCompliance" 
+                                        className="h-5 w-5 rounded-md border-2 border-slate-200"
+                                        checked={watch("compliesWithMinimumWage")}
+                                        onCheckedChange={(checked) => setValue("compliesWithMinimumWage", checked === true)}
+                                    />
+                                    <Label htmlFor="wageCompliance" className="text-[10px] font-black text-slate-600 uppercase tracking-tight cursor-pointer leading-tight">
+                                        Listing complies with Sri Lanka minimum wage standards.
+                                    </Label>
+                                </div>
+
+                                <div className="p-6 bg-blue-50 rounded-3xl border border-blue-100 text-center">
+                                    <Users className="h-8 w-8 text-blue-500 mx-auto mb-3" />
+                                    <p className="text-[11px] font-black text-blue-900 uppercase tracking-tight">Access Verified Workers</p>
+                                    <p className="text-[9px] font-bold text-blue-600 uppercase italic mt-1">Our platform connects you with citizens whose identities are verified via biometrics.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="h-px bg-slate-50 w-full" />
+
+                        <div className="space-y-4">
+                             <Button 
+                                type="submit" 
+                                className="w-full h-18 rounded-[32px] font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-primary/30 group"
+                                disabled={createJob.isPending || updateJob.isPending}
+                             >
+                                {createJob.isPending || updateJob.isPending ? "Syncing Logic..." : isEdit ? "Update Opportunity" : "Publish Opportunity"}
+                                <PlusCircle className="ml-2 h-5 w-5 transition-transform group-hover:rotate-90" />
+                             </Button>
+                             <p className="text-center text-[9px] font-bold text-slate-400 uppercase tracking-widest italic leading-relaxed px-4">
+                                By publishing, you agree to the Fair-Work recruitment protocol and background verification.
+                             </p>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    );
+};
+
+export default JobFormPage;

@@ -1,0 +1,228 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 222.2 47.4% 11.2%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 222.2 84% 4.9%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 210 40% 98%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 212.7 26.8% 83.9%;
+}
+
+@layer base {
+  body {
+    @apply font-sans leading-relaxed min-h-screen flex flex-col bg-background text-foreground;
+  }
+
+  #root {
+    @apply flex flex-col min-h-screen w-full;
+  }
+
+  a {
+    @apply text-accent-primary font-medium transition-colors duration-200;
+  }
+
+  a:hover {
+    @apply text-accent-hover;
+  }
+
+  h1, h2, h3, h4, .text-heading {
+    @apply font-bold mb-4 text-text-primary;
+  }
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+@layer components {
+  /* Legacy Components mapped to Tailwind */
+
+  .glass-container {
+    @apply bg-bg-primary border border-slate-200/80 rounded-md p-10 shadow-main transition-shadow duration-300;
+  }
+
+  .modern-input {
+    @apply w-full px-5 py-3.5 bg-slate-50 border border-black/5 text-slate-800 rounded-sm font-sans text-base font-medium transition-all duration-300 mb-4;
+  }
+
+  .modern-input:focus {
+    @apply outline-none bg-white border-accent-primary shadow-[0_0_0_4px_rgba(37,137,245,0.15)];
+  }
+
+  .modern-select {
+    @apply w-full px-5 py-3.5 bg-slate-50 border border-black/5 text-slate-800 rounded-sm font-sans text-base cursor-pointer mb-4 transition-all duration-300 appearance-none;
+  }
+
+  .modern-select:focus {
+    @apply outline-none bg-white border-accent-primary shadow-[0_0_0_4px_rgba(37,137,245,0.15)];
+  }
+
+  .btn-primary {
+    @apply bg-accent-primary text-white border-none py-3.5 px-8 rounded-pill font-sans text-[1.05rem] font-semibold cursor-pointer transition-all duration-300 w-full flex justify-center items-center gap-2 shadow-[0_4px_15px_rgba(37,137,245,0.2)];
+  }
+
+  .btn-primary:hover {
+    @apply bg-accent-hover -translate-y-0.5 shadow-[0_6px_20px_rgba(37,137,245,0.3)];
+  }
+
+  .btn-primary:active {
+    @apply translate-y-0;
+  }
+
+  .btn-google {
+    @apply bg-white text-text-primary border border-black/10 py-3.5 px-8 rounded-pill font-sans text-[1.05rem] font-semibold cursor-pointer transition-all duration-300 w-full flex justify-center items-center gap-3 shadow-[0_2px_5px_rgba(0,0,0,0.02)];
+  }
+
+  .btn-google:hover {
+    @apply bg-slate-50 border-black/20 -translate-y-0.5 shadow-[0_6px_15px_rgba(0,0,0,0.05)];
+  }
+
+  .auth-wrapper {
+    @apply flex items-center justify-center min-h-[calc(100vh-74px)] w-full p-8;
+  }
+
+  .auth-wrapper.register-bg,
+  .auth-wrapper.login-bg {
+    @apply bg-cover bg-center bg-fixed;
+    background-image: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.7)), url('./assets/auth-bg.jpg');
+  }
+
+  .auth-card {
+    @apply w-full max-w-[480px] bg-bg-primary border border-slate-200/80 rounded-md p-10 shadow-main;
+  }
+
+  .register-card-wide, 
+  .register-card-extra-wide {
+    @apply !max-w-[1000px];
+  }
+
+  .form-grid {
+    @apply grid grid-cols-2 gap-x-6;
+  }
+
+  @media (max-width: 768px) {
+    .form-grid {
+      @apply grid-cols-1;
+    }
+
+    .register-card-wide, .register-card-extra-wide {
+      @apply !max-w-[480px];
+    }
+  }
+
+  .full-width {
+    @apply col-span-full;
+  }
+
+  .drop-zone {
+    @apply border-2 border-dashed border-accent-primary/20 rounded-md p-8 text-center bg-accent-primary/5 cursor-pointer transition-all duration-300 mt-2;
+  }
+
+  .drop-zone:hover {
+    @apply border-accent-primary bg-accent-primary/10;
+  }
+
+  .drop-zone-icon {
+    @apply text-3xl mb-2 block;
+  }
+
+  .drop-zone-content p {
+    @apply font-semibold text-text-primary mb-1;
+  }
+
+  .drop-zone-content small {
+    @apply text-text-secondary;
+  }
+
+  .file-list {
+    @apply mt-4 flex flex-col gap-2;
+  }
+
+  .file-item {
+    @apply flex items-center px-4 py-3 bg-white border border-black/5 rounded-lg animate-[fadeIn_0.4s_ease-out];
+  }
+
+  .file-icon {
+    @apply text-xl mr-3;
+  }
+
+  .file-name {
+    @apply flex-1 text-[0.9rem] text-text-primary font-medium whitespace-nowrap overflow-hidden text-ellipsis;
+  }
+
+  .file-remove {
+    @apply bg-transparent border-none text-accent-danger cursor-pointer px-2 py-1 font-bold opacity-60 transition-opacity duration-200 hover:opacity-100;
+  }
+
+  .auth-header {
+    @apply text-center mb-8;
+  }
+
+  .auth-header h2 {
+    @apply text-4xl;
+  }
+
+  .auth-footer {
+    @apply text-center mt-6 text-[0.95rem];
+  }
+
+  .form-group {
+    @apply mb-6;
+  }
+
+  .form-label {
+    @apply block text-[0.9rem] font-semibold text-text-primary mb-2;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease forwards;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

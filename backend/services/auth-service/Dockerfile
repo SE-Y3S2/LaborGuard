@@ -6,13 +6,13 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY . .
 
 # Expose port
-EXPOSE 3001
+EXPOSE 5001
 
 # Start the service
-CMD ["node", "src/index.js"]
+CMD ["node", "src/server.js"]

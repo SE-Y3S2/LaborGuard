@@ -3,9 +3,11 @@ const mongoose = require('mongoose');
 const path = require('path');
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
-const swaggerDocument = YAML.load(path.join(__dirname, '../swagger.yaml'));
 const { Kafka } = require('kafkajs');
 const cors = require('cors');
+const messageRoutes = require('./routes/messageRoutes');
+
+require('dotenv').config();
 
 const app = express();
 
@@ -13,16 +15,22 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Swagger Documentation
+const swaggerDocument = YAML.load(path.join(__dirname, '..', 'swagger.yaml'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 // Environment variables
 const PORT = process.env.PORT || 3005;
 const SERVICE_NAME = process.env.SERVICE_NAME || 'messaging-service';
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/laborguard';
+const MONGODB_URI = process.env.MONGODB_URI;
 const KAFKA_BROKER = process.env.KAFKA_BROKER || 'localhost:9092';
 
 // MongoDB Connection
 const connectMongoDB = async () => {
     try {
-        await mongoose.connect(MONGODB_URI);
+        await mongoose.connect(MONGODB_URI, {
+            dbName: process.env.MONGODB_DB_NAME || 'laborguard-messaging'
+        });
         console.log(`[${SERVICE_NAME}] Connected to MongoDB`);
     } catch (error) {
         console.error(`[${SERVICE_NAME}] MongoDB connection error:`, error.message);
@@ -68,6 +76,16 @@ const connectKafka = async () => {
     }
 };
 
+// Injection of kafka producer into req
+app.use((req, res, next) => {
+    req.producer = producer;
+    next();
+});
+
+// Routes
+app.use('/api', messageRoutes);
+app.use('/api/messages', messageRoutes); // Supporting both prefixes if needed
+
 // Health Check Endpoint
 app.get('/health', (req, res) => {
     res.json({
@@ -85,21 +103,6 @@ app.get('/', (req, res) => {
         version: '1.0.0'
     });
 });
-
-<<<<<<< Updated upstream
-// Routes
-=======
-// Swagger API Docs
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-
-// TODO: Add messaging routes
-// app.post('/api/messages', ...)
-// app.get('/api/messages/conversations', ...)
-// app.get('/api/messages/:conversationId', ...)
-
->>>>>>> Stashed changes
-const messageRoutes = require('./routes/messageRoutes');
-app.use('/api', messageRoutes);
 
 // Start server
 const startServer = async () => {

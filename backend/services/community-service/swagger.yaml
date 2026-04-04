@@ -1,226 +1,351 @@
-openapi: 3.0.0
+openapi: 3.0.3
 info:
-  title: Community Service API
+  title: LaborGuard Community Service API
+  description: Community Management Service for LaborGuard
   version: 1.0.0
-  description: API Documentation for the LaborGuard Community Service
 servers:
-  - url: http://localhost:3002/api
-    description: Local development server
+  - url: http://localhost:3002
+tags:
+  - name: Profiles
+    description: User profile management
+  - name: Posts
+    description: Community posts
+  - name: Comments
+    description: Post comments
+  - name: Statuses
+    description: User statuses (stories)
+  - name: Reports
+    description: Content reports
+
 paths:
-  /profiles/{userId}:
-    get:
-      summary: Get user profile
-      tags: [Profiles]
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: User profile retrieved
-  /profiles/{userId}/bookmarks:
-    get:
-      summary: Get user bookmarks
-      tags: [Profiles]
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: User bookmarks retrieved
-  /profiles/follow:
+  /api/profiles:
     post:
-      summary: Follow a user
       tags: [Profiles]
+      summary: Create or update a user profile
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [followerId, targetId]
-              properties:
-                followerId:
-                  type: string
-                targetId:
-                  type: string
-      responses:
-        '200':
-          description: Successfully followed user
-  /profiles/unfollow:
-    post:
-      summary: Unfollow a user
-      tags: [Profiles]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [followerId, targetId]
-              properties:
-                followerId:
-                  type: string
-                targetId:
-                  type: string
-      responses:
-        '200':
-          description: Successfully unfollowed user
-  /profiles/bookmark:
-    post:
-      summary: Toggle bookmark for a post
-      tags: [Profiles]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [userId, postId]
+              required: [userId, name]
               properties:
                 userId:
+                  type: string
+                name:
+                  type: string
+                role:
+                  type: string
+                  enum: [worker, lawyer, ngo_representative, employer, admin]
+                avatarUrl:
+                  type: string
+                bio:
+                  type: string
+      responses:
+        "200":
+          description: Profile created/updated
+        "500":
+          description: Server error
+
+  /api/profiles/{userId}:
+    get:
+      tags: [Profiles]
+      summary: Get a user profile
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User profile data
+        "404":
+          description: Profile not found
+
+  /api/profiles/{userId}/bookmarks:
+    get:
+      tags: [Profiles]
+      summary: Get user bookmarks
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of bookmarked posts
+        "404":
+          description: Profile not found
+
+  /api/profiles/follow:
+    post:
+      tags: [Profiles]
+      summary: Follow a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentUserId, targetUserId]
+              properties:
+                currentUserId:
+                  type: string
+                targetUserId:
+                  type: string
+      responses:
+        "200":
+          description: Followed successfully
+        "400":
+          description: Cannot follow yourself
+        "404":
+          description: User profile not found
+
+  /api/profiles/unfollow:
+    post:
+      tags: [Profiles]
+      summary: Unfollow a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentUserId, targetUserId]
+              properties:
+                currentUserId:
+                  type: string
+                targetUserId:
+                  type: string
+      responses:
+        "200":
+          description: Unfollowed successfully
+        "404":
+          description: User profile not found
+
+  /api/profiles/bookmark:
+    post:
+      tags: [Profiles]
+      summary: Toggle bookmark on a post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentUserId, postId]
+              properties:
+                currentUserId:
                   type: string
                 postId:
                   type: string
       responses:
-        '200':
+        "200":
           description: Bookmark toggled
-  /profiles:
+        "404":
+          description: Profile not found
+
+  /api/posts:
     post:
-      summary: Create or update a profile
-      tags: [Profiles]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                userId:
-                  type: string
-                bio:
-                  type: string
-                location:
-                  type: string
-                occupation:
-                  type: string
-      responses:
-        '200':
-          description: Profile created/updated
-  /posts:
-    post:
-      summary: Create a new post
       tags: [Posts]
+      summary: Create a new post
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
-              required: [userId, content]
+              required: [authorId, content]
               properties:
-                userId:
+                authorId:
                   type: string
                 content:
                   type: string
                 hashtags:
+                  type: string
+                  description: JSON array string e.g. '["labor","rights"]'
+                poll:
+                  type: string
+                  description: JSON object string e.g. '{"question":"Pick?","options":[{"text":"A","votes":[]}]}'
+                media:
                   type: array
                   items:
                     type: string
+                    format: binary
+                  description: Up to 5 image/video files
       responses:
-        '201':
-          description: Post created successfully
-  /posts/feed/{userId}:
+        "201":
+          description: Post created
+        "403":
+          description: Content flagged by moderation
+        "500":
+          description: Server error
+
+  /api/posts/feed/{userId}:
     get:
-      summary: Get user feed
       tags: [Posts]
+      summary: Get user feed (posts from following + self)
       parameters:
-        - name: userId
-          in: path
+        - in: path
+          name: userId
           required: true
           schema:
             type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
       responses:
-        '200':
-          description: Feed retrieved
-  /posts/trending:
+        "200":
+          description: List of feed posts
+        "404":
+          description: User profile not found
+
+  /api/posts/trending:
     get:
-      summary: Get trending posts
       tags: [Posts]
+      summary: Get trending feed (sorted by engagement)
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
       responses:
-        '200':
-          description: Trending posts retrieved
-  /posts/hashtag/{tag}:
+        "200":
+          description: List of trending posts
+
+  /api/posts/hashtag/{tag}:
     get:
+      tags: [Posts]
       summary: Search posts by hashtag
-      tags: [Posts]
       parameters:
-        - name: tag
-          in: path
+        - in: path
+          name: tag
           required: true
           schema:
             type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
       responses:
-        '200':
-          description: Posts retrieved
-  /posts/{postId}:
+        "200":
+          description: Posts matching the hashtag
+
+  /api/posts/{postId}:
     get:
-      summary: Get post by ID
       tags: [Posts]
+      summary: Get a single post by ID
       parameters:
-        - name: postId
-          in: path
+        - in: path
+          name: postId
           required: true
           schema:
             type: string
       responses:
-        '200':
-          description: Post retrieved
+        "200":
+          description: Post details
+        "404":
+          description: Post not found
     put:
-      summary: Update a post
       tags: [Posts]
+      summary: Update a post (author only)
       parameters:
-        - name: postId
-          in: path
+        - in: path
+          name: postId
           required: true
           schema:
             type: string
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
+              required: [authorId]
               properties:
+                authorId:
+                  type: string
+                  description: Must match the original post author
                 content:
                   type: string
+                media:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
       responses:
-        '200':
+        "200":
           description: Post updated
+        "403":
+          description: Unauthorized or content flagged
+        "404":
+          description: Post not found
     delete:
-      summary: Delete a post
       tags: [Posts]
+      summary: Delete a post (author only)
       parameters:
-        - name: postId
-          in: path
+        - in: path
+          name: postId
           required: true
           schema:
             type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [authorId]
+              properties:
+                authorId:
+                  type: string
+                  description: Must match the original post author
       responses:
-        '200':
+        "200":
           description: Post deleted
-  /posts/{postId}/like:
+        "403":
+          description: Unauthorized
+        "404":
+          description: Post not found
+
+  /api/posts/{postId}/like:
     post:
-      summary: Like/Unlike a post
       tags: [Posts]
+      summary: Like or unlike a post (toggle)
       parameters:
-        - name: postId
-          in: path
+        - in: path
+          name: postId
           required: true
           schema:
             type: string
@@ -235,38 +360,34 @@ paths:
                 userId:
                   type: string
       responses:
-        '200':
-          description: Like toggled
-  /posts/{postId}/share:
+        "200":
+          description: Post liked/unliked
+        "404":
+          description: Post not found
+
+  /api/posts/{postId}/share:
     post:
-      summary: Share a post
       tags: [Posts]
+      summary: Share a post (increments share count)
       parameters:
-        - name: postId
-          in: path
+        - in: path
+          name: postId
           required: true
           schema:
             type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [userId]
-              properties:
-                userId:
-                  type: string
       responses:
-        '200':
+        "200":
           description: Post shared
-  /posts/{postId}/poll:
+        "404":
+          description: Post not found
+
+  /api/posts/{postId}/poll:
     post:
-      summary: Vote on a poll
       tags: [Posts]
+      summary: Vote on a poll
       parameters:
-        - name: postId
-          in: path
+        - in: path
+          name: postId
           required: true
           schema:
             type: string
@@ -282,16 +403,22 @@ paths:
                   type: string
                 optionIndex:
                   type: integer
+                  description: Zero-based index of the poll option to vote for
       responses:
-        '200':
-          description: Vote registered
-  /posts/{postId}/report:
+        "200":
+          description: Vote recorded
+        "400":
+          description: Already voted or invalid option
+        "404":
+          description: Post not found
+
+  /api/posts/{postId}/report:
     post:
-      summary: Report a post
       tags: [Posts]
+      summary: Report a post
       parameters:
-        - name: postId
-          in: path
+        - in: path
+          name: postId
           required: true
           schema:
             type: string
@@ -301,22 +428,25 @@ paths:
           application/json:
             schema:
               type: object
-              required: [userId, reason]
+              required: [reporterId, reason]
               properties:
-                userId:
+                reporterId:
                   type: string
                 reason:
                   type: string
       responses:
-        '200':
+        "200":
           description: Post reported
-  /comments/{postId}:
+        "404":
+          description: Post not found
+
+  /api/comments/{postId}:
     post:
-      summary: Add a comment
       tags: [Comments]
+      summary: Add a comment to a post
       parameters:
-        - name: postId
-          in: path
+        - in: path
+          name: postId
           required: true
           schema:
             type: string
@@ -326,159 +456,228 @@ paths:
           application/json:
             schema:
               type: object
-              required: [userId, text]
+              required: [authorId, content]
               properties:
-                userId:
-                  type: string
-                text:
-                  type: string
-      responses:
-        '201':
-          description: Comment added
-    get:
-      summary: Get comments for a post
-      tags: [Comments]
-      parameters:
-        - name: postId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: page
-          in: query
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Comments retrieved
-  /comments/{commentId}:
-    delete:
-      summary: Delete a comment
-      tags: [Comments]
-      parameters:
-        - name: commentId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Comment deleted
-  /comments/{commentId}/report:
-    post:
-      summary: Report a comment
-      tags: [Comments]
-      parameters:
-        - name: commentId
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [userId, reason]
-              properties:
-                userId:
-                  type: string
-                reason:
-                  type: string
-      responses:
-        '200':
-          description: Comment reported
-  /statuses:
-    post:
-      summary: Create a status
-      tags: [Statuses]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [userId, content]
-              properties:
-                userId:
+                authorId:
                   type: string
                 content:
                   type: string
       responses:
-        '201':
-          description: Status created
-  /statuses/feed/{userId}:
+        "201":
+          description: Comment added
+        "403":
+          description: Content flagged by moderation
+        "404":
+          description: Post not found
     get:
-      summary: Get status feed for user
-      tags: [Statuses]
+      tags: [Comments]
+      summary: Get comments for a post
       parameters:
-        - name: userId
-          in: path
+        - in: path
+          name: postId
           required: true
           schema:
             type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
       responses:
-        '200':
-          description: Status feed retrieved
-  /statuses/{statusId}:
+        "200":
+          description: List of comments
+
+  /api/comments/{commentId}:
     delete:
-      summary: Delete a status
-      tags: [Statuses]
+      tags: [Comments]
+      summary: Delete a comment (author only)
       parameters:
-        - name: statusId
-          in: path
+        - in: path
+          name: commentId
           required: true
           schema:
             type: string
-      responses:
-        '200':
-          description: Status deleted
-  /reports:
-    post:
-      summary: Create a report
-      tags: [Reports]
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [reportedBy, targetId, targetType, reason]
+              required: [authorId]
               properties:
-                reportedBy:
+                authorId:
                   type: string
-                targetId:
+                  description: Must match the comment author
+      responses:
+        "200":
+          description: Comment deleted
+        "403":
+          description: Unauthorized
+        "404":
+          description: Comment not found
+
+  /api/comments/{commentId}/report:
+    post:
+      tags: [Comments]
+      summary: Report a comment
+      parameters:
+        - in: path
+          name: commentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reporterId, reason]
+              properties:
+                reporterId:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        "200":
+          description: Comment reported
+        "404":
+          description: Comment not found
+
+  /api/statuses:
+    post:
+      tags: [Statuses]
+      summary: Create a status (story, expires in 24h)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [authorId]
+              properties:
+                authorId:
+                  type: string
+                content:
+                  type: string
+                media:
+                  type: string
+                  format: binary
+                  description: Single image/video file
+      responses:
+        "201":
+          description: Status created
+        "403":
+          description: Content flagged by moderation
+        "500":
+          description: Server error
+
+  /api/statuses/feed/{userId}:
+    get:
+      tags: [Statuses]
+      summary: Get statuses feed (from following + self, non-expired only)
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of active statuses
+        "404":
+          description: User profile not found
+
+  /api/statuses/{statusId}:
+    delete:
+      tags: [Statuses]
+      summary: Delete a status (author only)
+      parameters:
+        - in: path
+          name: statusId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [authorId]
+              properties:
+                authorId:
+                  type: string
+                  description: Must match the status author
+      responses:
+        "200":
+          description: Status deleted
+        "403":
+          description: Unauthorized
+        "404":
+          description: Status not found
+
+  /api/reports:
+    post:
+      tags: [Reports]
+      summary: Create a report (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reporterId, targetType, targetId, reason]
+              properties:
+                reporterId:
                   type: string
                 targetType:
                   type: string
-                  enum: [Post, Comment, User]
+                  enum: [Post, Comment, UserProfile]
+                targetId:
+                  type: string
                 reason:
                   type: string
-                description:
-                  type: string
       responses:
-        '201':
+        "201":
           description: Report created
+        "500":
+          description: Server error
     get:
-      summary: Get all reports (Admin only)
       tags: [Reports]
+      summary: Get all reports
       parameters:
-        - name: status
-          in: query
+        - in: query
+          name: status
           schema:
             type: string
-            enum: [pending, reviewed, dismissed, resolved]
+            enum: [Pending, Reviewed, Resolved]
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
       responses:
-        '200':
-          description: Reports retrieved
-  /reports/{reportId}/status:
+        "200":
+          description: List of reports
+
+  /api/reports/{reportId}/status:
     put:
-      summary: Update report status (Admin only)
       tags: [Reports]
+      summary: Update report status
       parameters:
-        - name: reportId
-          in: path
+        - in: path
+          name: reportId
           required: true
           schema:
             type: string
@@ -492,9 +691,9 @@ paths:
               properties:
                 status:
                   type: string
-                  enum: [pending, reviewed, dismissed, resolved]
-                actionTaken:
-                  type: string
+                  enum: [Pending, Reviewed, Resolved]
       responses:
-        '200':
+        "200":
           description: Report status updated
+        "404":
+          description: Report not found
