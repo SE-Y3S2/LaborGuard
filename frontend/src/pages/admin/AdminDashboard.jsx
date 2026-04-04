@@ -47,6 +47,7 @@ import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { adminApi } from '../../api/adminApi';
 
 const AdminDashboard = () => {
     const { t } = useTranslation();
