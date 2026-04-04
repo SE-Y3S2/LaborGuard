@@ -27,6 +27,7 @@ router
     .put(protect, authorize('employer', 'admin'), updateJob)
     .delete(protect, authorize('employer', 'admin'), deleteJob);
 
+router.get('/:id/applications', protect, authorize('employer', 'admin'), getJobApplications);
 router.post('/:id/apply', protect, authorize('worker'), applyToJob); // Only workers can apply
 router.put('/applications/:appId/status', protect, authorize('employer', 'admin'), updateApplicationStatus);
 

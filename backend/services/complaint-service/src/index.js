@@ -1,5 +1,9 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const path = require('path');
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
+const swaggerDocument = YAML.load(path.join(__dirname, '../swagger.yaml'));
 const { Kafka } = require('kafkajs');
 const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
@@ -95,6 +99,11 @@ app.get('/', (req, res) => {
     });
 });
 
+
+// Swagger API Docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+
 // Routes
 app.use('/api/complaints', complaintRoutes);
 app.use('/api/appointments', appointmentRoutes);
@@ -103,7 +112,6 @@ app.use('/api/registry', registryRoutes);
 // Error Handling
 app.use(notFound);
 app.use(errorHandler);
-
 // Start server
 const startServer = async () => {
     await connectMongoDB();

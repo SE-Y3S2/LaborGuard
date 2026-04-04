@@ -89,7 +89,7 @@ services:
       - MONGODB_URI=${MONGODB_ATLAS_BASE}
       - MONGODB_DB_NAME=laborguard-community
       - KAFKA_BROKER=kafka:9092
-      - PERSPECTIVE_API_KEY=${PERSPECTIVE_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
@@ -179,6 +179,43 @@ services:
     dns:
       - 1.1.1.1
       - 8.8.8.8
+    restart: unless-stopped
+
+  job-service:
+    build:
+      context: ./services/job-service
+      dockerfile: Dockerfile
+    container_name: laborguard-job-service
+    ports:
+      - "5003:5003"
+    env_file:
+      - ./.env
+    environment:
+      - PORT=5003
+      - SERVICE_NAME=job-service
+      - MONGODB_URI=${MONGODB_ATLAS_BASE}
+      - MONGODB_DB_NAME=laborguard-jobs
+      - KAFKA_BROKER=kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - laborguard-network
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    restart: unless-stopped
+
+  centrifugo:
+    image: centrifugo/centrifugo:v5
+    container_name: laborguard-centrifugo
+    ports:
+      - "8000:8000"
+    command: centrifugo --config=config.json
+    volumes:
+      - ./infra/centrifugo/config.json:/centrifugo/config.json
+    networks:
+      - laborguard-network
     restart: unless-stopped
 
 networks:

@@ -8,8 +8,25 @@ servers:
 tags:
   - name: Notifications
     description: Notification management
+  - name: System
+    description: System endpoints
 
 paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      tags: [System]
+      responses:
+        '200':
+          description: Service is healthy
+  /:
+    get:
+      summary: Root endpoint
+      tags: [System]
+      responses:
+        '200':
+          description: Service information
+
   /api/notifications:
     post:
       tags: [Notifications]

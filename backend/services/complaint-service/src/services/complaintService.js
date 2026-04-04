@@ -26,6 +26,7 @@ const getAllComplaints = async (queryParams) => {
     status,
     category,
     priority,
+    assignedTo,
     search,
     sortBy = 'createdAt',
     order = 'desc'
@@ -36,6 +37,7 @@ const getAllComplaints = async (queryParams) => {
   if (status) filter.status = status;
   if (category) filter.category = category;
   if (priority) filter.priority = priority;
+  if (assignedTo) filter.assignedTo = assignedTo;
 
   // Full-text search on title and description
   if (search) {

@@ -1,13 +1,15 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const { Kafka } = require('kafkajs');
-const cors = require('cors');
+const path = require('path');
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
-const path = require('path');
+const { Kafka } = require('kafkajs');
+const cors = require('cors');
+const messageRoutes = require('./routes/messageRoutes');
+
+require('dotenv').config();
 
 const app = express();
-require('dotenv').config();
 
 // Middleware
 app.use(cors());
@@ -74,6 +76,16 @@ const connectKafka = async () => {
     }
 };
 
+// Injection of kafka producer into req
+app.use((req, res, next) => {
+    req.producer = producer;
+    next();
+});
+
+// Routes
+app.use('/api', messageRoutes);
+app.use('/api/messages', messageRoutes); // Supporting both prefixes if needed
+
 // Health Check Endpoint
 app.get('/health', (req, res) => {
     res.json({
@@ -91,17 +103,6 @@ app.get('/', (req, res) => {
         version: '1.0.0'
     });
 });
-
-// Routes
-const messageRoutes = require('./routes/messageRoutes');
-app.use('/api', messageRoutes);
-
-app.use((req, res, next) => {
-    req.producer = producer;
-    next();
-});
-
-app.use('/api/messages', messageRoutes);
 
 // Start server
 const startServer = async () => {

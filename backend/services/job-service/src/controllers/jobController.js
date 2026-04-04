@@ -202,6 +202,34 @@ const updateApplicationStatus = async (req, res, next) => {
     }
 };
 
+// @desc    Get all applications for a specific job
+// @route   GET /api/jobs/:id/applications
+// @access  Private/Employer or Admin
+const getJobApplications = async (req, res, next) => {
+    try {
+        const job = await Job.findById(req.params.id);
+
+        if (!job) {
+            return res.status(404).json({ success: false, message: 'Job not found' });
+        }
+
+        // Only owner or admin
+        if (job.employerId.toString() !== req.user.userId && req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, message: 'Not authorized' });
+        }
+
+        const applications = await Application.find({ jobId: req.params.id }).sort({ appliedDate: -1 });
+
+        res.status(200).json({
+            success: true,
+            count: applications.length,
+            data: applications
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     createJob,
     getJobs,
@@ -210,5 +238,6 @@ module.exports = {
     deleteJob,
     applyToJob,
     getWorkerApplications,
-    updateApplicationStatus
+    updateApplicationStatus,
+    getJobApplications
 };
