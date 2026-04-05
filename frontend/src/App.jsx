@@ -39,9 +39,9 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 
 import { ProtectedRoute, PublicRoute } from './components/auth/ProtectedRoute';
 
-// FIX: All 'lawyer' role references replaced with 'legal_officer' to match
-// the role name issued by the backend JWT (auth-service) and enforced by
-// the complaint-service authorize() middleware.
+import NGOCasesPage from './pages/ngo/NGOCasesPage';
+import NGOImpactPage from './pages/ngo/NGOImpactPage';
+import NGOReportsPage from './pages/ngo/NGOReportsPage';
 
 function App() {
   return (
@@ -99,9 +99,14 @@ function App() {
         </Route>
 
         {/* NGO Portal */}
+        {/* NGO Portal */}
         <Route element={<ProtectedRoute allowedRoles={['ngo']} />}>
           <Route element={<DashboardLayout />}>
             <Route path="/ngo/dashboard" element={<NGODashboard />} />
+            <Route path="/ngo/cases" element={<NGOCasesPage />} />
+            <Route path="/ngo/cases/:id" element={<ComplaintDetailsPage />} />
+            <Route path="/ngo/impact" element={<NGOImpactPage />} />
+            <Route path="/ngo/reports" element={<NGOReportsPage />} />
           </Route>
         </Route>
 

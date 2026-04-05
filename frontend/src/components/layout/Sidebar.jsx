@@ -50,10 +50,17 @@ const Sidebar = ({ className }) => {
                 { title: t("nav.new_job", "Post Vacancy"), href: "/employer/jobs/new", icon: PlusCircle },
                 { title: t("nav.jobs", "Active Listings"), href: "/employer/jobs", icon: Briefcase },
             ],
-            lawyer: [
-                { title: t("nav.dashboard", "Legal Command"), href: "/legal/dashboard", icon: Gavel },
-                { title: t("nav.cases", "Active Docket"), href: "/legal/cases", icon: ShieldCheck },
-                { title: t("nav.appointments", "Consultations"), href: "/legal/appointments", icon: Calendar },
+            // FIX: 'lawyer' key replaced with 'legal_officer' to match JWT role name
+            legal_officer: [
+            { title: t("nav.dashboard", "Legal Command"), href: "/legal/dashboard", icon: Gavel },
+            { title: t("nav.cases", "Active Docket"),     href: "/legal/cases",     icon: ShieldCheck },
+            { title: t("nav.appointments", "Consultations"), href: "/legal/appointments", icon: Calendar },
+            ],
+            ngo: [
+            { title: t("nav.dashboard", "Advocacy Dashboard"), href: "/ngo/dashboard", icon: LayoutDashboard },
+            { title: t("nav.cases",     "Investigations"),      href: "/ngo/cases",     icon: ShieldAlert },
+            { title: t("nav.impact",    "Impact Hub"),           href: "/ngo/impact",    icon: Globe },
+            { title: t("nav.reports",   "Reports"),              href: "/ngo/reports",   icon: FileText },
             ],
             ngo: [
                 { title: t("nav.dashboard", "Advocacy Dashboard"), href: "/ngo/dashboard", icon: LayoutDashboard },
