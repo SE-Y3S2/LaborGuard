@@ -1,5 +1,6 @@
 const Job = require('../models/Job');
 const Application = require('../models/Application');
+const { sendApplicationStatusEmail } = require('../services/emailService');
 
 // @desc    Create a new Job Posting
 // @route   POST /api/jobs
@@ -178,19 +179,59 @@ const getWorkerApplications = async (req, res, next) => {
     }
 };
 
+// @desc    Get applications for jobs created by the current employer
+// @route   GET /api/jobs/employer/applications
+// @access  Private/Employer or Admin
+const getEmployerApplications = async (req, res, next) => {
+    try {
+        let query = {};
+        if (req.user.role !== 'admin') {
+            query.employerId = req.user.userId;
+        }
+
+        const myJobs = await Job.find(query).select('_id');
+        const jobIds = myJobs.map(j => j._id);
+
+        const applications = await Application.find({ jobId: { $in: jobIds } })
+            .populate('jobId')
+            .sort({ appliedDate: -1 });
+
+        res.status(200).json({
+            success: true,
+            count: applications.length,
+            data: applications
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 // @desc    Update application status
 // @route   PUT /api/jobs/applications/:appId/status
 // @access  Private/Employer or Admin
 const updateApplicationStatus = async (req, res, next) => {
     try {
-        const application = await Application.findByIdAndUpdate(
-            req.params.appId,
-            { status: req.body.status },
-            { new: true, runValidators: true }
-        );
+        const { status } = req.body;
+        const application = await Application.findById(req.params.appId).populate('jobId');
 
         if (!application) {
             return res.status(404).json({ success: false, message: 'Application not found' });
+        }
+
+        if (req.user.role !== 'admin' && application.jobId.employerId.toString() !== req.user.userId) {
+            return res.status(403).json({ success: false, message: 'Not authorized to update this application' });
+        }
+
+        application.status = status;
+        await application.save();
+
+        if (status === 'accepted' || status === 'rejected') {
+            await sendApplicationStatusEmail(
+                application.workerEmail,
+                application.workerName,
+                application.jobId.title,
+                status
+            );
         }
 
         res.status(200).json({
@@ -238,6 +279,7 @@ module.exports = {
     deleteJob,
     applyToJob,
     getWorkerApplications,
+    getEmployerApplications,
     updateApplicationStatus,
     getJobApplications
 };

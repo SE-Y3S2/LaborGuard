@@ -41,7 +41,7 @@ import { ProtectedRoute, PublicRoute } from './components/auth/ProtectedRoute';
 
 import NGOCasesPage from './pages/ngo/NGOCasesPage';
 import NGOImpactPage from './pages/ngo/NGOImpactPage';
-import NGOReportsPage from './pages/ngo/NGOReportsPage';
+import NGOReportsPage from './pages/ngo/NGOReportPage';
 
 function App() {
   return (

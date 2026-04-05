@@ -180,22 +180,25 @@ services:
       - 1.1.1.1
       - 8.8.8.8
     restart: unless-stopped
-
+ 
   job-service:
     build:
       context: ./services/job-service
       dockerfile: Dockerfile
     container_name: laborguard-job-service
     ports:
-      - "5003:5003"
+      - "5006:5006"
     env_file:
       - ./.env
     environment:
-      - PORT=5003
+      - PORT=5006
       - SERVICE_NAME=job-service
       - MONGODB_URI=${MONGODB_ATLAS_BASE}
       - MONGODB_DB_NAME=laborguard-jobs
       - KAFKA_BROKER=kafka:9092
+      - EMAIL_SERVICE=${EMAIL_SERVICE}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
     depends_on:
       kafka:
         condition: service_healthy

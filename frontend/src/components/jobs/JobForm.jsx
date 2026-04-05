@@ -28,7 +28,7 @@ const JobForm = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const API_URL = 'http://localhost:5003/api/jobs';
+    const API_URL = 'http://localhost:5006/api/jobs';
 
     const handleChange = (e) => {
         const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;

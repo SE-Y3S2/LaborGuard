@@ -7,6 +7,8 @@ const {
     deleteJob,
     applyToJob,
     getWorkerApplications,
+    getEmployerApplications,
+    getJobApplications,
     updateApplicationStatus
 } = require('../controllers/jobController');
 
@@ -20,6 +22,7 @@ router
     .post(protect, authorize('employer', 'admin'), createJob); // Only employers and admins can post
 
 router.get('/my-applications', protect, getWorkerApplications); // Workers view their own apps
+router.get('/employer/applications', protect, authorize('employer', 'admin'), getEmployerApplications); // Employers view applicants
 
 router
     .route('/:id')

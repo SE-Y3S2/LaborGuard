@@ -57,15 +57,11 @@ const Sidebar = ({ className }) => {
             { title: t("nav.appointments", "Consultations"), href: "/legal/appointments", icon: Calendar },
             ],
             ngo: [
-            { title: t("nav.dashboard", "Advocacy Dashboard"), href: "/ngo/dashboard", icon: LayoutDashboard },
-            { title: t("nav.cases",     "Investigations"),      href: "/ngo/cases",     icon: ShieldAlert },
-            { title: t("nav.impact",    "Impact Hub"),           href: "/ngo/impact",    icon: Globe },
-            { title: t("nav.reports",   "Reports"),              href: "/ngo/reports",   icon: FileText },
-            ],
-            ngo: [
                 { title: t("nav.dashboard", "Advocacy Dashboard"), href: "/ngo/dashboard", icon: LayoutDashboard },
-                { title: t("nav.impact", "Impact Hub"), href: "/advocacy", icon: Globe },
-                { title: t("nav.community", "Community Feed"), href: "/community", icon: Activity },
+                { title: t("nav.cases",     "Investigations"),      href: "/ngo/cases",     icon: ShieldAlert },
+                { title: t("nav.impact",    "Impact Hub"),           href: "/ngo/impact",    icon: Globe },
+                { title: t("nav.reports",   "Reports"),              href: "/ngo/reports",   icon: FileText },
+                { title: t("nav.community", "Community Feed"),       href: "/community",     icon: Activity },
             ],
             admin: [
                 { title: t("nav.dashboard", "System Governance"), href: "/admin/dashboard", icon: ShieldAlert },
