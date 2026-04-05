@@ -1,13 +1,12 @@
 const express = require('express');
 const router  = express.Router();
 const reportController         = require('../controllers/reportController');
-const { protect, authorize }   = require('../middleware/authMiddleware');
+const { protect, authorize } = require('../middleware/authMiddleware');
 
-// Any authenticated user can file a report
-router.post('/', protect, reportController.createReport);
+router.use(protect);
 
-// Admin-only moderation routes
-router.get('/',            protect, authorize('admin'), reportController.getReports);
-router.patch('/:reportId', protect, authorize('admin'), reportController.updateReportStatus);
+
+router.get('/',              authorize('admin'), reportController.getReports);
+router.put('/:id/status',    authorize('admin'), reportController.updateReportStatus);
 
 module.exports = router;

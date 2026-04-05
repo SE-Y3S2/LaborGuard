@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
-// Common Interceptor for Authorization
+// ── Request interceptor: attach Bearer token ──────────────────────────────────
 const attachAuthToken = (config) => {
   const { accessToken } = useAuthStore.getState();
   if (accessToken) {
@@ -10,18 +10,17 @@ const attachAuthToken = (config) => {
   return config;
 };
 
-// Common Interceptor for Token Refresh
-// FIX: Unified the refresh body key to { refreshToken } to match authApi.js
+// ── Response interceptor: silent token refresh on 401 ────────────────────────
 const handleTokenRefresh = async (error) => {
   const originalRequest = error.config;
+
   if (error.response?.status === 401 && !originalRequest._retry) {
     originalRequest._retry = true;
+
     try {
       const { refreshToken, setTokens, logout } = useAuthStore.getState();
-      if (!refreshToken) throw new Error('No refresh token');
+      if (!refreshToken) throw new Error('No refresh token available');
 
-      // Always use Auth Service URL for refresh
-      // FIX: Changed body key from { token: refreshToken } → { refreshToken }
       const response = await axios.post(
         `${import.meta.env.VITE_AUTH_SERVICE_URL}/api/auth/refresh`,
         { refreshToken }
@@ -29,7 +28,12 @@ const handleTokenRefresh = async (error) => {
 
       const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
         response.data.data;
-      setTokens(newAccessToken, newRefreshToken);
+
+      // FIX: Backend POST /auth/refresh only returns { accessToken } — no new refreshToken.
+      // Old code: setTokens(newAccessToken, newRefreshToken) where newRefreshToken = undefined
+      // → stored refreshToken gets wiped to undefined → next refresh fails immediately.
+      // Fix: fall back to the CURRENT refreshToken when backend doesn't rotate it.
+      setTokens(newAccessToken, newRefreshToken || refreshToken);
 
       originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
       return axios(originalRequest);
@@ -38,10 +42,11 @@ const handleTokenRefresh = async (error) => {
       return Promise.reject(err);
     }
   }
+
   return Promise.reject(error);
 };
 
-// Create Service-Specific Clients
+// ── Service clients ───────────────────────────────────────────────────────────
 export const authClient = axios.create({
   baseURL: `${import.meta.env.VITE_AUTH_SERVICE_URL}/api`,
   headers: { 'Content-Type': 'application/json' },
@@ -72,7 +77,7 @@ export const notificationClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Attach Interceptors to ALL Clients
+// ── Attach interceptors to every client ──────────────────────────────────────
 const clients = [
   authClient,
   communityClient,
@@ -83,8 +88,6 @@ const clients = [
 ];
 
 clients.forEach((client) => {
-  client.interceptors.request.use(attachAuthToken, (error) =>
-    Promise.reject(error)
-  );
+  client.interceptors.request.use(attachAuthToken, (error) => Promise.reject(error));
   client.interceptors.response.use((response) => response, handleTokenRefresh);
 });

@@ -1,56 +1,57 @@
-import { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuthStore } from "@/store/authStore";
 
-const OAuthSuccess = () => {
-    const navigate = useNavigate();
-    const location = useLocation();
+const OAuthSuccessPage = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { setAuth } = useAuthStore();
 
-    useEffect(() => {
-        // Parse URL parameters
-        const params = new URLSearchParams(location.search);
-        const token = params.get('token');
-        const refreshToken = params.get('refreshToken');
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
 
-        if (token) {
-            // Store tokens
-            localStorage.setItem('accessToken', token);
-            if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
-            
-            const role = params.get('role');
-            if (role) localStorage.setItem('userRole', role);
+    const accessToken  = params.get("token");
+    const refreshToken = params.get("refreshToken");
+    const role         = params.get("role");
+    // FIX: oauthController was NOT including userId and email in the redirect URL.
+    // Without them, setAuth({ id: null, email: null, role }) → broken identity in store.
+    // oauthController.js is now fixed to include both in the URL params.
+    const userId       = params.get("userId");
+    const email        = params.get("email");
 
-            // Redirect based on role: Workers to Home, others to Dashboard
-            setTimeout(() => {
-                if (role === 'worker') {
-                    navigate('/');
-                } else {
-                    navigate('/dashboard');
-                }
-            }, 1000); // Give user a moment to see success state
-        } else {
-            navigate('/login?error=oauth_failed');
-        }
-    }, [navigate, location]);
+    if (!accessToken) {
+      navigate("/login?error=oauth_failed");
+      return;
+    }
 
-    return (
-        <div className="auth-wrapper">
-            <div className="auth-card glass-container" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
-                <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'center' }}>
-                    <div style={{ width: '50px', height: '50px', border: '4px solid rgba(255,255,255,0.2)', borderTopColor: 'var(--primary-color)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-                </div>
-                <h2 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Authenticating...</h2>
-                <p style={{ color: 'var(--text-secondary)' }}>Securely connecting your account to LaborGuard.</p>
-                
-                <style>
-                    {`
-                        @keyframes spin {
-                            to { transform: rotate(360deg); }
-                        }
-                    `}
-                </style>
-            </div>
-        </div>
-    );
+    setAuth({ id: userId, email, role }, accessToken, refreshToken);
+
+    // FIX: role from backend JWT is 'lawyer' (User model enum), not 'legal_officer'.
+    // Consistent with ProtectedRoute.jsx and App.jsx.
+    const roleRoutes = {
+      admin    : "/admin/dashboard",
+      worker   : "/worker/dashboard",
+      employer : "/employer/dashboard",
+      lawyer   : "/legal/dashboard",  // FIX: was 'lawyer' here but ProtectedRoute checked 'legal_officer'
+      ngo      : "/ngo/dashboard",
+    };
+
+    setTimeout(() => {
+      navigate(roleRoutes[role] || "/");
+    }, 800);
+  }, [navigate, location, setAuth]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="text-center space-y-4 p-8">
+        <div className="w-14 h-14 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
+        <h2 className="text-2xl font-bold text-slate-900">Authenticating...</h2>
+        <p className="text-slate-500 text-sm">
+          Securely connecting your account to LaborGuard.
+        </p>
+      </div>
+    </div>
+  );
 };
 
-export default OAuthSuccess;
+export default OAuthSuccessPage;

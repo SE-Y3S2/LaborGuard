@@ -6,7 +6,6 @@ const { moderateContent }    = require('../middleware/contentModeration');
 const { moderateImages }     = require('../middleware/imageModeration');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-// Protect ALL routes in this file
 router.use(protect);
 
 router.get('/feed/:userId',  postController.getFeed);

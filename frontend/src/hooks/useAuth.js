@@ -1,15 +1,3 @@
-/**
- * useAuth.js
- *
- * FIXES:
- *  - authApi.getMyProfile()    → authApi.getProfile()
- *  - authApi.loginUser()       → authApi.login()
- *  - authApi.registerUser()    → authApi.register()
- *  - authApi.verifyCode()      → authApi.verifyEmail() / verifySms()
- *  - authApi.updateMyProfile() → authApi.updateProfile()
- *  - login: storeLogin         → setAuth: storeLogin (authStore has setAuth, not login)
- */
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { authApi } from "@/api/authApi";
@@ -20,21 +8,19 @@ export const useAuth = () => {
   const navigate    = useNavigate();
   const queryClient = useQueryClient();
 
-  // [FIX] authStore has 'setAuth', not 'login' — renamed destructuring key
   const {
     user,
     isAuthenticated,
-    setAuth: storeLogin,       // was: login: storeLogin — UNDEFINED CRASH
+    setAuth: storeLogin,
     logout: storeLogout,
-    updateUser: storeUpdateUser
+    updateUser: storeUpdateUser,
   } = useAuthStore();
 
-  // ── Get My Profile ─────────────────────────────────────────────────────────
+  // ── Get My Profile ──────────────────────────────────────────────────────────
   const useGetProfile = () => {
     return useQuery({
       queryKey: ["profile", user?.userId],
       queryFn: async () => {
-        // [FIX] was: authApi.getMyProfile() — method does not exist
         const res = await authApi.getProfile();
         return res.data.data;
       },
@@ -42,23 +28,21 @@ export const useAuth = () => {
     });
   };
 
-  // ── Login ──────────────────────────────────────────────────────────────────
+  // ── Login ───────────────────────────────────────────────────────────────────
   const loginMutation = useMutation({
-    // [FIX] was: authApi.loginUser(email, password) — method does not exist
     mutationFn: ({ email, password }) => authApi.login({ email, password }),
     onSuccess: (res) => {
       const { user, accessToken, refreshToken } = res.data.data;
-
-      // [FIX] storeLogin is now setAuth(user, accessToken, refreshToken)
       storeLogin(user, accessToken, refreshToken);
       toast.success("Welcome back!");
 
+      // FIX: was 'legal_officer' — JWT carries 'lawyer' from User model enum
       const roleRoutes = {
-        admin         : "/admin/dashboard",
-        worker        : "/worker/dashboard",
-        employer      : "/employer/dashboard",
-        legal_officer : "/legal/dashboard",
-        ngo           : "/ngo/dashboard",
+        admin    : "/admin/dashboard",
+        worker   : "/worker/dashboard",
+        employer : "/employer/dashboard",
+        lawyer   : "/legal/dashboard",   // FIX: was legal_officer
+        ngo      : "/ngo/dashboard",
       };
       navigate(roleRoutes[user.role] || "/");
     },
@@ -67,9 +51,8 @@ export const useAuth = () => {
     },
   });
 
-  // ── Register ───────────────────────────────────────────────────────────────
+  // ── Register ────────────────────────────────────────────────────────────────
   const registerMutation = useMutation({
-    // [FIX] was: authApi.registerUser(formData) — method does not exist
     mutationFn: (formData) => authApi.register(formData),
     onSuccess: (res) => {
       toast.success("Registration successful! Please verify your account.");
@@ -80,33 +63,26 @@ export const useAuth = () => {
     },
   });
 
-  // ── Verify OTP ─────────────────────────────────────────────────────────────
+  // ── Verify OTP ──────────────────────────────────────────────────────────────
+  // FIX: Backend POST /auth/verify returns ONLY { success, message } — no tokens, no user.
+  // The old onSuccess tried: const { user, accessToken, refreshToken } = res.data.data
+  // → res.data.data is undefined → CRASH ("Cannot destructure property of undefined")
+  // Fix: redirect to /login after successful verification.
   const verifyMutation = useMutation({
-    // [FIX] was: authApi.verifyCode(userId, code, type) — method does not exist
-    //       authApi has verifyEmail(userId, code) and verifySms(userId, code)
     mutationFn: ({ userId, code, type }) =>
       type === "sms"
         ? authApi.verifySms(userId, code)
         : authApi.verifyEmail(userId, code),
-    onSuccess: (res) => {
-      const { user, accessToken, refreshToken } = res.data.data;
-      storeLogin(user, accessToken, refreshToken);
-      toast.success("Account verified successfully!");
-      const roleRoutes = {
-        admin         : "/admin/dashboard",
-        worker        : "/worker/dashboard",
-        employer      : "/employer/dashboard",
-        legal_officer : "/legal/dashboard",
-        ngo           : "/ngo/dashboard",
-      };
-      navigate(roleRoutes[user.role] || "/");
+    onSuccess: () => {
+      toast.success("Account verified! Please sign in to continue.");
+      navigate("/login"); // FIX: no auto-login — backend doesn't return tokens here
     },
     onError: (err) => {
       toast.error(err.response?.data?.message || "Verification failed");
     },
   });
 
-  // ── Logout ─────────────────────────────────────────────────────────────────
+  // ── Logout ──────────────────────────────────────────────────────────────────
   const logout = () => {
     storeLogout();
     queryClient.clear();
@@ -114,9 +90,8 @@ export const useAuth = () => {
     navigate("/login");
   };
 
-  // ── Update Profile ─────────────────────────────────────────────────────────
+  // ── Update Profile ──────────────────────────────────────────────────────────
   const updateProfileMutation = useMutation({
-    // [FIX] was: authApi.updateMyProfile(data) — method does not exist
     mutationFn: (data) => authApi.updateProfile(data),
     onSuccess: (res) => {
       storeUpdateUser(res.data.data);
@@ -128,9 +103,8 @@ export const useAuth = () => {
     },
   });
 
-  // ── Change Password ────────────────────────────────────────────────────────
+  // ── Change Password ─────────────────────────────────────────────────────────
   const changePasswordMutation = useMutation({
-    // [FIX] authApi.changePassword expects { currentPassword, newPassword }
     mutationFn: ({ current, next }) =>
       authApi.changePassword({ currentPassword: current, newPassword: next }),
     onSuccess: () => {

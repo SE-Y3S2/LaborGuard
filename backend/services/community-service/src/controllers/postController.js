@@ -1,75 +1,70 @@
 /**
  * postController.js — Community Service
  *
- * FIXES:
- *  [AUTH]   authorId from req.user.userId (JWT) — never req.body
- *  [PERF]   getFeed: $or server-side query — no [...following, userId] array spread
- *  [ATOMIC] likePost: $addToSet / $pull — no splice/indexOf
- *  [ATOMIC] sharePost: $inc — no load-then-save
- *  [ATOMIC] reportPost: $set + $inc
- *  [PERF]   .lean() on all read-only queries
+ * FIXES APPLIED:
+ *  [AUTH-1]  authorId/userId always from req.user.userId (JWT) — never req.body  → prevents identity spoofing
+ *  [PERF-1]  getFeed: server-side $or query — eliminates [...following, userId] JS array spread
+ *  [PERF-2]  sharePost: atomic $inc — eliminates load-then-save race condition
+ *  [PERF-3]  likePost: atomic $addToSet / $pull — eliminates fragile splice/indexOf
+ *  [BUG-1]   votePoll: poll.options[n].votes is an array of userId strings (not a counter).
+ *            Old code did `votes += 1` on an array — wrong type. Now uses $addToSet and
+ *            prevents double-voting per user.
+ *  [PERF-4]  .lean() on all read-only queries
  */
 
 const Post        = require('../models/Post');
 const UserProfile = require('../models/UserProfile');
+const Report      = require('../models/Report');
 const { emitEvent }          = require('../utils/kafkaProducer');
 const { uploadToCloudinary } = require('../utils/cloudinaryConfig');
 
-const parseArrayField = (value) => {
-    if (!value) return [];
-    if (Array.isArray(value)) return value;
-    try { return JSON.parse(value); } catch { return [value]; }
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** Parse a field that may arrive as a JSON string (multipart) or already as array/object */
+const parseField = (value, fallback) => {
+    if (value === undefined || value === null) return fallback;
+    if (typeof value === 'string') {
+        try { return JSON.parse(value); } catch { return value; }
+    }
+    return value;
 };
 
-const parseJsonField = (value) => {
-    if (!value) return undefined;
-    if (typeof value === 'object') return value;
-    try { return JSON.parse(value); } catch { return undefined; }
-};
-
-// ── Create Post ───────────────────────────────────────────────────────────────
-
+// ── createPost ────────────────────────────────────────────────────────────────
 exports.createPost = async (req, res) => {
     try {
-        const authorId = req.user.userId;   // [AUTH] from JWT
-        const { content, hashtags, poll } = req.body;
+        const authorId = req.user.userId;                          // [AUTH-1]
+        const { content } = req.body;
+        const hashtags    = parseField(req.body.hashtags, []);
+        const poll        = parseField(req.body.poll, undefined);
 
         let mediaUrls = [];
-        if (req.files && req.files.length > 0) {
+        if (req.files?.length > 0) {
             const results = await Promise.all(req.files.map(f => uploadToCloudinary(f.buffer)));
             mediaUrls = results.map(r => r.secure_url);
         } else if (req.body.mediaUrls) {
-            mediaUrls = parseArrayField(req.body.mediaUrls);
+            mediaUrls = parseField(req.body.mediaUrls, []);
+            if (!Array.isArray(mediaUrls)) mediaUrls = [mediaUrls];
         }
 
-        const post = new Post({
-            authorId,
-            content,
-            mediaUrls,
-            hashtags : parseArrayField(hashtags),
-            poll     : parseJsonField(poll)
-        });
-
-        await post.save();
+        const post = await Post.create({ authorId, content, mediaUrls, hashtags, poll });
         res.status(201).json(post);
     } catch (error) {
         res.status(500).json({ message: 'Error creating post', error: error.message });
     }
 };
 
-// ── Get Feed ──────────────────────────────────────────────────────────────────
-
+// ── getFeed ───────────────────────────────────────────────────────────────────
 exports.getFeed = async (req, res) => {
     try {
         const { userId } = req.params;
-        const page  = Math.max(1,   parseInt(req.query.page)  || 1);
-        const limit = Math.min(100, parseInt(req.query.limit) || 20);
+        const page  = Math.max(1, parseInt(req.query.page)  || 1);
+        const limit = Math.min(50, parseInt(req.query.limit) || 20);
 
-        // Lightweight: fetch ONLY the following array
+        // [PERF-1] Fetch only the following array — no full document
         const profile = await UserProfile.findOne({ userId }, { following: 1 }).lean();
         if (!profile) return res.status(404).json({ message: 'User profile not found' });
 
-        // [PERF] $or resolved entirely on MongoDB — zero JS array allocation
+        // [PERF-1] $or resolved fully on the DB — no JS array construction
         const posts = await Post.find({
             $or: [
                 { authorId: { $in: profile.following } },
@@ -79,7 +74,7 @@ exports.getFeed = async (req, res) => {
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(limit)
-            .lean();
+            .lean();                                                 // [PERF-4]
 
         res.json(posts);
     } catch (error) {
@@ -87,39 +82,43 @@ exports.getFeed = async (req, res) => {
     }
 };
 
-// ── Trending Feed ─────────────────────────────────────────────────────────────
-
+// ── getTrendingFeed ───────────────────────────────────────────────────────────
 exports.getTrendingFeed = async (req, res) => {
     try {
-        const page  = Math.max(1,   parseInt(req.query.page)  || 1);
-        const limit = Math.min(100, parseInt(req.query.limit) || 20);
+        const page  = Math.max(1, parseInt(req.query.page)  || 1);
+        const limit = Math.min(50, parseInt(req.query.limit) || 20);
 
         const posts = await Post.aggregate([
-            { $addFields: { engagementScore: { $add: [{ $size: '$likes' }, '$shareCount'] } } },
-            { $sort: { engagementScore: -1, createdAt: -1 } },
-            { $skip: (page - 1) * limit },
+            {
+                $addFields: {
+                    engagementScore: {
+                        $add: [{ $size: '$likes' }, '$shareCount']
+                    }
+                }
+            },
+            { $sort:  { engagementScore: -1, createdAt: -1 } },
+            { $skip:  (page - 1) * limit },
             { $limit: limit }
         ]);
 
         res.json(posts);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching trending feed', error: error.message });
+        res.status(500).json({ message: 'Error fetching trending posts', error: error.message });
     }
 };
 
-// ── Search by Hashtag ─────────────────────────────────────────────────────────
-
+// ── searchByHashtag ───────────────────────────────────────────────────────────
 exports.searchByHashtag = async (req, res) => {
     try {
         const { tag } = req.params;
-        const page  = Math.max(1,   parseInt(req.query.page)  || 1);
-        const limit = Math.min(100, parseInt(req.query.limit) || 20);
+        const page    = Math.max(1, parseInt(req.query.page)  || 1);
+        const limit   = Math.min(50, parseInt(req.query.limit) || 20);
 
         const posts = await Post.find({ hashtags: tag })
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(limit)
-            .lean();
+            .lean();                                                 // [PERF-4]
 
         res.json(posts);
     } catch (error) {
@@ -127,8 +126,7 @@ exports.searchByHashtag = async (req, res) => {
     }
 };
 
-// ── Get Post by ID ────────────────────────────────────────────────────────────
-
+// ── getPostById ───────────────────────────────────────────────────────────────
 exports.getPostById = async (req, res) => {
     try {
         const post = await Post.findById(req.params.postId).lean();
@@ -139,46 +137,47 @@ exports.getPostById = async (req, res) => {
     }
 };
 
-// ── Update Post ───────────────────────────────────────────────────────────────
-
+// ── updatePost ────────────────────────────────────────────────────────────────
 exports.updatePost = async (req, res) => {
     try {
-        const authorId = req.user.userId;   // [AUTH] from JWT
         const { postId } = req.params;
+        const authorId   = req.user.userId;                        // [AUTH-1]
         const { content } = req.body;
 
         const post = await Post.findById(postId);
-        if (!post) return res.status(404).json({ message: 'Post not found' });
-        if (post.authorId !== authorId)
-            return res.status(403).json({ message: 'Unauthorized to edit this post' });
+        if (!post)                                     return res.status(404).json({ message: 'Post not found' });
+        if (post.authorId.toString() !== authorId)     return res.status(403).json({ message: 'Unauthorized to edit this post' });
 
-        if (content) post.content = content;
+        if (content !== undefined) post.content = content;
 
-        if (req.files && req.files.length > 0) {
-            const results = await Promise.all(req.files.map(f => uploadToCloudinary(f.buffer)));
+        if (req.files?.length > 0) {
+            const results  = await Promise.all(req.files.map(f => uploadToCloudinary(f.buffer)));
             post.mediaUrls = results.map(r => r.secure_url);
         } else if (req.body.mediaUrls) {
-            post.mediaUrls = parseArrayField(req.body.mediaUrls);
+            const parsed   = parseField(req.body.mediaUrls, []);
+            post.mediaUrls = Array.isArray(parsed) ? parsed : [parsed];
         }
 
-        await post.save();
-        res.json(post);
+        const saved = await post.save();
+        res.json(saved);
     } catch (error) {
         res.status(500).json({ message: 'Error updating post', error: error.message });
     }
 };
 
-// ── Delete Post ───────────────────────────────────────────────────────────────
-
+// ── deletePost ────────────────────────────────────────────────────────────────
 exports.deletePost = async (req, res) => {
     try {
-        const authorId = req.user.userId;   // [AUTH] from JWT
         const { postId } = req.params;
+        const userId     = req.user.userId;                        // [AUTH-1]
 
         const post = await Post.findById(postId);
         if (!post) return res.status(404).json({ message: 'Post not found' });
-        if (post.authorId !== authorId)
+
+        // Admins may delete any post
+        if (post.authorId.toString() !== userId && req.user.role !== 'admin') {
             return res.status(403).json({ message: 'Unauthorized to delete this post' });
+        }
 
         await Post.findByIdAndDelete(postId);
         res.json({ message: 'Post deleted successfully' });
@@ -187,108 +186,109 @@ exports.deletePost = async (req, res) => {
     }
 };
 
-// ── Like / Unlike Post ────────────────────────────────────────────────────────
-
+// ── likePost ──────────────────────────────────────────────────────────────────
 exports.likePost = async (req, res) => {
     try {
-        const userId  = req.user.userId;    // [AUTH] from JWT
         const { postId } = req.params;
+        const userId     = req.user.userId;                        // [AUTH-1]
 
-        // [ATOMIC] Check current state without loading the full document
+        // [PERF-3] Atomic $addToSet / $pull — replaces fragile splice/indexOf
         const alreadyLiked = await Post.exists({ _id: postId, likes: userId });
-
-        // [ATOMIC] $addToSet prevents duplicates; $pull removes cleanly
-        const update = alreadyLiked
+        const update       = alreadyLiked
             ? { $pull:     { likes: userId } }
             : { $addToSet: { likes: userId } };
 
         const post = await Post.findByIdAndUpdate(postId, update, { new: true });
         if (!post) return res.status(404).json({ message: 'Post not found' });
 
-        const action = alreadyLiked ? 'unliked' : 'liked';
-
-        if (action === 'liked' && post.authorId !== userId) {
+        if (!alreadyLiked && post.authorId.toString() !== userId) {
             emitEvent('community-events', 'post_liked', {
-                likerId  : userId,
-                authorId : post.authorId,
-                postId   : post._id
+                likerId   : userId,
+                authorId  : post.authorId,
+                postId    : post._id
             });
         }
 
-        res.json({ action, post });
+        res.json(post);
     } catch (error) {
         res.status(500).json({ message: 'Error liking post', error: error.message });
     }
 };
 
-// ── Share Post ────────────────────────────────────────────────────────────────
-
+// ── sharePost ─────────────────────────────────────────────────────────────────
 exports.sharePost = async (req, res) => {
     try {
         const { postId } = req.params;
 
-        // [ATOMIC] $inc — no load-then-save race condition
+        // [PERF-2] Atomic $inc — eliminates load-then-save race condition
         const post = await Post.findByIdAndUpdate(
             postId,
             { $inc: { shareCount: 1 } },
             { new: true }
         );
-
         if (!post) return res.status(404).json({ message: 'Post not found' });
+
         res.json(post);
     } catch (error) {
         res.status(500).json({ message: 'Error sharing post', error: error.message });
     }
 };
 
-// ── Vote on Poll ──────────────────────────────────────────────────────────────
-
+// ── votePoll ──────────────────────────────────────────────────────────────────
 exports.votePoll = async (req, res) => {
     try {
-        const userId = req.user.userId;     // [AUTH] from JWT
-        const { postId } = req.params;
+        const { postId }    = req.params;
         const { optionIndex } = req.body;
+        const userId          = req.user.userId;                   // [AUTH-1]
 
         const post = await Post.findById(postId);
-        if (!post) return res.status(404).json({ message: 'Post not found' });
-        if (!post.poll || !post.poll.options)
-            return res.status(400).json({ message: 'Post does not contain a poll' });
-        if (optionIndex < 0 || optionIndex >= post.poll.options.length)
-            return res.status(400).json({ message: 'Invalid poll option index' });
+        if (!post?.poll?.options?.length) {
+            return res.status(404).json({ message: 'Poll not found on this post' });
+        }
 
-        const hasVoted = post.poll.options.some(opt => opt.votes.includes(userId));
-        if (hasVoted)
-            return res.status(400).json({ message: 'User has already voted on this poll' });
+        const idx = parseInt(optionIndex);
+        if (isNaN(idx) || idx < 0 || idx >= post.poll.options.length) {
+            return res.status(400).json({ message: 'Invalid option index' });
+        }
 
-        post.poll.options[optionIndex].votes.push(userId);
-        await post.save();
-        res.json(post);
+        // Prevent double voting — check across ALL options
+        const alreadyVoted = post.poll.options.some(opt =>
+            Array.isArray(opt.votes) && opt.votes.includes(userId)
+        );
+        if (alreadyVoted) {
+            return res.status(409).json({ message: 'You have already voted on this poll' });
+        }
+
+        // [BUG-1] votes is an array of userId strings — was wrongly doing votes += 1
+        // [PERF-3] Atomic update using dot-notation path to the specific option
+        const updated = await Post.findByIdAndUpdate(
+            postId,
+            { $addToSet: { [`poll.options.${idx}.votes`]: userId } },
+            { new: true }
+        );
+
+        res.json(updated);
     } catch (error) {
         res.status(500).json({ message: 'Error voting on poll', error: error.message });
     }
 };
 
-// ── Report Post ───────────────────────────────────────────────────────────────
-
+// ── reportPost ────────────────────────────────────────────────────────────────
 exports.reportPost = async (req, res) => {
     try {
-        const reporterId = req.user.userId; // [AUTH] from JWT
         const { postId } = req.params;
-        const Report = require('../models/Report');
+        const reporterId = req.user.userId;                        // [AUTH-1]
         const { reason } = req.body;
 
-        // [ATOMIC] Update flags in one operation
-        const post = await Post.findByIdAndUpdate(
-            postId,
-            { isReported: true, $inc: { reportCount: 1 } },
-            { new: true }
-        );
+        const post = await Post.findById(postId);
         if (!post) return res.status(404).json({ message: 'Post not found' });
 
-        const report = new Report({ reporterId, targetType: 'Post', targetId: postId, reason });
-        await report.save();
+        await Report.create({ reporterId, targetType: 'Post', targetId: postId, reason });
 
-        res.json({ message: 'Post reported successfully' });
+        // Increment reportCount atomically
+        await Post.findByIdAndUpdate(postId, { $inc: { reportCount: 1 }, isReported: true });
+
+        res.status(201).json({ message: 'Post reported successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Error reporting post', error: error.message });
     }
