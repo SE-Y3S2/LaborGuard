@@ -7,11 +7,15 @@ const YAML = require('yamljs');
 const swaggerDocument = YAML.load(path.join(__dirname, '../swagger.yaml'));
 const { Kafka } = require('kafkajs');
 const cors = require('cors');
+const helmet = require('helmet');
 
 const app = express();
 
 // Middleware
 app.use(cors());
+app.use(helmet({
+    contentSecurityPolicy: false
+}));
 app.use(express.json());
 
 // Swagger Documentation

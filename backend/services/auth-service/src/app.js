@@ -23,7 +23,9 @@ require('./config/passport');
 const app = express();
 
 // Security Middleware
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: false
+}));
 
 // Session Middleware (Required for Passport OAuth)
 app.use(session({

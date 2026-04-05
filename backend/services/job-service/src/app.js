@@ -13,7 +13,9 @@ dotenv.config();
 const app = express();
 
 // Security Middleware
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: false
+}));
 
 // CORS Middleware
 app.use(cors({
