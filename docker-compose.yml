@@ -322,20 +322,7 @@ services:
     image: laborguard/frontend:latest
     container_name: laborguard-frontend
     ports:
-      - "3000:3000"
-    depends_on:
-      auth-service:
-        condition: service_healthy
-      community-service:
-        condition: service_healthy
-      complaint-service:
-        condition: service_healthy
-      notification-service:
-        condition: service_healthy
-      messaging-service:
-        condition: service_healthy
-      job-service:
-        condition: service_healthy
+      - "3000:80"
     networks:
       - laborguard-network
     healthcheck:
