@@ -13,7 +13,7 @@ const {
 } = require('../utils/validator');
 
 // GET /api/complaints/stats
-router.get('/stats', authenticate, authorize('admin', 'legal_officer'), complaintController.getComplaintStats);
+router.get('/stats', authenticate, authorize('admin', 'lawyer'), complaintController.getComplaintStats);
 
 // GET /api/complaints/my
 router.get('/my', authenticate, authorize('worker'), listComplaintsRules, validate, complaintController.getMyComplaints);
@@ -31,7 +31,7 @@ router.get('/:id', authenticate, validateObjectId, validate, complaintController
 router.patch('/:id', authenticate, authorize('worker'), validateObjectId, updateComplaintRules, validate, complaintController.updateComplaint);
 
 // PATCH /api/complaints/:id/status
-router.patch('/:id/status', authenticate, authorize('admin', 'legal_officer'), validateObjectId, updateStatusRules, validate, complaintController.updateComplaintStatus);
+router.patch('/:id/status', authenticate, authorize('admin', 'lawyer'), validateObjectId, updateStatusRules, validate, complaintController.updateComplaintStatus);
 
 // PATCH /api/complaints/:id/assign
 router.patch('/:id/assign', authenticate, authorize('admin'), validateObjectId, assignComplaintRules, validate, complaintController.assignComplaint);

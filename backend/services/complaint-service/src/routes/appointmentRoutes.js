@@ -16,7 +16,7 @@ const {
 router.get('/my', authenticate, authorize('worker'), listAppointmentRules, validate, appointmentController.getMyAppointments);
 
 // GET /api/appointments/assigned
-router.get('/assigned', authenticate, authorize('legal_officer'), listAppointmentRules, validate, appointmentController.getAssignedAppointments);
+router.get('/assigned', authenticate, authorize('lawyer'), listAppointmentRules, validate, appointmentController.getAssignedAppointments);
 
 // GET /api/appointments
 router.get('/', authenticate, authorize('admin'), listAppointmentRules, validate, appointmentController.getAllAppointments);
@@ -28,7 +28,7 @@ router.get('/:id', authenticate, validateObjectId, validate, appointmentControll
 router.patch('/:id/confirm', authenticate, authorize('admin'), validateObjectId, confirmAppointmentRules, validate, appointmentController.confirmAppointment);
 
 // PATCH /api/appointments/:id/reschedule
-router.patch('/:id/reschedule', authenticate, authorize('admin', 'legal_officer'), validateObjectId, rescheduleAppointmentRules, validate, appointmentController.rescheduleAppointment);
+router.patch('/:id/reschedule', authenticate, authorize('admin', 'lawyer'), validateObjectId, rescheduleAppointmentRules, validate, appointmentController.rescheduleAppointment);
 
 // PATCH /api/appointments/:id/cancel
 router.patch('/:id/cancel', authenticate, authorize('admin'), validateObjectId, cancelAppointmentRules, validate, appointmentController.cancelAppointment);
