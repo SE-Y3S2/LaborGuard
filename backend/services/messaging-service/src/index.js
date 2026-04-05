@@ -5,6 +5,7 @@ const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
 const { Kafka } = require('kafkajs');
 const cors = require('cors');
+const helmet = require('helmet');
 const messageRoutes = require('./routes/messageRoutes');
 
 require('dotenv').config();
@@ -13,6 +14,9 @@ const app = express();
 
 // Middleware
 app.use(cors());
+app.use(helmet({
+    contentSecurityPolicy: false
+}));
 app.use(express.json());
 
 // Swagger Documentation

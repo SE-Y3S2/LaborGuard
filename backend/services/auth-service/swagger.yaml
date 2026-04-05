@@ -4,7 +4,7 @@ info:
   description: Authentication and Identity Service for LaborGuard
   version: 1.0.0
 servers:
-  - url: http://localhost:3001
+  - url: http://localhost:5001
 tags:
   - name: Auth
     description: Authentication endpoints
@@ -21,7 +21,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               required: [firstName, lastName, birthDate, email, phone, password, role]
@@ -42,9 +42,19 @@ paths:
                 password:
                   type: string
                   minLength: 8
+                  description: "Must be min 8 chars, contain 1 uppercase, 1 lowercase, 1 number, and 1 special character (!@#$%^&*)."
+                confirmPassword:
+                  type: string
+                  description: "Must match the password field above."
                 role:
                   type: string
                   enum: [worker, lawyer, ngo, employer, admin]
+                documents:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Up to 5 verification documents
       responses:
         "201":
           description: User registered successfully
@@ -179,6 +189,70 @@ paths:
       responses:
         "200":
           description: Logged out successfully
+
+  /api/auth/resend-verification:
+    post:
+      tags: [Auth]
+      summary: Resend verification code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        "200":
+          description: Verification code resent
+
+  /api/auth/documents/{filename}:
+    get:
+      tags: [Auth]
+      summary: Retrieve a document from GridFS
+      parameters:
+        - in: path
+          name: filename
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Document retrieved
+        "404":
+          description: Document not found
+
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current authenticated user profile
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: User profile data
+        "401":
+          description: Unauthorized
+    patch:
+      tags: [Auth]
+      summary: Update current authenticated user profile
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                profileImage:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Profile updated
 
   /api/auth/change-password:
     post:

@@ -8,6 +8,8 @@ servers:
 tags:
   - name: Jobs
     description: Job posting management
+  - name: Applications
+    description: Job application management
 
 paths:
   /api/jobs:
@@ -162,6 +164,76 @@ paths:
           description: Not authorized
         "404":
           description: Job not found
+
+  /api/jobs/my-applications:
+    get:
+      tags: [Applications]
+      summary: Get all applications submitted by the current worker
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of user's applications
+
+  /api/jobs/{id}/applications:
+    get:
+      tags: [Applications]
+      summary: Get all applications for a specific job (Employer only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of job applications
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workerExperience]
+              properties:
+                workerExperience:
+                  type: string
+                additionalDetails:
+                  type: string
+      responses:
+        "201":
+          description: Application submitted successfully
+
+  /api/jobs/applications/{appId}/status:
+    put:
+      tags: [Applications]
+      summary: Update application status (Employer only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [pending, accepted, rejected]
+      responses:
+        "200":
+          description: Application status updated
+
 
 components:
   securitySchemes:
