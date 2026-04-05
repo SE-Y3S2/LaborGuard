@@ -38,7 +38,7 @@ const createNotification = async (req, res) => {
 
 const getNotifications = async (req, res) => {
     try {
-        const { userId } = req.params;
+        const userId = req.user.userId; // FIX: from JWT — was req.params.userId (spoofable)
         const limit = parseInt(req.query.limit) || 20;
         const page = parseInt(req.query.page) || 1;
 
@@ -56,7 +56,7 @@ const getNotifications = async (req, res) => {
 
 const getUnreadCount = async (req, res) => {
     try {
-        const { userId } = req.params;
+        const userId = req.user.userId; // FIX: from JWT — was req.params.userId (spoofable)
 
         const count = await Notification.countDocuments({ userId, isRead: false });
 
@@ -90,7 +90,7 @@ const markAsRead = async (req, res) => {
 
 const markAllAsRead = async (req, res) => {
     try {
-        const { userId } = req.params;
+        const userId = req.user.userId; // FIX: from JWT — was req.params.userId (spoofable)
 
         const result = await Notification.updateMany(
             { userId, isRead: false },

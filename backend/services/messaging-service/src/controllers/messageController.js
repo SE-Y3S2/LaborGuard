@@ -41,7 +41,7 @@ const createConversation = async (req, res) => {
 
 const getConversations = async (req, res) => {
     try {
-        const { userId } = req.params;
+        const userId = req.user.userId; // FIX: from JWT — was req.params.userId (spoofable)
         const limit = parseInt(req.query.limit) || 20;
         const page = parseInt(req.query.page) || 1;
 
