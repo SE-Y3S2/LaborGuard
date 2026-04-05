@@ -21,7 +21,7 @@ app.use(express.json());
 
 
 
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 5002;
 const SERVICE_NAME = process.env.SERVICE_NAME || 'community-service';
 const MONGODB_URI = process.env.MONGODB_URI;
 const KAFKA_BROKER = process.env.KAFKA_BROKER || 'kafka:9092';

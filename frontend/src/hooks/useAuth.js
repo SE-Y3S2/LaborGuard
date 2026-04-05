@@ -1,3 +1,15 @@
+/**
+ * useAuth.js
+ *
+ * FIXES:
+ *  - authApi.getMyProfile()    → authApi.getProfile()
+ *  - authApi.loginUser()       → authApi.login()
+ *  - authApi.registerUser()    → authApi.register()
+ *  - authApi.verifyCode()      → authApi.verifyEmail() / verifySms()
+ *  - authApi.updateMyProfile() → authApi.updateProfile()
+ *  - login: storeLogin         → setAuth: storeLogin (authStore has setAuth, not login)
+ */
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { authApi } from "@/api/authApi";
@@ -5,53 +17,60 @@ import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 
 export const useAuth = () => {
-  const navigate = useNavigate();
+  const navigate    = useNavigate();
   const queryClient = useQueryClient();
-  const { 
-    user, 
-    isAuthenticated, 
-    login: storeLogin, 
+
+  // [FIX] authStore has 'setAuth', not 'login' — renamed destructuring key
+  const {
+    user,
+    isAuthenticated,
+    setAuth: storeLogin,       // was: login: storeLogin — UNDEFINED CRASH
     logout: storeLogout,
     updateUser: storeUpdateUser
   } = useAuthStore();
 
-  // Get My Profile
+  // ── Get My Profile ─────────────────────────────────────────────────────────
   const useGetProfile = () => {
     return useQuery({
       queryKey: ["profile", user?.userId],
       queryFn: async () => {
-        const res = await authApi.getMyProfile();
+        // [FIX] was: authApi.getMyProfile() — method does not exist
+        const res = await authApi.getProfile();
         return res.data.data;
       },
       enabled: isAuthenticated && !!user?.userId,
     });
   };
 
-  // Login Mutation
+  // ── Login ──────────────────────────────────────────────────────────────────
   const loginMutation = useMutation({
-    mutationFn: ({ email, password }) => authApi.loginUser(email, password),
+    // [FIX] was: authApi.loginUser(email, password) — method does not exist
+    mutationFn: ({ email, password }) => authApi.login({ email, password }),
     onSuccess: (res) => {
       const { user, accessToken, refreshToken } = res.data.data;
-      storeLogin({ user, accessToken, refreshToken });
-      
+
+      // [FIX] storeLogin is now setAuth(user, accessToken, refreshToken)
+      storeLogin(user, accessToken, refreshToken);
       toast.success("Welcome back!");
-      
-      // Redirect based on role
-      if (user.role === 'admin') navigate("/admin/dashboard");
-      else if (user.role === 'worker') navigate("/worker/dashboard");
-      else if (user.role === 'employer') navigate("/employer/dashboard");
-      else if (user.role === 'lawyer') navigate("/legal/dashboard");
-      else if (user.role === 'ngo') navigate("/ngo/dashboard");
-      else navigate("/");
+
+      const roleRoutes = {
+        admin         : "/admin/dashboard",
+        worker        : "/worker/dashboard",
+        employer      : "/employer/dashboard",
+        legal_officer : "/legal/dashboard",
+        ngo           : "/ngo/dashboard",
+      };
+      navigate(roleRoutes[user.role] || "/");
     },
     onError: (err) => {
       toast.error(err.response?.data?.message || "Login failed");
     },
   });
 
-  // Register Mutation
+  // ── Register ───────────────────────────────────────────────────────────────
   const registerMutation = useMutation({
-    mutationFn: (formData) => authApi.registerUser(formData),
+    // [FIX] was: authApi.registerUser(formData) — method does not exist
+    mutationFn: (formData) => authApi.register(formData),
     onSuccess: (res) => {
       toast.success("Registration successful! Please verify your account.");
       navigate("/verify", { state: { userId: res.data.data.userId } });
@@ -61,21 +80,33 @@ export const useAuth = () => {
     },
   });
 
-  // Verify OTP Mutation
+  // ── Verify OTP ─────────────────────────────────────────────────────────────
   const verifyMutation = useMutation({
-    mutationFn: ({ userId, code, type }) => authApi.verifyCode(userId, code, type),
+    // [FIX] was: authApi.verifyCode(userId, code, type) — method does not exist
+    //       authApi has verifyEmail(userId, code) and verifySms(userId, code)
+    mutationFn: ({ userId, code, type }) =>
+      type === "sms"
+        ? authApi.verifySms(userId, code)
+        : authApi.verifyEmail(userId, code),
     onSuccess: (res) => {
       const { user, accessToken, refreshToken } = res.data.data;
-      storeLogin({ user, accessToken, refreshToken });
+      storeLogin(user, accessToken, refreshToken);
       toast.success("Account verified successfully!");
-      navigate(`/${user.role}/dashboard`);
+      const roleRoutes = {
+        admin         : "/admin/dashboard",
+        worker        : "/worker/dashboard",
+        employer      : "/employer/dashboard",
+        legal_officer : "/legal/dashboard",
+        ngo           : "/ngo/dashboard",
+      };
+      navigate(roleRoutes[user.role] || "/");
     },
     onError: (err) => {
       toast.error(err.response?.data?.message || "Verification failed");
     },
   });
 
-  // Logout
+  // ── Logout ─────────────────────────────────────────────────────────────────
   const logout = () => {
     storeLogout();
     queryClient.clear();
@@ -83,19 +114,25 @@ export const useAuth = () => {
     navigate("/login");
   };
 
-  // Update Profile
+  // ── Update Profile ─────────────────────────────────────────────────────────
   const updateProfileMutation = useMutation({
-    mutationFn: (data) => authApi.updateMyProfile(data),
+    // [FIX] was: authApi.updateMyProfile(data) — method does not exist
+    mutationFn: (data) => authApi.updateProfile(data),
     onSuccess: (res) => {
       storeUpdateUser(res.data.data);
       toast.success("Profile updated successfully");
       queryClient.invalidateQueries(["profile"]);
     },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Failed to update profile");
+    },
   });
 
-  // Change Password
+  // ── Change Password ────────────────────────────────────────────────────────
   const changePasswordMutation = useMutation({
-    mutationFn: ({ current, next }) => authApi.changePassword(current, next),
+    // [FIX] authApi.changePassword expects { currentPassword, newPassword }
+    mutationFn: ({ current, next }) =>
+      authApi.changePassword({ currentPassword: current, newPassword: next }),
     onSuccess: () => {
       toast.success("Password changed successfully");
     },
@@ -108,11 +145,11 @@ export const useAuth = () => {
     user,
     isAuthenticated,
     useGetProfile,
-    login: loginMutation,
-    register: registerMutation,
-    verify: verifyMutation,
+    login          : loginMutation,
+    register       : registerMutation,
+    verify         : verifyMutation,
     logout,
-    updateProfile: updateProfileMutation,
-    changePassword: changePasswordMutation,
+    updateProfile  : updateProfileMutation,
+    changePassword : changePasswordMutation,
   };
 };
