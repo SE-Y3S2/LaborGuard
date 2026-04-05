@@ -1,12 +1,12 @@
 const express = require('express');
-const router = express.Router();
+const router  = express.Router();
 const statusController = require('../controllers/statusController');
-const { upload } = require('../utils/cloudinaryConfig');
-const { moderateContent } = require('../middleware/contentModeration');
-const { moderateImages } = require('../middleware/imageModeration');
+const { protect }      = require('../middleware/authMiddleware');
 
-router.post('/', upload.single('media'), moderateImages, moderateContent, statusController.createStatus);
-router.get('/feed/:userId', statusController.getStatuses);
+router.use(protect);
+
+router.post('/',            statusController.createStatus);
+router.get('/:userId',      statusController.getStatuses);
 router.delete('/:statusId', statusController.deleteStatus);
 
 module.exports = router;

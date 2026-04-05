@@ -1,11 +1,20 @@
-const Status = require('../models/Status');
+/**
+ * statusController.js — Community Service
+ *
+ * FIXES:
+ *  [AUTH]   authorId from req.user.userId (JWT) — not req.body
+ *  [PERF]   getStatuses: $or server-side query — no [...following, userId] spread
+ *  [PERF]   .lean() on read-only query
+ */
+
+const Status      = require('../models/Status');
 const UserProfile = require('../models/UserProfile');
 const { uploadToCloudinary } = require('../utils/cloudinaryConfig');
 
 exports.createStatus = async (req, res) => {
     try {
-        const { authorId, content } = req.body;
-
+        const authorId = req.user.userId;   // [AUTH] from JWT
+        const { content } = req.body;
 
         let mediaUrl = '';
         if (req.file && req.file.buffer) {
@@ -15,12 +24,7 @@ exports.createStatus = async (req, res) => {
             mediaUrl = req.body.mediaUrl;
         }
 
-        const status = new Status({
-            authorId,
-            content: content || '',
-            mediaUrl
-        });
-
+        const status = new Status({ authorId, content: content || '', mediaUrl });
         await status.save();
         res.status(201).json(status);
     } catch (error) {
@@ -32,19 +36,20 @@ exports.getStatuses = async (req, res) => {
     try {
         const { userId } = req.params;
 
-        const profile = await UserProfile.findOne({ userId });
-        if (!profile) {
-            return res.status(404).json({ message: 'User profile not found' });
-        }
+        // Lightweight: fetch ONLY the following array
+        const profile = await UserProfile.findOne({ userId }, { following: 1 }).lean();
+        if (!profile) return res.status(404).json({ message: 'User profile not found' });
 
-
-        const userIds = [...profile.following, userId];
-
-
+        // [PERF] $or resolved entirely on MongoDB — no JS array spread
         const activeStatuses = await Status.find({
-            authorId: { $in: userIds },
+            $or: [
+                { authorId: { $in: profile.following } },
+                { authorId: userId }
+            ],
             expiresAt: { $gt: new Date() }
-        }).sort({ createdAt: -1 });
+        })
+            .sort({ createdAt: -1 })
+            .lean();
 
         res.json(activeStatuses);
     } catch (error) {
@@ -54,18 +59,13 @@ exports.getStatuses = async (req, res) => {
 
 exports.deleteStatus = async (req, res) => {
     try {
+        const authorId = req.user.userId;   // [AUTH] from JWT
         const { statusId } = req.params;
-        const { authorId } = req.body;
 
         const status = await Status.findById(statusId);
-
-        if (!status) {
-            return res.status(404).json({ message: 'Status not found' });
-        }
-
-        if (status.authorId !== authorId) {
+        if (!status) return res.status(404).json({ message: 'Status not found' });
+        if (status.authorId !== authorId)
             return res.status(403).json({ message: 'Unauthorized to delete this status' });
-        }
 
         await Status.findByIdAndDelete(statusId);
         res.json({ message: 'Status deleted successfully' });
