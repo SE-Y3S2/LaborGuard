@@ -1,5 +1,5 @@
 FROM node:20-alpine AS base
-RUN apk add --no-cache dumb-init python3 make g++ libc6-compat
+RUN apk add --no-cache dumb-init
 WORKDIR /app
 
 FROM base AS deps
@@ -10,6 +10,6 @@ FROM base AS production
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-EXPOSE 5002
+EXPOSE 5004
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "src/index.js"]
+CMD ["node", "src/server.js"]

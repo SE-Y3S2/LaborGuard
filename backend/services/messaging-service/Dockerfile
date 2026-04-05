@@ -1,18 +1,15 @@
-FROM node:20-alpine
-
+FROM node:20-alpine AS base
+RUN apk add --no-cache dumb-init
 WORKDIR /app
 
-# Copy package files
+FROM base AS deps
 COPY package*.json ./
+RUN npm ci --legacy-peer-deps
 
-# Install dependencies
-RUN npm install --legacy-peer-deps
-
-# Copy source code
+FROM base AS production
+ENV NODE_ENV=production
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# Expose port
-EXPOSE 3005
-
-# Start the service
+EXPOSE 5005
+ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "src/index.js"]
