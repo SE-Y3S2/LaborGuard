@@ -39,44 +39,40 @@ const Sidebar = ({ className }) => {
         
         const links = {
             worker: [
-                { title: t("nav.dashboard", "Command Center"), href: "/worker/dashboard", icon: LayoutDashboard },
-                { title: t("nav.jobs", "Job Board"), href: "/worker/jobs", icon: Briefcase },
-                { title: t("nav.complaints", "My Case Files"), href: "/worker/complaints", icon: FileText },
-                { title: t("nav.new_complaint", "New Complaint"), href: "/worker/complaints/new", icon: PlusCircle },
-                { title: t("nav.appointments", "Consultations"), href: "/worker/appointments", icon: Calendar },
+                { title: t("nav.dashboard",     "Command Center"),  href: "/worker/dashboard",      icon: LayoutDashboard },
+                { title: t("nav.jobs",          "Job Board"),        href: "/worker/jobs",           icon: Briefcase },
+                { title: t("nav.complaints",    "My Case Files"),    href: "/worker/complaints",     icon: FileText },
+                { title: t("nav.new_complaint", "New Complaint"),    href: "/worker/complaints/new", icon: PlusCircle },
+                { title: t("nav.appointments",  "Consultations"),    href: "/worker/appointments",   icon: Calendar },
             ],
             employer: [
                 { title: t("nav.dashboard", "Recruitment Hub"), href: "/employer/dashboard", icon: LayoutDashboard },
-                { title: t("nav.new_job", "Post Vacancy"), href: "/employer/jobs/new", icon: PlusCircle },
-                { title: t("nav.jobs", "Active Listings"), href: "/employer/jobs", icon: Briefcase },
+                { title: t("nav.new_job",   "Post Vacancy"),    href: "/employer/jobs/new",  icon: PlusCircle },
+                { title: t("nav.jobs",      "Active Listings"), href: "/employer/jobs",      icon: Briefcase },
             ],
-            // FIX: 'lawyer' key replaced with 'legal_officer' to match JWT role name
-            legal_officer: [
-            { title: t("nav.dashboard", "Legal Command"), href: "/legal/dashboard", icon: Gavel },
-            { title: t("nav.cases", "Active Docket"),     href: "/legal/cases",     icon: ShieldCheck },
-            { title: t("nav.appointments", "Consultations"), href: "/legal/appointments", icon: Calendar },
+            // ✅ FIXED: was 'legal_officer' — JWT role stored as 'lawyer'
+            lawyer: [
+                { title: t("nav.dashboard",    "Legal Command"),  href: "/legal/dashboard",    icon: Gavel },
+                { title: t("nav.cases",        "Active Docket"),  href: "/legal/cases",        icon: ShieldCheck },
+                { title: t("nav.appointments", "Consultations"),  href: "/legal/appointments", icon: Calendar },
             ],
-            ngo: [
-            { title: t("nav.dashboard", "Advocacy Dashboard"), href: "/ngo/dashboard", icon: LayoutDashboard },
-            { title: t("nav.cases",     "Investigations"),      href: "/ngo/cases",     icon: ShieldAlert },
-            { title: t("nav.impact",    "Impact Hub"),           href: "/ngo/impact",    icon: Globe },
-            { title: t("nav.reports",   "Reports"),              href: "/ngo/reports",   icon: FileText },
-            ],
+            // ✅ FIXED: removed duplicate ngo key — kept the full 4-route version
             ngo: [
                 { title: t("nav.dashboard", "Advocacy Dashboard"), href: "/ngo/dashboard", icon: LayoutDashboard },
-                { title: t("nav.impact", "Impact Hub"), href: "/advocacy", icon: Globe },
-                { title: t("nav.community", "Community Feed"), href: "/community", icon: Activity },
+                { title: t("nav.cases",     "Investigations"),      href: "/ngo/cases",     icon: ShieldAlert },
+                { title: t("nav.impact",    "Impact Hub"),          href: "/ngo/impact",    icon: Globe },
+                { title: t("nav.reports",   "Reports"),             href: "/ngo/reports",   icon: FileText },
             ],
             admin: [
-                { title: t("nav.dashboard", "System Governance"), href: "/admin/dashboard", icon: ShieldAlert },
-                { title: t("nav.users", "User Registry"), href: "/admin/dashboard?tab=users", icon: Users },
-                { title: t("nav.analytics", "Global Analytics"), href: "/admin/dashboard?tab=analytics", icon: BarChart3 },
-            ]
+                { title: t("nav.dashboard", "System Governance"), href: "/admin/dashboard",               icon: ShieldAlert },
+                { title: t("nav.users",     "User Registry"),     href: "/admin/dashboard?tab=users",     icon: Users },
+                { title: t("nav.analytics", "Global Analytics"),  href: "/admin/dashboard?tab=analytics", icon: BarChart3 },
+            ],
         };
 
         const commonLinks = [
             { title: t("nav.community", "Community"), href: "/community", icon: Users },
-            { title: t("nav.messaging", "Messaging"), href: "/messages", icon: MessageSquare, badge: "Live" },
+            { title: t("nav.messaging", "Messaging"), href: "/messages",  icon: MessageSquare, badge: "Live" },
         ];
 
         return [...(links[role] || []), ...commonLinks];
@@ -190,7 +186,7 @@ const Sidebar = ({ className }) => {
             
             {/* Version Flag */}
             <div className="pb-6 text-center">
-                 <p className="text-[7px] font-black uppercase tracking-[0.4em] text-slate-700">Protocol v4.0.2-SECURE</p>
+                <p className="text-[7px] font-black uppercase tracking-[0.4em] text-slate-700">Protocol v4.0.2-SECURE</p>
             </div>
         </aside>
     );

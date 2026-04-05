@@ -49,6 +49,10 @@ app.get('/', (req, res) => {
 const jobRoutes = require('./routes/jobRoutes');
 app.use('/api/jobs', jobRoutes);
 
+// Health check endpoint — required for Docker healthcheck
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
+
+
 // Generic Error Handler
 app.use((err, req, res, next) => {
     console.error(err.stack);
