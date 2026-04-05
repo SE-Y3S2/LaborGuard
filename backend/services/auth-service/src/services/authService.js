@@ -1,13 +1,14 @@
-const User = require('../models/User');
-const RefreshToken = require('../models/RefreshToken');
+const User             = require('../models/User');
+const RefreshToken     = require('../models/RefreshToken');
 const VerificationCode = require('../models/VerificationCode');
-const { hashPassword, comparePassword } = require('../utils/passwordHelper');
+const { hashPassword, comparePassword }          = require('../utils/passwordHelper');
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require('../config/jwt');
-const { generateCodeWithExpiry } = require('../utils/codeGenerator');
+const { generateCodeWithExpiry }                 = require('../utils/codeGenerator');
 const emailService = require('./emailService');
-const smsService = require('./smsService');
+const smsService   = require('./smsService');
+const { emitEvent } = require('../utils/kafkaProducer');
 
-// ── registerUser ─────────────────────────────────────────────
+// ── registerUser ──────────────────────────────────────────────────────────────
 const registerUser = async (userData) => {
   const { confirmPassword, ...validUserData } = userData;
 
@@ -35,49 +36,61 @@ const registerUser = async (userData) => {
 
   // Generate email + SMS verification codes
   const emailCodeData = generateCodeWithExpiry();
-  const smsCodeData = generateCodeWithExpiry();
+  const smsCodeData   = generateCodeWithExpiry();
 
   await VerificationCode.create({
-    userId: userDoc._id,
-    code: emailCodeData.code,
-    type: 'email',
-    purpose: 'registration',
-    expiresAt: emailCodeData.expiresAt,
+    userId    : userDoc._id,
+    code      : emailCodeData.code,
+    type      : 'email',
+    purpose   : 'registration',
+    expiresAt : emailCodeData.expiresAt,
   });
 
   await VerificationCode.create({
-    userId: userDoc._id,
-    code: smsCodeData.code,
-    type: 'sms',
-    purpose: 'registration',
-    expiresAt: smsCodeData.expiresAt,
+    userId    : userDoc._id,
+    code      : smsCodeData.code,
+    type      : 'sms',
+    purpose   : 'registration',
+    expiresAt : smsCodeData.expiresAt,
   });
 
   try {
     await emailService.sendVerificationEmail(user.email, emailCodeData.code);
-    // SMS errors are caught separately so fake dev numbers don't break registration
+    // SMS errors caught separately so fake dev numbers don't break registration
     smsService
       .sendVerificationSMS(user.phone, smsCodeData.code)
-      .catch((err) => console.error('SMS Warning:', err.message));
+      .catch(err => console.error('SMS Warning:', err.message));
   } catch (error) {
     console.error('Verification dispatch error:', error);
   }
 
+  // FIX: Emit user_registered so community-service auto-creates a UserProfile.
+  // community-service/src/index.js listens on 'auth-events':
+  //   if (event.type === 'user_registered') → new UserProfile({ userId, name, role })
+  // Without this emit, UserProfiles are never created
+  // → every getFeed / followUser / getBookmarks call returns 404.
+  emitEvent('auth-events', 'user_registered', {
+    userId : userDoc._id.toString(),
+    name   : `${userDoc.firstName} ${userDoc.lastName}`.trim(),
+    role   : userDoc.role,
+  }).catch(err => console.error('[auth-service] Kafka emit error:', err.message));
+
   return {
-    userId: userDoc._id,
-    email: user.email,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    role: user.role,
-    message: 'User registered successfully. Please verify your email.',
+    userId    : userDoc._id,
+    email     : user.email,
+    firstName : user.firstName,
+    lastName  : user.lastName,
+    role      : user.role,
+    message   : 'Registration successful. Please verify your email and phone number.',
   };
 };
 
-// ── loginUser ────────────────────────────────────────────────
+// ── loginUser ─────────────────────────────────────────────────────────────────
 const loginUser = async (email, password) => {
   const user = await User.findOne({ email }).select('+password');
   if (!user) throw { statusCode: 401, message: 'Invalid credentials' };
-  if (!user.isActive) throw { statusCode: 403, message: 'Account is deactivated' };
+  if (!user.isActive)
+    throw { statusCode: 403, message: 'Account is deactivated' };
   if (!user.isEmailVerified && !user.isPhoneVerified)
     throw { statusCode: 403, message: 'Please verify your email or phone number before logging in' };
   if (!user.isApproved)
@@ -86,13 +99,13 @@ const loginUser = async (email, password) => {
   const isMatch = await comparePassword(password, user.password);
   if (!isMatch) throw { statusCode: 401, message: 'Invalid credentials' };
 
-  const accessToken = generateAccessToken(user._id, user.email, user.role);
+  const accessToken  = generateAccessToken(user._id, user.email, user.role);
   const refreshToken = generateRefreshToken(user._id, accessToken);
 
   await RefreshToken.create({
-    userId: user._id,
-    token: refreshToken,
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    userId    : user._id,
+    token     : refreshToken,
+    expiresAt : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   });
 
   user.lastLogin = Date.now();
@@ -104,7 +117,7 @@ const loginUser = async (email, password) => {
   return { accessToken, refreshToken, user: userResponse };
 };
 
-// ── verifyCode ───────────────────────────────────────────────
+// ── verifyCode ────────────────────────────────────────────────────────────────
 const verifyCode = async (userId, code, type) => {
   const record = await VerificationCode.findOne({ userId, code, type, isUsed: false });
   if (!record) throw { statusCode: 400, message: 'Invalid code' };
@@ -119,7 +132,7 @@ const verifyCode = async (userId, code, type) => {
   return { message: `${type} verified successfully` };
 };
 
-// ── resendVerificationCode  (FIX: new — was missing entirely) ─
+// ── resendVerificationCode ────────────────────────────────────────────────────
 const resendVerificationCode = async (email) => {
   const user = await User.findOne({ email });
   // Generic response to prevent user enumeration attacks
@@ -129,86 +142,74 @@ const resendVerificationCode = async (email) => {
     return { message: 'Email is already verified' };
   }
 
-  // Invalidate all unused existing codes for this user
+  // Invalidate all existing unused codes for this user
   await VerificationCode.updateMany(
     { userId: user._id, type: 'email', isUsed: false },
     { isUsed: true }
   );
 
-  const { code, expiresAt } = generateCodeWithExpiry();
+  const emailCodeData = generateCodeWithExpiry();
   await VerificationCode.create({
-    userId: user._id,
-    code,
-    type: 'email',
-    purpose: 'registration',
-    expiresAt,
+    userId    : user._id,
+    code      : emailCodeData.code,
+    type      : 'email',
+    purpose   : 'registration',
+    expiresAt : emailCodeData.expiresAt,
   });
 
-  try {
-    await emailService.sendVerificationEmail(user.email, code);
-  } catch (err) {
-    console.error('Resend verification email error:', err);
-  }
+  await emailService.sendVerificationEmail(user.email, emailCodeData.code);
 
   return { message: 'If that email is registered, a new verification code was sent' };
 };
 
-// ── forgotPassword ───────────────────────────────────────────
+// ── forgotPassword ────────────────────────────────────────────────────────────
 const forgotPassword = async (email) => {
   const user = await User.findOne({ email });
-  // Generic response to prevent email enumeration
+  // Generic to prevent enumeration
   if (!user) return { message: 'If that email is registered, a reset code was sent' };
 
-  const { code, expiresAt } = generateCodeWithExpiry();
+  const codeData = generateCodeWithExpiry();
   await VerificationCode.create({
-    userId: user._id,
-    code,
-    type: 'email',
-    purpose: 'password_reset',
-    expiresAt,
+    userId    : user._id,
+    code      : codeData.code,
+    type      : 'email',
+    purpose   : 'password_reset',
+    expiresAt : codeData.expiresAt,
   });
 
-  try {
-    await emailService.sendVerificationEmail(user.email, code);
-  } catch (error) {
-    console.error('Forgot password email error:', error);
-  }
-
+  await emailService.sendPasswordResetEmail(user.email, codeData.code);
   return { message: 'If that email is registered, a reset code was sent' };
 };
 
-// ── resetPassword ────────────────────────────────────────────
-// FIX: params are (email, code, newPassword) — no URL token
+// ── resetPassword ─────────────────────────────────────────────────────────────
 const resetPassword = async (email, code, newPassword) => {
   const user = await User.findOne({ email });
   if (!user) throw { statusCode: 400, message: 'Invalid request' };
 
   const record = await VerificationCode.findOne({
-    userId: user._id,
+    userId  : user._id,
     code,
-    type: 'email',
-    purpose: 'password_reset',
-    isUsed: false,
+    type    : 'email',
+    purpose : 'password_reset',
+    isUsed  : false,
   });
-
-  if (!record || record.isExpired()) {
-    throw { statusCode: 400, message: 'Invalid or expired reset code' };
-  }
-
-  user.password = await hashPassword(newPassword);
-  await user.save();
+  if (!record) throw { statusCode: 400, message: 'Invalid or expired reset code' };
+  if (record.isExpired()) throw { statusCode: 400, message: 'Reset code expired' };
 
   record.isUsed = true;
   await record.save();
 
-  return { message: 'Password has been reset successfully. You can now login.' };
+  user.password = await hashPassword(newPassword);
+  await user.save();
+
+  return { message: 'Password reset successfully' };
 };
 
-// ── refreshAccessToken ───────────────────────────────────────
+// ── refreshAccessToken ────────────────────────────────────────────────────────
 const refreshAccessToken = async (token) => {
   const decoded = verifyRefreshToken(token);
-  const refreshTokenDoc = await RefreshToken.findOne({ token, userId: decoded.userId });
 
+  const refreshTokenDoc = await RefreshToken.findOne({ token, userId: decoded.userId });
   if (!refreshTokenDoc) throw { statusCode: 401, message: 'Refresh token not found or revoked' };
 
   if (refreshTokenDoc.isExpired()) {
@@ -223,14 +224,14 @@ const refreshAccessToken = async (token) => {
   return { accessToken: newAccessToken };
 };
 
-// ── logoutUser ───────────────────────────────────────────────
+// ── logoutUser ────────────────────────────────────────────────────────────────
 const logoutUser = async (token) => {
   const result = await RefreshToken.findOneAndDelete({ token });
   if (!result) throw { statusCode: 400, message: 'Token not found' };
   return { message: 'Logged out successfully' };
 };
 
-// ── changePassword ───────────────────────────────────────────
+// ── changePassword ────────────────────────────────────────────────────────────
 const changePassword = async (userId, currentPassword, newPassword) => {
   const user = await User.findById(userId).select('+password');
   if (!user) throw { statusCode: 404, message: 'User not found' };
@@ -248,7 +249,7 @@ module.exports = {
   registerUser,
   loginUser,
   verifyCode,
-  resendVerificationCode,  // FIX: exported new function
+  resendVerificationCode,
   forgotPassword,
   resetPassword,
   refreshAccessToken,

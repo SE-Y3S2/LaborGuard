@@ -140,8 +140,8 @@ export const useCommunity = () => {
 
     // [FIX] was crashing CommunityFeedPage — votePoll was missing everywhere
     const votePoll = useMutation({
-        mutationFn: ({ postId, optionIndex }) =>
-            communityApi.votePoll(postId, optionIndex),
+    mutationFn: ({ postId, pollId, optionIndex }) =>
+        communityApi.votePoll(postId ?? pollId, optionIndex),  
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['community-feed'] });
             queryClient.invalidateQueries({ queryKey: ['community-polls'] });

@@ -1,15 +1,11 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 
-// FIX: Role name mismatch — backend uses 'legal_officer', frontend was using 'lawyer'.
-// Resolution strategy: the frontend stores the role exactly as returned by the backend JWT.
-// The backend auth-service issues JWTs with role = 'legal_officer' for lawyers.
-// Therefore ALL frontend role checks must use 'legal_officer', not 'lawyer'.
-//
-// Changes made:
-//   - ProtectedRoute allowedRoles checks: 'lawyer' → 'legal_officer'
-//   - PublicRoute redirect checks: 'lawyer' → 'legal_officer'
-//   - App.jsx must also be updated (see App.jsx fix)
+// FIX: Standardized all role checks to 'lawyer' to match the backend User model enum:
+// enum: ['worker', 'lawyer', 'ngo', 'employer', 'admin']
+// generateAccessToken(user._id, user.email, user.role) embeds user.role from the DB.
+// The JWT therefore always carries 'lawyer', never 'legal_officer'.
+// Previous comment "backend uses 'legal_officer'" was incorrect.
 
 export const ProtectedRoute = ({ allowedRoles = [] }) => {
   const { isAuthenticated, user } = useAuthStore();
@@ -19,12 +15,12 @@ export const ProtectedRoute = ({ allowedRoles = [] }) => {
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
-    // Redirect to their respective dashboard based on actual role
-    if (user?.role === 'admin') return <Navigate to="/admin/dashboard" replace />;
-    if (user?.role === 'worker') return <Navigate to="/worker/dashboard" replace />;
+    // Redirect to the correct dashboard based on the user's actual role
+    if (user?.role === 'admin')    return <Navigate to="/admin/dashboard"    replace />;
+    if (user?.role === 'worker')   return <Navigate to="/worker/dashboard"   replace />;
     if (user?.role === 'employer') return <Navigate to="/employer/dashboard" replace />;
-    if (user?.role === 'legal_officer') return <Navigate to="/legal/dashboard" replace />;
-    if (user?.role === 'ngo') return <Navigate to="/ngo/dashboard" replace />;
+    if (user?.role === 'lawyer')   return <Navigate to="/legal/dashboard"    replace />; // FIX: was 'legal_officer'
+    if (user?.role === 'ngo')      return <Navigate to="/ngo/dashboard"      replace />;
     return <Navigate to="/" replace />;
   }
 
@@ -35,11 +31,11 @@ export const PublicRoute = () => {
   const { isAuthenticated, user } = useAuthStore();
 
   if (isAuthenticated) {
-    if (user?.role === 'admin') return <Navigate to="/admin/dashboard" replace />;
-    if (user?.role === 'worker') return <Navigate to="/worker/dashboard" replace />;
+    if (user?.role === 'admin')    return <Navigate to="/admin/dashboard"    replace />;
+    if (user?.role === 'worker')   return <Navigate to="/worker/dashboard"   replace />;
     if (user?.role === 'employer') return <Navigate to="/employer/dashboard" replace />;
-    if (user?.role === 'legal_officer') return <Navigate to="/legal/dashboard" replace />;
-    if (user?.role === 'ngo') return <Navigate to="/ngo/dashboard" replace />;
+    if (user?.role === 'lawyer')   return <Navigate to="/legal/dashboard"    replace />; // FIX: was 'legal_officer'
+    if (user?.role === 'ngo')      return <Navigate to="/ngo/dashboard"      replace />;
     return <Navigate to="/" replace />;
   }
 

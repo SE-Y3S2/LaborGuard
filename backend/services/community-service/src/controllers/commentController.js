@@ -1,29 +1,35 @@
 /**
  * commentController.js — Community Service
  *
- * FIXES:
- *  [AUTH]   authorId / reporterId from req.user.userId (JWT) — not req.body
- *  [ATOMIC] reportComment: findByIdAndUpdate + $inc — no load-then-save
- *  [PERF]   getComments: .lean() on read-only query
+ * FIXES APPLIED:
+ *  [AUTH-1]  authorId / reporterId always from req.user.userId (JWT) — never req.body
+ *  [PERF-1]  .lean() on read queries
+ *  [ROBUST]  Admin override for delete (matches postController pattern)
  */
 
 const Comment = require('../models/Comment');
 const Post    = require('../models/Post');
+const Report  = require('../models/Report');
 const { emitEvent } = require('../utils/kafkaProducer');
 
+// ── addComment ────────────────────────────────────────────────────────────────
 exports.addComment = async (req, res) => {
     try {
-        const authorId = req.user.userId;   // [AUTH] from JWT
-        const { postId } = req.params;
+        const { postId }  = req.params;
+        const authorId    = req.user.userId;                       // [AUTH-1]
         const { content } = req.body;
+
+        if (!content?.trim()) {
+            return res.status(400).json({ message: 'Comment content is required' });
+        }
 
         const post = await Post.findById(postId);
         if (!post) return res.status(404).json({ message: 'Post not found' });
 
-        const comment = new Comment({ postId, authorId, content });
-        await comment.save();
+        const comment = await Comment.create({ postId, authorId, content });
 
-        if (post.authorId !== authorId) {
+        // Notify post author (don't notify on self-comments)
+        if (post.authorId.toString() !== authorId) {
             emitEvent('community-events', 'post_commented', {
                 commenterId : authorId,
                 authorId    : post.authorId,
@@ -38,17 +44,18 @@ exports.addComment = async (req, res) => {
     }
 };
 
+// ── getComments ───────────────────────────────────────────────────────────────
 exports.getComments = async (req, res) => {
     try {
         const { postId } = req.params;
-        const page  = Math.max(1,   parseInt(req.query.page)  || 1);
-        const limit = Math.min(100, parseInt(req.query.limit) || 20);
+        const page  = Math.max(1, parseInt(req.query.page)  || 1);
+        const limit = Math.min(50, parseInt(req.query.limit) || 20);
 
         const comments = await Comment.find({ postId })
             .sort({ createdAt: 1 })
             .skip((page - 1) * limit)
             .limit(limit)
-            .lean();   // [PERF] plain JS object
+            .lean();                                                // [PERF-1]
 
         res.json(comments);
     } catch (error) {
@@ -56,15 +63,19 @@ exports.getComments = async (req, res) => {
     }
 };
 
+// ── deleteComment ─────────────────────────────────────────────────────────────
 exports.deleteComment = async (req, res) => {
     try {
-        const authorId = req.user.userId;   // [AUTH] from JWT
         const { commentId } = req.params;
+        const userId        = req.user.userId;                     // [AUTH-1]
 
         const comment = await Comment.findById(commentId);
         if (!comment) return res.status(404).json({ message: 'Comment not found' });
-        if (comment.authorId !== authorId)
+
+        // Allow the comment author or an admin to delete
+        if (comment.authorId.toString() !== userId && req.user.role !== 'admin') {
             return res.status(403).json({ message: 'Unauthorized to delete this comment' });
+        }
 
         await Comment.findByIdAndDelete(commentId);
         res.json({ message: 'Comment deleted successfully' });
@@ -73,25 +84,25 @@ exports.deleteComment = async (req, res) => {
     }
 };
 
+// ── reportComment ─────────────────────────────────────────────────────────────
 exports.reportComment = async (req, res) => {
     try {
-        const reporterId = req.user.userId; // [AUTH] from JWT
         const { commentId } = req.params;
-        const Report = require('../models/Report');
-        const { reason } = req.body;
+        const reporterId    = req.user.userId;                     // [AUTH-1]
+        const { reason }    = req.body;
 
-        // [ATOMIC] Update flags in one operation — no load-then-save
-        const comment = await Comment.findByIdAndUpdate(
-            commentId,
-            { isReported: true, $inc: { reportCount: 1 } },
-            { new: true }
-        );
+        const comment = await Comment.findById(commentId);
         if (!comment) return res.status(404).json({ message: 'Comment not found' });
 
-        const report = new Report({ reporterId, targetType: 'Comment', targetId: commentId, reason });
-        await report.save();
+        await Report.create({ reporterId, targetType: 'Comment', targetId: commentId, reason });
 
-        res.json({ message: 'Comment reported successfully' });
+        // Increment reportCount atomically
+        await Comment.findByIdAndUpdate(commentId, {
+            $inc:  { reportCount: 1 },
+            isReported: true
+        });
+
+        res.status(201).json({ message: 'Comment reported successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Error reporting comment', error: error.message });
     }
