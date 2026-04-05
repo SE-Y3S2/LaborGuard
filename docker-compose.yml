@@ -312,11 +312,11 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_AUTH_SERVICE_URL: ${VITE_AUTH_SERVICE_URL:-http://localhost:5001}
-        VITE_COMMUNITY_SERVICE_URL: ${VITE_COMMUNITY_SERVICE_URL:-http://localhost:3002}
-        VITE_COMPLAINT_SERVICE_URL: ${VITE_COMPLAINT_SERVICE_URL:-http://localhost:3003}
-        VITE_NOTIFICATION_SERVICE_URL: ${VITE_NOTIFICATION_SERVICE_URL:-http://localhost:3004}
-        VITE_MESSAGING_SERVICE_URL: ${VITE_MESSAGING_SERVICE_URL:-http://localhost:3005}
-        VITE_JOB_SERVICE_URL: ${VITE_JOB_SERVICE_URL:-http://localhost:5003}
+        VITE_COMMUNITY_SERVICE_URL: ${VITE_COMMUNITY_SERVICE_URL:-http://localhost:5002}
+        VITE_COMPLAINT_SERVICE_URL: ${VITE_COMPLAINT_SERVICE_URL:-http://localhost:5003}
+        VITE_NOTIFICATION_SERVICE_URL: ${VITE_NOTIFICATION_SERVICE_URL:-http://localhost:5004}
+        VITE_MESSAGING_SERVICE_URL: ${VITE_MESSAGING_SERVICE_URL:-http://localhost:5005}
+        VITE_JOB_SERVICE_URL: ${VITE_JOB_SERVICE_URL:-http://localhost:5006}
         VITE_CENTRIFUGO_URL: ${VITE_CENTRIFUGO_URL:-ws://localhost:8000/connection/websocket}  # ← added
         VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}    # ← added (frontend OAuth)
     image: laborguard/frontend:latest
