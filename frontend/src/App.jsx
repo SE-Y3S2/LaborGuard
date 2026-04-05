@@ -41,7 +41,7 @@ import { ProtectedRoute, PublicRoute } from './components/auth/ProtectedRoute';
 
 import NGOCasesPage from './pages/ngo/NGOCasesPage';
 import NGOImpactPage from './pages/ngo/NGOImpactPage';
-import NGOReportsPage from './pages/ngo/NGOReportsPage';
+import NGOReportPage from './pages/ngo/NGOReportPage';
 
 function App() {
   return (
@@ -107,7 +107,7 @@ function App() {
             <Route path="/ngo/cases"                  element={<NGOCasesPage />} />
             <Route path="/ngo/cases/:id"              element={<ComplaintDetailsPage />} />
             <Route path="/ngo/impact"                 element={<NGOImpactPage />} />
-            <Route path="/ngo/reports"                element={<NGOReportsPage />} />
+            <Route path="/ngo/reports"                element={<NGOReportPage />} />
           </Route>
         </Route>
 
