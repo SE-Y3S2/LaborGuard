@@ -1,27 +1,27 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { 
-  LayoutDashboard, 
-  FileText, 
-  PlusCircle, 
-  Calendar, 
-  Briefcase, 
-  Users, 
-  MessageSquare, 
-  ShieldAlert, 
-  BarChart3,
-  Globe,
-  Settings,
-  ShieldCheck,
-  AlertCircle,
-  Gavel,
-  PieChart,
-  Activity,
-  Heart,
-  ChevronRight,
-  LogOut,
-  Bell,
-  Search
+import {
+    LayoutDashboard,
+    FileText,
+    PlusCircle,
+    Calendar,
+    Briefcase,
+    Users,
+    MessageSquare,
+    ShieldAlert,
+    BarChart3,
+    Globe,
+    Settings,
+    ShieldCheck,
+    AlertCircle,
+    Gavel,
+    PieChart,
+    Activity,
+    Heart,
+    ChevronRight,
+    LogOut,
+    Bell,
+    Search
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "../common/Button";
@@ -36,7 +36,7 @@ const Sidebar = ({ className }) => {
 
     const getNavLinks = () => {
         const role = user?.role;
-        
+
         const links = {
             worker: [
                 { title: t("nav.dashboard", "Command Center"), href: "/worker/dashboard", icon: LayoutDashboard },
@@ -52,22 +52,22 @@ const Sidebar = ({ className }) => {
             ],
             // FIX: 'lawyer' key replaced with 'legal_officer' to match JWT role name
             legal_officer: [
-            { title: t("nav.dashboard", "Legal Command"), href: "/legal/dashboard", icon: Gavel },
-            { title: t("nav.cases", "Active Docket"),     href: "/legal/cases",     icon: ShieldCheck },
-            { title: t("nav.appointments", "Consultations"), href: "/legal/appointments", icon: Calendar },
+                { title: t("nav.dashboard", "Legal Command"), href: "/legal/dashboard", icon: Gavel },
+                { title: t("nav.cases", "Active Docket"), href: "/legal/cases", icon: ShieldCheck },
+                { title: t("nav.appointments", "Consultations"), href: "/legal/appointments", icon: Calendar },
             ],
             ngo: [
                 { title: t("nav.dashboard", "Advocacy Dashboard"), href: "/ngo/dashboard", icon: LayoutDashboard },
-                { title: t("nav.cases",     "Investigations"),      href: "/ngo/cases",     icon: ShieldAlert },
-                { title: t("nav.impact",    "Impact Hub"),           href: "/ngo/impact",    icon: Globe },
-                { title: t("nav.reports",   "Reports"),              href: "/ngo/reports",   icon: FileText },
-                { title: t("nav.community", "Community Feed"),       href: "/community",     icon: Activity },
+                { title: t("nav.cases", "Investigations"), href: "/ngo/cases", icon: ShieldAlert },
+                { title: t("nav.impact", "Impact Hub"), href: "/ngo/impact", icon: Globe },
+                { title: t("nav.reports", "Reports"), href: "/ngo/reports", icon: FileText },
+                { title: t("nav.community", "Community Feed"), href: "/community", icon: Activity },
             ],
             admin: [
                 { title: t("nav.dashboard", "System Governance"), href: "/admin/dashboard", icon: ShieldAlert },
                 { title: t("nav.users", "User Registry"), href: "/admin/dashboard?tab=users", icon: Users },
                 { title: t("nav.analytics", "Global Analytics"), href: "/admin/dashboard?tab=analytics", icon: BarChart3 },
-            ]
+            ],
         };
 
         const commonLinks = [
@@ -85,7 +85,7 @@ const Sidebar = ({ className }) => {
             {/* Background Texture Accents */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl opacity-20 pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/10 blur-3xl opacity-20 pointer-events-none" />
-            
+
             {/* Brand Header */}
             <div className="p-8 pb-10">
                 <Link to="/" className="flex items-center gap-3">
@@ -106,19 +106,19 @@ const Sidebar = ({ className }) => {
                 <div className="mb-4">
                     <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 px-4 mb-3">Navigation Modules</p>
                 </div>
-                
+
                 {navLinks.map((link) => {
                     const Icon = link.icon;
                     const isActive = location.pathname === link.href || (location.pathname + location.search === link.href);
-                    
+
                     return (
                         <Link
                             key={link.href}
                             to={link.href}
                             className={cn(
                                 "flex items-center justify-between group px-5 py-4 rounded-[20px] transition-all duration-300 relative",
-                                isActive 
-                                    ? "bg-white/10 text-white shadow-2xl shadow-black/20" 
+                                isActive
+                                    ? "bg-white/10 text-white shadow-2xl shadow-black/20"
                                     : "text-slate-400 hover:text-white hover:bg-white/5"
                             )}
                         >
@@ -134,7 +134,7 @@ const Sidebar = ({ className }) => {
                                     {link.title}
                                 </span>
                             </div>
-                            
+
                             {link.badge && (
                                 <Badge className="bg-primary/20 text-primary border-none font-black text-[7px] tracking-[0.2em] px-2 uppercase shadow-inner z-10">
                                     {link.badge}
@@ -173,8 +173,8 @@ const Sidebar = ({ className }) => {
                         <Button variant="ghost" className="h-11 rounded-2xl bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 p-0 transition-all">
                             <Settings className="h-4 w-4" />
                         </Button>
-                        <Button 
-                            variant="ghost" 
+                        <Button
+                            variant="ghost"
                             onClick={logout}
                             className="h-11 rounded-2xl bg-red-500/10 text-red-400 hover:text-white hover:bg-red-500 p-0 transition-all"
                         >
@@ -183,10 +183,10 @@ const Sidebar = ({ className }) => {
                     </div>
                 </div>
             </div>
-            
+
             {/* Version Flag */}
             <div className="pb-6 text-center">
-                 <p className="text-[7px] font-black uppercase tracking-[0.4em] text-slate-700">Protocol v4.0.2-SECURE</p>
+                <p className="text-[7px] font-black uppercase tracking-[0.4em] text-slate-700">Protocol v4.0.2-SECURE</p>
             </div>
         </aside>
     );

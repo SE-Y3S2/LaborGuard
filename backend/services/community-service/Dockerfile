@@ -1,21 +1,15 @@
-FROM node:20-alpine
-
-# Install native build dependencies required by @tensorflow/tfjs-node
-RUN apk add --no-cache python3 make g++ libc6-compat
-
+FROM node:20-alpine AS base
+RUN apk add --no-cache dumb-init python3 make g++ libc6-compat
 WORKDIR /app
 
-# Copy package files
+FROM base AS deps
 COPY package*.json ./
+RUN npm ci --legacy-peer-deps
 
-# Install dependencies
-RUN npm install --omit=dev --legacy-peer-deps
-
-# Copy source code
+FROM base AS production
+ENV NODE_ENV=production
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# Expose port
-EXPOSE 3002
-
-# Start the service
+EXPOSE 5002
+ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "src/index.js"]

@@ -20,7 +20,8 @@
         "react-dom": "^19.2.4",
         "resend": "^3.2.0",
         "swagger-ui-express": "^5.0.1",
-        "yamljs": "^0.3.0"
+        "yamljs": "^0.3.0",
+        "jsonwebtoken": "^9.0.2"
     },
     "devDependencies": {
         "jest": "^29.7.0",

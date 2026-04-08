@@ -271,7 +271,36 @@ const getJobApplications = async (req, res, next) => {
     }
 };
 
-module.exports = {
+
+// FIX: NEW — Employers fetch their own job postings
+// @route   GET /api/jobs/my-listings
+// @access  Private (employer, admin)
+const getEmployerJobs = async (req, res, next) => {
+    try {
+        const employerId = req.user.userId; // from JWT — never req.body
+        const page  = parseInt(req.query.page)  || 1;
+        const limit = parseInt(req.query.limit) || 10;
+
+        const Job = require('../models/Job');
+        const total = await Job.countDocuments({ postedBy: employerId });
+        const jobs  = await Job.find({ postedBy: employerId })
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .lean();
+
+        res.status(200).json({
+            success: true,
+            count: jobs.length,
+            total,
+            data: jobs
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports = { getEmployerJobs,
     createJob,
     getJobs,
     getJobById,

@@ -1,29 +1,19 @@
-import { notificationClient } from './apiClient'; 
+import { notificationClient } from './apiClient';
 
 export const notificationApi = {
-  /**
-   * Fetch all notifications for the authenticated user.
-   * Service: Notification-Service (Port 3004)
-   */
+  // FIX: was GET /notifications/:userId (required userId in URL — now read from JWT in backend)
+  // Backend: GET /api/notifications — userId from req.user.userId
   getNotifications: () => notificationClient.get('/notifications'),
-  
-  /**
-   * Mark a single notification as read.
-   */
-  markAsRead: (id) => notificationClient.patch(`/notifications/${id}/read`),
-  
-  /**
-   * Mark all notifications as read.
-   */
-  markAllAsRead: () => notificationClient.patch('/notifications/read-all'),
-  
-  /**
-   * Get unread notification count.
-   */
+
+  // FIX: was GET /notifications/unread-count — backend now GET /notifications/unread-count (JWT-based)
   getUnreadCount: () => notificationClient.get('/notifications/unread-count'),
-  
-  /**
-   * Update notification settings/preferences.
-   */
+
+  // Mark single notification read — uses notification document _id, not userId — no change needed
+  markAsRead: (id) => notificationClient.patch(`/notifications/${id}/read`),
+
+  // FIX: was PATCH /notifications/read-all — backend now PATCH /notifications/read-all (JWT-based)
+  markAllAsRead: () => notificationClient.patch('/notifications/read-all'),
+
+  // Update notification settings
   updateSettings: (data) => notificationClient.patch('/notifications/settings', data),
 };
