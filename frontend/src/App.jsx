@@ -51,41 +51,41 @@ function App() {
 
         {/* ── Public ───────────────────────────────────────────────────────── */}
         <Route element={<PublicLayout />}>
-          <Route path="/"          element={<LandingPage />} />
-          <Route path="/jobs"      element={<JobBoardPage />} />
-          <Route path="/advocacy"  element={<AdvocacyHub />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/jobs" element={<JobBoardPage />} />
+          <Route path="/advocacy" element={<AdvocacyHub />} />
 
           <Route element={<PublicRoute />}>
-            <Route path="/login"           element={<LoginPage />} />
-            <Route path="/register"        element={<RegisterPage />} />
-            <Route path="/verify"          element={<VerifyPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/verify" element={<VerifyPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password"  element={<ResetPasswordPage />} />
-            <Route path="/oauth-success"   element={<OAuthSuccessPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/oauth-success" element={<OAuthSuccessPage />} />
           </Route>
         </Route>
 
         {/* ── Worker Portal ────────────────────────────────────────────────── */}
         <Route element={<ProtectedRoute allowedRoles={['worker']} />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/worker/dashboard"           element={<WorkerDashboard />} />
-            <Route path="/worker/jobs"                element={<JobBoardPage />} />
-            <Route path="/worker/complaints"          element={<MyComplaints />} />
-            <Route path="/worker/complaints/new"      element={<NewComplaintPage />} />
-            <Route path="/worker/complaints/:id"      element={<ComplaintDetailsPage />} />
-            <Route path="/worker/appointments"        element={<MyAppointments />} />
-            <Route path="/worker/profile"             element={<WorkerProfile />} />
+            <Route path="/worker/dashboard" element={<WorkerDashboard />} />
+            <Route path="/worker/jobs" element={<JobBoardPage />} />
+            <Route path="/worker/complaints" element={<MyComplaints />} />
+            <Route path="/worker/complaints/new" element={<NewComplaintPage />} />
+            <Route path="/worker/complaints/:id" element={<ComplaintDetailsPage />} />
+            <Route path="/worker/appointments" element={<MyAppointments />} />
+            <Route path="/worker/profile" element={<WorkerProfile />} />
           </Route>
         </Route>
 
         {/* ── Employer Portal ──────────────────────────────────────────────── */}
         <Route element={<ProtectedRoute allowedRoles={['employer']} />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/employer/dashboard"         element={<EmployerDashboard />} />
-            <Route path="/employer/jobs"              element={<EmployerDashboard />} />
-            <Route path="/employer/jobs/new"          element={<JobFormPage />} />
-            <Route path="/employer/jobs/:id"          element={<JobApplicantsPage />} />
-            <Route path="/employer/jobs/:id/edit"     element={<JobFormPage />} />
+            <Route path="/employer/dashboard" element={<EmployerDashboard />} />
+            <Route path="/employer/jobs" element={<EmployerDashboard />} />
+            <Route path="/employer/jobs/new" element={<JobFormPage />} />
+            <Route path="/employer/jobs/:id" element={<JobApplicantsPage />} />
+            <Route path="/employer/jobs/:id/edit" element={<JobFormPage />} />
           </Route>
         </Route>
 
@@ -93,28 +93,28 @@ function App() {
         {/* FIX: was 'legal_officer' — backend User model enum stores 'lawyer' */}
         <Route element={<ProtectedRoute allowedRoles={['lawyer']} />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/legal/dashboard"            element={<LegalDashboard />} />
-            <Route path="/legal/cases"                element={<LegalDashboard />} />
-            <Route path="/legal/cases/:id"            element={<ComplaintDetailsPage />} />
-            <Route path="/legal/appointments"         element={<LegalAppointments />} />
+            <Route path="/legal/dashboard" element={<LegalDashboard />} />
+            <Route path="/legal/cases" element={<LegalDashboard />} />
+            <Route path="/legal/cases/:id" element={<ComplaintDetailsPage />} />
+            <Route path="/legal/appointments" element={<LegalAppointments />} />
           </Route>
         </Route>
 
         {/* ── NGO Portal ───────────────────────────────────────────────────── */}
         <Route element={<ProtectedRoute allowedRoles={['ngo']} />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/ngo/dashboard"              element={<NGODashboard />} />
-            <Route path="/ngo/cases"                  element={<NGOCasesPage />} />
-            <Route path="/ngo/cases/:id"              element={<ComplaintDetailsPage />} />
-            <Route path="/ngo/impact"                 element={<NGOImpactPage />} />
-            <Route path="/ngo/reports"                element={<NGOReportPage />} />
+            <Route path="/ngo/dashboard" element={<NGODashboard />} />
+            <Route path="/ngo/cases" element={<NGOCasesPage />} />
+            <Route path="/ngo/cases/:id" element={<ComplaintDetailsPage />} />
+            <Route path="/ngo/impact" element={<NGOImpactPage />} />
+            <Route path="/ngo/reports" element={<NGOReportPage />} />
           </Route>
         </Route>
 
         {/* ── Admin Portal ─────────────────────────────────────────────────── */}
         <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/admin/dashboard"            element={<AdminDashboard />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
           </Route>
         </Route>
 
@@ -122,8 +122,8 @@ function App() {
         {/* FIX: was 'legal_officer' → 'lawyer' to match User model enum */}
         <Route element={<ProtectedRoute allowedRoles={['worker', 'admin', 'lawyer', 'employer', 'ngo']} />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/community"                  element={<CommunityFeedPage />} />
-            <Route path="/messages"                   element={<ChatPage />} />
+            <Route path="/community" element={<CommunityFeedPage />} />
+            <Route path="/messages" element={<ChatPage />} />
           </Route>
         </Route>
 

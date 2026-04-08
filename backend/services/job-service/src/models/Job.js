@@ -38,7 +38,7 @@ const JobSchema = new mongoose.Schema({
         required: true
     },
     location: {
-        address: { type: String, required: [true, 'Address is required'] },
+        address: { type: String },
         city: { type: String, required: [true, 'City is required'] },
         state: { type: String },
         country: { type: String, default: 'USA' }, // Default adjust as needed
