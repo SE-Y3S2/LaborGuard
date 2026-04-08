@@ -16,7 +16,7 @@ const JobDashboard = () => {
     const [submitting, setSubmitting] = useState(false);
 
     const navigate = useNavigate();
-    const JOBS_API = 'http://localhost:5003/api/jobs';
+    const JOBS_API = 'http://localhost:5006/api/jobs';
     const userRole = localStorage.getItem('userRole');
 
     const fetchJobs = async () => {
@@ -81,6 +81,23 @@ const JobDashboard = () => {
             }
         }
     };
+ 
+    const handleApplyClick = (job) => {
+        if (!userRole) {
+            // Guest -> Redirect to login
+            navigate('/login');
+            return;
+        }
+ 
+        if (userRole !== 'worker') {
+            // Other Role (Employer/Admin) -> Show popup
+            alert('Only registered workers can apply to this vacancy post.');
+            return;
+        }
+ 
+        // Worker -> Show modal
+        setSelectedJob(job);
+    };
 
     const hasApplied = (jobId) => myApplications.some(app => app.jobId?._id === jobId);
 
@@ -138,16 +155,12 @@ const JobDashboard = () => {
                                     </p>
 
                                     <div className="flex justify-between items-center mt-auto pt-5 border-t border-[#f1f5f9]">
-                                        {userRole === 'worker' ? (
-                                            hasApplied(job._id) ? (
-                                                <button disabled className="w-full bg-[#dcfce7] text-[#166534] border-none py-3.5 px-3 rounded-xl font-bold text-center transition-all cursor-not-allowed">Applied Successfully ✓</button>
-                                            ) : (
-                                                <button className="w-full bg-[#f8fafc] text-text-primary border border-[#e2e8f0] py-3.5 px-3 rounded-xl font-bold cursor-pointer transition-all hover:bg-accent-primary hover:text-white hover:border-accent-primary text-center" onClick={() => setSelectedJob(job)}>Apply Now</button>
-                                            )
+                                        {userRole === 'worker' && hasApplied(job._id) ? (
+                                            <button disabled className="w-full bg-[#dcfce7] text-[#166534] border-none py-3.5 px-3 rounded-xl font-bold text-center transition-all cursor-not-allowed">Applied Successfully ✓</button>
                                         ) : (
-                                            <button className="w-full bg-[#f8fafc] text-text-primary border border-[#e2e8f0] py-3.5 px-3 rounded-xl font-bold cursor-pointer transition-all hover:bg-slate-100 text-center" onClick={() => navigate('/login')}>Login to Apply</button>
+                                            <button className="w-full bg-[#f8fafc] text-text-primary border border-[#e2e8f0] py-3.5 px-3 rounded-xl font-bold cursor-pointer transition-all hover:bg-accent-primary hover:text-white hover:border-accent-primary text-center" onClick={() => handleApplyClick(job)}>Apply Now</button>
                                         )}
-
+ 
                                         {(userRole === 'admin' || userRole === 'employer') && (
                                             <button
                                                 onClick={() => handleDelete(job._id)}

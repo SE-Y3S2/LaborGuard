@@ -4,7 +4,7 @@ const connectDB = require('./config/db');
 // Connect to database
 connectDB();
 
-const PORT = process.env.PORT || 5003;
+const PORT = process.env.PORT || 5006;
 
 const server = app.listen(PORT, () => {
     console.log(`Job Service running in ${process.env.NODE_ENV} mode on port ${PORT}`);

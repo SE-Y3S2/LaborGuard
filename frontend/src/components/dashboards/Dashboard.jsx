@@ -11,6 +11,7 @@ const Dashboard = () => {
     // Role-specific data
     const [workerStats, setWorkerStats] = useState({ total: 0, pending: 0, approved: 0 });
     const [applications, setApplications] = useState([]);
+    const [employerApplications, setEmployerApplications] = useState([]);
     
     const [adminUsers, setAdminUsers] = useState([]);
     const [complaints, setComplaints] = useState([]);
@@ -20,8 +21,8 @@ const Dashboard = () => {
     const navigate = useNavigate();
 
     const AUTH_API = 'http://localhost:5001/api';
-    const JOBS_API = 'http://localhost:5003/api';
-    const COMPLAINT_API = 'http://localhost:5005/api';
+    const JOBS_API = 'http://localhost:5006/api';
+    const COMPLAINT_API = 'http://localhost:3003/api';
 
     const getHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('accessToken')}` });
 
@@ -46,6 +47,13 @@ const Dashboard = () => {
                     pending: apps.filter(a => a.status === 'pending').length,
                     approved: apps.filter(a => a.status === 'accepted').length
                 });
+            } else if (userData.role === 'employer') {
+                const [jobsRes, appsRes] = await Promise.all([
+                    axios.get(`${JOBS_API}/jobs?employerId=${userData.userId}`, { headers: getHeaders() }).catch(() => ({ data: { data: [] } })),
+                    axios.get(`${JOBS_API}/jobs/employer/applications`, { headers: getHeaders() }).catch(() => ({ data: { data: [] } }))
+                ]);
+                setJobs(jobsRes.data.data || []);
+                setEmployerApplications(appsRes.data.data || []);
             } else if (userData.role === 'admin') {
                 const [usersRes, complaintsRes, jobsRes] = await Promise.all([
                     axios.get(`${AUTH_API}/admin/users`, { headers: getHeaders() }).catch(() => ({ data: { data: { users: [] } } })),
@@ -90,6 +98,17 @@ const Dashboard = () => {
         }
     };
 
+    const handleStatusUpdate = async (appId, newStatus) => {
+        try {
+            await axios.put(`${JOBS_API}/jobs/applications/${appId}/status`, { status: newStatus }, { headers: getHeaders() });
+            setSuccess(`Application ${newStatus} successfully! Notification sent.`);
+            fetchDashboardData();
+            setTimeout(() => setSuccess(''), 3000);
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to update status');
+        }
+    };
+
     if (loading) return (
         <div className="min-h-[calc(100vh-70px)] bg-bg-secondary p-4 md:p-10 flex justify-center items-start">
             <div className="text-center mt-40">
@@ -106,10 +125,10 @@ const Dashboard = () => {
                 <div className="flex justify-between items-end mb-8">
                     <div>
                         <span className="text-[0.9rem] text-text-secondary font-extrabold uppercase tracking-wider block mb-1">
-                            {profile.role === 'admin' ? 'Administrative Access' : 'Worker Portal'}
+                            {profile.role === 'admin' ? 'Administrative Access' : profile.role === 'employer' ? 'Management Portal' : 'Worker Portal'}
                         </span>
                         <h1 className="text-[2.2rem] md:text-[2.8rem] font-extrabold text-text-primary m-0 tracking-tight leading-none">
-                            {profile.role === 'admin' ? 'Platform Governance' : 'Command Center'}
+                            {profile.role === 'admin' ? 'Platform Governance' : profile.role === 'employer' ? 'Workforce Management' : 'Command Center'}
                         </h1>
                     </div>
                 </div>
@@ -286,6 +305,83 @@ const Dashboard = () => {
                             </div>
                         </div>
                     </>
+                ) : profile.role === 'employer' ? (
+                    /* ROLE: EMPLOYER VIEW */
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <div className="bg-white rounded-[20px] p-6 shadow-main border border-slate-200/80 hover:-translate-y-1 hover:shadow-hover transition-all duration-300 flex justify-center items-center flex-col md:col-span-1 lg:col-span-1 xl:col-span-1">
+                            <span className="text-[0.9rem] text-text-primary font-bold uppercase tracking-wider mb-2">My Vacancies</span>
+                            <div className="text-[3.5rem] font-extrabold leading-none text-text-primary mb-1">{jobs.length}</div>
+                            <div className="text-[0.85rem] text-text-secondary font-medium">Active listings</div>
+                        </div>
+                        <div className="bg-white rounded-[20px] p-6 shadow-main border border-slate-200/80 hover:-translate-y-1 hover:shadow-hover transition-all duration-300 flex justify-center items-center flex-col md:col-span-1 lg:col-span-1 xl:col-span-1">
+                            <span className="text-[0.9rem] font-bold uppercase tracking-wider mb-2 text-accent-primary">New Applicants</span>
+                            <div className="text-[3.5rem] font-extrabold leading-none mb-1 text-accent-primary">{employerApplications.filter(a => a.status === 'pending').length}</div>
+                            <div className="text-[0.85rem] text-text-secondary font-medium">Awaiting decision</div>
+                        </div>
+                        <div className="bg-white rounded-[20px] p-6 shadow-main border border-slate-200/80 hover:-translate-y-1 hover:shadow-hover transition-all duration-300 flex justify-center items-center flex-col md:col-span-1 lg:col-span-1 xl:col-span-1">
+                            <span className="text-[0.9rem] font-bold uppercase tracking-wider mb-2 text-[#059669]">Confirmed Placements</span>
+                            <div className="text-[3.5rem] font-extrabold leading-none mb-1 text-[#059669]">{employerApplications.filter(a => a.status === 'accepted').length}</div>
+                            <div className="text-[0.85rem] text-text-secondary font-medium">Ready for work</div>
+                        </div>
+                        <div className="bg-accent-primary rounded-[20px] p-6 shadow-[0_10px_25px_rgba(37,137,245,0.3)] hover:-translate-y-1 transition-all duration-300 flex justify-center items-center flex-col text-white md:col-span-1 lg:col-span-1 xl:col-span-1">
+                            <span className="text-[0.9rem] font-bold uppercase tracking-wider mb-2 text-white/90">Platform Rating</span>
+                            <div className="text-[3rem] font-extrabold leading-none mb-1 text-white">4.9</div>
+                            <div className="text-[0.85rem] font-medium text-white/90">Top Verified</div>
+                        </div>
+
+                        {/* Employer Candidate Queue */}
+                        <div className="bg-white rounded-[20px] p-8 shadow-main border border-slate-200/80 col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4 min-h-[500px]">
+                            <div className="flex justify-between items-center border-b-2 border-[#f1f5f9] mb-6 pb-4">
+                                <h3 className="text-[1.4rem] font-extrabold text-text-primary m-0">Candidate Management Queue</h3>
+                                <button onClick={() => navigate('/jobs/new')} className="bg-accent-primary text-white border-none py-2.5 px-6 rounded-xl font-bold cursor-pointer hover:bg-accent-hover transition-all shadow-sm">+ Post New Job</button>
+                            </div>
+                            
+                            {employerApplications.length === 0 ? <p className="text-center py-20 text-text-secondary font-medium">No candidates have applied yet. Your jobs are live!</p> : (
+                                <div className="w-full overflow-x-auto">
+                                    <table className="w-full border-collapse">
+                                        <thead>
+                                            <tr className="text-left text-text-secondary text-[0.85rem] border-b border-[#f1f5f9]">
+                                                <th className="pb-4 font-bold uppercase tracking-wider">Applicant Profile</th>
+                                                <th className="pb-4 font-bold uppercase tracking-wider">Job Applied For</th>
+                                                <th className="pb-4 font-bold uppercase tracking-wider">Experience Highlight</th>
+                                                <th className="pb-4 font-bold uppercase tracking-wider">Status</th>
+                                                <th className="pb-4 font-bold uppercase tracking-wider text-right">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {employerApplications.map(app => (
+                                                <tr key={app._id} className="border-b border-[#f1f5f9] hover:bg-slate-50 transition-colors">
+                                                    <td className="py-5 pr-4">
+                                                        <div className="font-extrabold text-[1.1rem] text-text-primary">{app.workerName}</div>
+                                                        <div className="text-[0.85rem] text-text-secondary mt-0.5">{app.workerEmail}</div>
+                                                    </td>
+                                                    <td className="pr-4">
+                                                        <div className="font-bold text-text-primary text-[0.95rem]">{app.jobId?.title}</div>
+                                                    </td>
+                                                    <td className="pr-4 max-w-[300px]">
+                                                        <p className="text-[0.9rem] text-text-secondary line-clamp-1 italic">"{app.workerExperience}"</p>
+                                                    </td>
+                                                    <td className="pr-4">
+                                                        <span className={`px-3 py-1.5 rounded-lg text-[0.75rem] font-bold uppercase tracking-wider inline-block ${app.status === 'accepted' ? 'bg-[#dcfce7] text-[#166534]' : app.status === 'pending' ? 'bg-[#fef3c7] text-[#b45309]' : 'bg-[#fee2e2] text-[#991b1b]'}`}>{app.status}</span>
+                                                    </td>
+                                                    <td className="text-right whitespace-nowrap">
+                                                        {app.status === 'pending' ? (
+                                                            <>
+                                                                <button onClick={() => handleStatusUpdate(app._id, 'accepted')} className="bg-[#059669] hover:bg-[#047857] text-white border-none py-2 px-4 rounded-lg cursor-pointer font-extrabold transition-all mr-3 shadow-sm hover:shadow-md hover:-translate-y-0.5">ACCEPT</button>
+                                                                <button onClick={() => handleStatusUpdate(app._id, 'rejected')} className="bg-transparent hover:bg-[#fee2e2] border border-[#fca5a5] text--[#dc2626] py-2 px-4 rounded-lg cursor-pointer font-bold transition-all">REJECT</button>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-[0.85rem] font-bold text-text-secondary italic">Processed</span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 ) : (
                     /* ROLE: WORKER VIEW */
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
