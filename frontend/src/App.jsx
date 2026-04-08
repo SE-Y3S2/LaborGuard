@@ -1,136 +1,63 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'sonner';
+﻿import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Home from './components/core/Home';
+import Login from './components/auth/Login';
+import Register from './components/auth/Register';
+import Dashboard from './components/dashboards/Dashboard';
+import OAuthSuccess from './components/auth/OAuthSuccess';
+import VerifyOTP from './components/auth/VerifyOTP';
+import ForgotPassword from './components/auth/ForgotPassword';
+import ResetPassword from './components/auth/ResetPassword';
+import AdminDashboard from './components/dashboards/AdminDashboard';
+import JobDashboard from './components/jobs/JobDashboard';
+import JobForm from './components/jobs/JobForm';
+import Navbar from './components/core/Navbar';
+import { AuthProvider } from './contexts/complaint/AuthContext';
+import ProtectedRoute from './components/core/ProtectedRoute';
+import MyComplaintsPage from './pages/complaint/MyComplaintsPage';
+import NewComplaintPage from './pages/complaint/NewComplaintPage';
+import AdminComplaintBoard from './pages/complaint/AdminComplaintBoard';
+import OfficerComplaintBoard from './pages/complaint/OfficerComplaintBoard';
+import ComplaintDetailPage from './pages/complaint/ComplaintDetailPage';
+import DevTestPage from './pages/complaint/DevTestPage';
 
-// Layouts
-import PublicLayout from './components/layout/PublicLayout';
-import DashboardLayout from './components/layout/DashboardLayout';
-
-// Public Pages
-import LandingPage from './pages/public/LandingPage';
-import LoginPage from './pages/public/LoginPage';
-import RegisterPage from './pages/public/RegisterPage';
-import VerifyPage from './pages/public/VerifyPage';
-import ForgotPasswordPage from './pages/public/ForgotPasswordPage';
-import ResetPasswordPage from './pages/public/ResetPasswordPage';
-import OAuthSuccessPage from './pages/public/OAuthSuccessPage';
-
-// Worker Pages
-import WorkerDashboard from './pages/worker/WorkerDashboard';
-import JobBoardPage from './pages/worker/JobBoardPage';
-import MyComplaints from './pages/worker/MyComplaints';
-import NewComplaintPage from './pages/worker/NewComplaintPage';
-import ComplaintDetailsPage from './pages/worker/ComplaintDetailsPage';
-import MyAppointments from './pages/worker/MyAppointments';
-import WorkerProfile from './pages/worker/WorkerProfile';
-
-// Portals
-import EmployerDashboard from './pages/employer/EmployerDashboard';
-import JobFormPage from './pages/employer/JobFormPage';
-import JobApplicantsPage from './pages/employer/JobApplicantsPage';
-import LegalDashboard from './pages/legal/LegalDashboard';
-import LegalAppointments from './pages/legal/LegalAppointments';
-import NGODashboard from './pages/ngo/NGODashboard';
-
-// Shared
-import CommunityFeedPage from './pages/community/CommunityFeedPage';
-import AdvocacyHub from './pages/community/AdvocacyHub';
-import ChatPage from './pages/messaging/ChatPage';
-import AdminDashboard from './pages/admin/AdminDashboard';
-
-import { ProtectedRoute, PublicRoute } from './components/auth/ProtectedRoute';
-
-import NGOCasesPage from './pages/ngo/NGOCasesPage';
-import NGOImpactPage from './pages/ngo/NGOImpactPage';
-import NGOReportPage from './pages/ngo/NGOReportPage';
+const ComplaintsRoot = () => {
+  const role = localStorage.getItem('userRole');
+  if (role === 'worker') return <Navigate to="/complaints/my" replace />;
+  if (role === 'admin') return <Navigate to="/complaints/admin" replace />;
+  if (role === 'legal_officer') return <Navigate to="/complaints/officer" replace />;
+  return <Navigate to="/dashboard" replace />;
+};
 
 function App() {
   return (
     <Router>
-      <Toaster position="top-right" expand={false} richColors closeButton />
-      <Routes>
-
-        {/* ── Public ───────────────────────────────────────────────────────── */}
-        <Route element={<PublicLayout />}>
-          <Route path="/"          element={<LandingPage />} />
-          <Route path="/jobs"      element={<JobBoardPage />} />
-          <Route path="/advocacy"  element={<AdvocacyHub />} />
-
-          <Route element={<PublicRoute />}>
-            <Route path="/login"           element={<LoginPage />} />
-            <Route path="/register"        element={<RegisterPage />} />
-            <Route path="/verify"          element={<VerifyPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password"  element={<ResetPasswordPage />} />
-            <Route path="/oauth-success"   element={<OAuthSuccessPage />} />
-          </Route>
-        </Route>
-
-        {/* ── Worker Portal ────────────────────────────────────────────────── */}
-        <Route element={<ProtectedRoute allowedRoles={['worker']} />}>
-          <Route element={<DashboardLayout />}>
-            <Route path="/worker/dashboard"           element={<WorkerDashboard />} />
-            <Route path="/worker/jobs"                element={<JobBoardPage />} />
-            <Route path="/worker/complaints"          element={<MyComplaints />} />
-            <Route path="/worker/complaints/new"      element={<NewComplaintPage />} />
-            <Route path="/worker/complaints/:id"      element={<ComplaintDetailsPage />} />
-            <Route path="/worker/appointments"        element={<MyAppointments />} />
-            <Route path="/worker/profile"             element={<WorkerProfile />} />
-          </Route>
-        </Route>
-
-        {/* ── Employer Portal ──────────────────────────────────────────────── */}
-        <Route element={<ProtectedRoute allowedRoles={['employer']} />}>
-          <Route element={<DashboardLayout />}>
-            <Route path="/employer/dashboard"         element={<EmployerDashboard />} />
-            <Route path="/employer/jobs"              element={<EmployerDashboard />} />
-            <Route path="/employer/jobs/new"          element={<JobFormPage />} />
-            <Route path="/employer/jobs/:id"          element={<JobApplicantsPage />} />
-            <Route path="/employer/jobs/:id/edit"     element={<JobFormPage />} />
-          </Route>
-        </Route>
-
-        {/* ── Legal Portal ─────────────────────────────────────────────────── */}
-        {/* FIX: was 'legal_officer' — backend User model enum stores 'lawyer' */}
-        <Route element={<ProtectedRoute allowedRoles={['lawyer']} />}>
-          <Route element={<DashboardLayout />}>
-            <Route path="/legal/dashboard"            element={<LegalDashboard />} />
-            <Route path="/legal/cases"                element={<LegalDashboard />} />
-            <Route path="/legal/cases/:id"            element={<ComplaintDetailsPage />} />
-            <Route path="/legal/appointments"         element={<LegalAppointments />} />
-          </Route>
-        </Route>
-
-        {/* ── NGO Portal ───────────────────────────────────────────────────── */}
-        <Route element={<ProtectedRoute allowedRoles={['ngo']} />}>
-          <Route element={<DashboardLayout />}>
-            <Route path="/ngo/dashboard"              element={<NGODashboard />} />
-            <Route path="/ngo/cases"                  element={<NGOCasesPage />} />
-            <Route path="/ngo/cases/:id"              element={<ComplaintDetailsPage />} />
-            <Route path="/ngo/impact"                 element={<NGOImpactPage />} />
-            <Route path="/ngo/reports"                element={<NGOReportPage />} />
-          </Route>
-        </Route>
-
-        {/* ── Admin Portal ─────────────────────────────────────────────────── */}
-        <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
-          <Route element={<DashboardLayout />}>
-            <Route path="/admin/dashboard"            element={<AdminDashboard />} />
-          </Route>
-        </Route>
-
-        {/* ── Shared Authenticated Routes ───────────────────────────────────── */}
-        {/* FIX: was 'legal_officer' → 'lawyer' to match User model enum */}
-        <Route element={<ProtectedRoute allowedRoles={['worker', 'admin', 'lawyer', 'employer', 'ngo']} />}>
-          <Route element={<DashboardLayout />}>
-            <Route path="/community"                  element={<CommunityFeedPage />} />
-            <Route path="/messages"                   element={<ChatPage />} />
-          </Route>
-        </Route>
-
-        {/* ── Fallback ─────────────────────────────────────────────────────── */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-
-      </Routes>
+      <AuthProvider>
+        <div className="flex flex-col min-h-screen w-full">
+          <Navbar />
+          <main className="flex-1 flex flex-col w-full">
+            <Routes>
+              <Route path="/dev/test" element={<DevTestPage />} />
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/verify" element={<VerifyOTP />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/jobs" element={<JobDashboard />} />
+              <Route path="/jobs/new" element={<JobForm />} />
+              <Route path="/complaints" element={<ComplaintsRoot />} />
+              <Route path="/complaints/my" element={<ProtectedRoute allowedRoles={[ 'worker' ]}><MyComplaintsPage /></ProtectedRoute>} />
+              <Route path="/complaints/new" element={<ProtectedRoute allowedRoles={[ 'worker' ]}><NewComplaintPage /></ProtectedRoute>} />
+              <Route path="/complaints/admin" element={<ProtectedRoute allowedRoles={[ 'admin' ]}><AdminComplaintBoard /></ProtectedRoute>} />
+              <Route path="/complaints/officer" element={<ProtectedRoute allowedRoles={[ 'legal_officer' ]}><OfficerComplaintBoard /></ProtectedRoute>} />
+              <Route path="/complaints/:id" element={<ProtectedRoute allowedRoles={[ 'worker', 'admin', 'legal_officer' ]}><ComplaintDetailPage /></ProtectedRoute>} />
+              <Route path="/oauth-success" element={<OAuthSuccess />} />
+            </Routes>
+          </main>
+        </div>
+      </AuthProvider>
     </Router>
   );
 }

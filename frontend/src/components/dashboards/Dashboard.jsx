@@ -116,6 +116,24 @@ const Dashboard = () => {
 
                 {success && <div className="bg-[#dcfce7] border border-[#bbf7d0] text-[#166534] px-5 py-4 rounded-xl font-medium mb-8 animate-[fadeIn_0.3s_ease] shadow-sm">{success}</div>}
 
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+                    <div className="bg-white rounded-[20px] p-6 shadow-main border border-slate-200/80 hover:-translate-y-1 hover:shadow-hover transition-all duration-300">
+                        <div className="text-[0.9rem] uppercase tracking-wider text-text-secondary font-bold mb-3">Complaint center</div>
+                        <div className="text-[1.9rem] font-extrabold text-text-primary mb-2">{profile.role === 'worker' ? 'Track your cases' : profile.role === 'admin' ? 'Review every complaint' : 'Officer action center'}</div>
+                        <div className="text-[0.95rem] text-text-secondary">{profile.role === 'worker' ? 'Submit and monitor complaints from your portal.' : profile.role === 'admin' ? 'Open the admin complaint board for full case control.' : 'View your assigned officer workspace and update status.'}</div>
+                    </div>
+                    <div className="bg-[#f8fafc] rounded-[20px] p-6 shadow-main border border-slate-200/80">
+                        <div className="text-[0.85rem] uppercase tracking-wider text-text-secondary font-semibold mb-3">Tip</div>
+                        <p className="text-text-secondary leading-relaxed">Use the complaint module to access the most important labor dispute actions in one place.</p>
+                    </div>
+                    <div className="bg-white rounded-[20px] p-6 shadow-main border border-slate-200/80 flex flex-col justify-between">
+                        <div>
+                            <div className="text-[0.85rem] uppercase tracking-wider text-text-secondary font-semibold mb-3">Quick link</div>
+                            <div className="text-[1rem] font-bold text-text-primary">{profile.role === 'worker' ? 'Launch your complaint dashboard' : profile.role === 'admin' ? 'Open complaint management' : 'Access officer resources'}</div>
+                        </div>
+                    </div>
+                </div>
+
                 {/* ROLE: ADMIN VIEW */}
                 {profile.role === 'admin' ? (
                     <>
