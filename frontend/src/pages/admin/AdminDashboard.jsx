@@ -43,6 +43,20 @@ import { Input } from "@/components/common/Input";
 import { Spinner } from "@/components/common/Spinner";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Avatar, AvatarFallback } from "@/components/common/Avatar";
+import { 
+    Dialog, 
+    DialogContent, 
+    DialogHeader, 
+    DialogTitle, 
+    DialogDescription,
+    DialogFooter 
+} from "@/components/ui/Dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/DropdownMenu";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -62,33 +76,102 @@ const AdminDashboard = () => {
 
     const [searchTerm, setSearchTerm] = useState("");
     const [filterPending, setFilterPending] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [aiResult, setAiResult] = useState(null);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     // Fetch users (Governance Registry)
     const { data: usersData, isLoading: usersLoading } = useQuery({
         queryKey: ['admin-users'],
         queryFn: async () => {
-            // Placeholder: Admin-only privileged route
-            // const res = await authApi.getAllUsers(); 
-            // Mocking for high-fidelity UI demonstration
-            return [
-                { _id: 'u1', firstName: "Admin", lastName: "Root", email: "admin@laborguard.org", role: "admin", isApproved: true, isActive: true, city: "Colombo" },
-                { _id: 'u2', firstName: "Legal", lastName: "Officer", email: "lawyer@laborguard.lk", role: "lawyer", isApproved: true, isActive: true, city: "Kandy" },
-                { _id: 'u3', firstName: "NGO", lastName: "Observer", email: "ngo@vforce.org", role: "ngo", isApproved: false, isActive: true, city: "Jaffna" },
-                { _id: 'u4', firstName: "Employer", lastName: "Corp", email: "hr@company.com", role: "employer", isApproved: false, isActive: true, city: "Gampaha" },
-            ];
+             const res = await adminApi.getAllUsers();
+             return res.data.data.users;
         }
     });
 
     const approveMutation = useMutation({
-        mutationFn: (userId) => {
-            console.log("Approving user:", userId);
-            return Promise.resolve();
-        },
+        mutationFn: (userId) => adminApi.approveUser(userId),
         onSuccess: () => {
             queryClient.invalidateQueries(['admin-users']);
             toast.success("User identity verified and role authorized.");
+            setSelectedUser(null);
         }
     });
+
+    const rejectMutation = useMutation({
+        mutationFn: ({ userId, reason }) => adminApi.rejectUser(userId, reason),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['admin-users']);
+            toast.success("User registration rejected.");
+            setSelectedUser(null);
+        }
+    });
+
+
+    const analyzeMutation = useMutation({
+        mutationFn: (userId) => adminApi.analyzeUserDocuments(userId),
+        onMutate: () => {
+            setIsAnalyzing(true);
+            setAiResult(null);
+        },
+        onSuccess: (res) => {
+            setAiResult(res.data.data);
+            setIsAnalyzing(false);
+            toast.success("AI Document Validation Complete.");
+        },
+        onError: (err) => {
+            setIsAnalyzing(false);
+            toast.error(err.response?.data?.message || "AI Analysis Failed");
+        }
+    });
+
+    const statusMutation = useMutation({
+        mutationFn: ({ userId, isActive }) => adminApi.updateUserStatus(userId, isActive),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['admin-users']);
+            toast.success("User status updated successfully.");
+        }
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: (userId) => adminApi.deleteUser(userId),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['admin-users']);
+            toast.success("Identity permanently deleted from registry.");
+        }
+    });
+
+    const handleApprove = () => {
+        if (window.confirm("Are you sure you want to AUTHORIZE this identity and grant platform access?")) {
+            approveMutation.mutate(selectedUser._id);
+        }
+    };
+
+    const handleReject = () => {
+        if (!window.confirm("Are you sure you want to REJECT this identity? This action will permanently remove their application.")) return;
+        const reason = window.prompt("Please enter a reason for rejecting this user (will be emailed to them):");
+        if (reason === null) return; // cancelled
+        rejectMutation.mutate({ userId: selectedUser._id, reason: reason || "Did not meet verification standards." });
+    };
+
+    const handleAiValidate = () => {
+        if (window.confirm("Are you sure you want to run AI heuristics on these sensitive documents?")) {
+            analyzeMutation.mutate(selectedUser._id);
+        }
+    };
+
+    const handleToggleStatus = (u) => {
+        const action = u.isActive === false ? "ACTIVATE" : "DEACTIVATE";
+        if (window.confirm(`Are you sure you want to ${action} this user's account?`)) {
+            statusMutation.mutate({ userId: u._id, isActive: u.isActive === false });
+        }
+    };
+
+    const handleDelete = (u) => {
+        if (window.confirm("CRITICAL WARNING: Are you sure you want to permanently DELETE this user? This destroys their identity from the registry entirely!")) {
+            deleteMutation.mutate(u._id);
+        }
+    };
 
     const filteredUsers = (usersData || []).filter(u => {
         const matchesSearch = 
@@ -234,15 +317,29 @@ const AdminDashboard = () => {
                                             {!u.isApproved && (
                                                 <Button 
                                                     size="sm" 
-                                                    className="h-12 px-6 rounded-2xl font-black uppercase tracking-widest text-[9px] bg-amber-500 hover:bg-amber-600 shadow-lg shadow-amber-100"
-                                                    onClick={() => approveMutation.mutate(u._id)}
+                                                    className="h-12 px-6 rounded-2xl font-black uppercase tracking-widest text-[9px] bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-100"
+                                                    onClick={() => setSelectedUser(u)}
                                                 >
-                                                    Authorize
+                                                    Review & Validate
                                                 </Button>
                                             )}
-                                            <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-500 transition-all">
-                                                <MoreHorizontal className="h-5 w-5" />
-                                            </Button>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl bg-slate-50 hover:bg-slate-100 text-slate-400 transition-all">
+                                                        <MoreHorizontal className="h-5 w-5" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 shadow-2xl border-slate-100 bg-white">
+                                                    {u.isApproved && (
+                                                        <DropdownMenuItem onClick={() => handleToggleStatus(u)} className="rounded-xl px-4 py-3 font-bold text-xs uppercase tracking-widest cursor-pointer mb-1 hover:bg-slate-50">
+                                                            {u.isActive === false ? "Activate Account" : "Deactivate Account"}
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    <DropdownMenuItem onClick={() => handleDelete(u)} className="rounded-xl px-4 py-3 font-bold text-xs uppercase tracking-widest cursor-pointer text-red-600 focus:text-red-700 hover:bg-red-50 focus:bg-red-50">
+                                                        <Trash2 className="h-4 w-4 mr-2" /> Delete Identity
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </td>
                                     </tr>
                                 ))}
@@ -377,7 +474,199 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             )}
-        </div>
+
+        {/* Identity Verification Modal */}
+        <Dialog open={!!selectedUser} onOpenChange={() => {
+            setSelectedUser(null);
+            setAiResult(null);
+        }}>
+            <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden rounded-[48px] border-none shadow-3xl bg-white">
+                <div className="bg-slate-900 px-10 py-10 text-white space-y-4">
+                    <Badge className="bg-amber-500/20 text-amber-500 border-none px-4 py-1.5 rounded-full font-black uppercase tracking-widest text-[9px]">Governance Review</Badge>
+                    <DialogHeader>
+                        <DialogTitle className="text-4xl font-black tracking-tight leading-tight">
+                            Verify <br />
+                            <span className="text-primary italic tracking-tight">{selectedUser?.firstName} {selectedUser?.lastName}</span>
+                        </DialogTitle>
+                        <DialogDescription className="text-slate-400 font-bold text-sm uppercase italic pt-2">
+                            Assigned Role: <span className="text-white not-italic">{selectedUser?.role}</span>
+                        </DialogDescription>
+                    </DialogHeader>
+                </div>
+
+                <div className="p-10 space-y-10 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                    {/* Documents View */}
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                                <FileText className="h-4 w-4" />
+                                Support Documents
+                            </h4>
+                            <Badge variant="outline" className="text-[9px] font-bold">{selectedUser?.documents?.length || 0} Files Attached</Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {selectedUser?.documents?.map((doc, i) => (
+                                <a 
+                                    key={i} 
+                                    href={`http://localhost:5001/api/auth/documents/${doc}`} 
+                                    target="_blank" 
+                                    rel="noreferrer"
+                                    className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 flex items-center justify-between group hover:border-primary/30 transition-all"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-10 w-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors">
+                                            <FileText className="h-5 w-5" />
+                                        </div>
+                                        <span className="text-xs font-bold text-slate-600 truncate max-w-[150px]">Document_{i+1}</span>
+                                    </div>
+                                    <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* AI Validation Panel */}
+                    <div className="space-y-6">
+                        <div className="p-1 bg-slate-50 rounded-[40px] border border-slate-100">
+                             <div className={cn(
+                                "p-10 rounded-[36px] space-y-8 transition-all duration-500",
+                                aiResult ? (aiResult.isValid ? "bg-green-50 border border-green-100" : "bg-red-50 border border-red-100") : "bg-white"
+                             )}>
+                                <div className="flex justify-between items-center">
+                                    <div className="space-y-1">
+                                         <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                                            <Cpu className="h-4 w-4" />
+                                            Gemini Flash Analysis
+                                        </h4>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase italic">Multi-modal identity correlation</p>
+                                    </div>
+                                    {!aiResult && (
+                                        <Button 
+                                            onClick={handleAiValidate}
+                                            disabled={isAnalyzing || analyzeMutation.isPending}
+                                            className="h-12 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-black uppercase tracking-widest px-8 shadow-xl shadow-purple-200 transition-all active:scale-95"
+                                        >
+                                            {isAnalyzing || analyzeMutation.isPending ? <RefreshCw className="h-4 w-4 animate-spin" /> : "AI Validate"}
+                                        </Button>
+                                    )}
+                                </div>
+
+                                {aiResult && (
+                                    <div className="space-y-8 animate-in fade-in duration-700">
+                                        <div className="flex items-center gap-6">
+                                            <div className={cn(
+                                                "h-20 w-20 rounded-[32px] flex items-center justify-center text-4xl font-black shadow-2xl shrink-0",
+                                                aiResult.isValid ? "bg-green-500 text-white shadow-green-200" : "bg-red-500 text-white shadow-red-200"
+                                            )}>
+                                                {aiResult.validationScore}%
+                                            </div>
+                                            <div>
+                                                <Badge className={cn(
+                                                    "px-6 py-2 rounded-full font-black uppercase tracking-[0.2em] text-[10px] mb-2",
+                                                    aiResult.isValid ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                                                )}>
+                                                    Result: {aiResult.assessment}
+                                                </Badge>
+                                                <p className="text-sm font-black text-slate-800 uppercase tracking-tight">
+                                                    Heuristic Conclusion
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 gap-8">
+                                            <div className="space-y-3 bg-white/60 p-6 rounded-3xl border border-white/40 shadow-sm">
+                                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
+                                                    <FileText className="h-3 w-3" />
+                                                    Document Summary
+                                                </p>
+                                                <p className="text-xs font-bold text-slate-700 leading-relaxed italic">
+                                                    "{aiResult.summary}"
+                                                </p>
+                                            </div>
+
+                                            <div className="space-y-3 bg-white/60 p-6 rounded-3xl border border-white/40 shadow-sm">
+                                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
+                                                    <ShieldCheck className="h-3 w-3" />
+                                                    Appropriateness Assessment
+                                                </p>
+                                                <p className="text-xs font-bold text-slate-700 leading-relaxed italic">
+                                                    "{aiResult.appropriateness}"
+                                                </p>
+                                            </div>
+
+                                            <div className="space-y-3 bg-white/60 p-6 rounded-3xl border border-white/40 shadow-sm">
+                                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
+                                                    <Terminal className="h-3 w-3" />
+                                                    Detailed Reasoning
+                                                </p>
+                                                <p className="text-xs font-bold text-slate-600 leading-relaxed italic">
+                                                    "{aiResult.reasoning}"
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-6 pt-4">
+                                            <div className="space-y-3">
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Information Found</p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {aiResult.details.foundInformation.map((info, i) => (
+                                                        <Badge key={i} variant="outline" className="text-[8px] border-slate-200 bg-white/50">{info}</Badge>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Concerns / Notes</p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {aiResult.details.concerns.map((note, i) => (
+                                                        <Badge key={i} variant="outline" className="text-[8px] border-red-200 text-red-500 bg-white/50">{note}</Badge>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {!aiResult && !isAnalyzing && (
+                                    <div className="py-10 text-center space-y-4">
+                                        <div className="h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto border border-dashed border-slate-200">
+                                            <ShieldCheck className="h-8 w-8 text-slate-300" />
+                                        </div>
+                                        <p className="text-xs font-bold text-slate-400 uppercase italic">Click validate to run AI heuristics on the attached proof.</p>
+                                    </div>
+                                )}
+                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <DialogFooter className="p-8 bg-slate-50 gap-4 border-t border-slate-100 flex flex-col sm:flex-row shadow-inner">
+                    <Button 
+                        variant="ghost" 
+                        onClick={() => setSelectedUser(null)} 
+                        className="h-16 px-8 rounded-[28px] font-black uppercase tracking-widest text-[10px]"
+                    >
+                        Close
+                    </Button>
+                    <Button 
+                        variant="outline"
+                        onClick={handleReject}
+                        disabled={rejectMutation.isPending || approveMutation.isPending}
+                        className="h-16 px-8 rounded-[28px] border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 font-black uppercase tracking-widest text-[10px] shadow-sm"
+                    >
+                        {rejectMutation.isPending ? "Rejecting..." : "Reject"}
+                    </Button>
+                    <Button 
+                        className="flex-1 h-16 rounded-[28px] bg-green-600 hover:bg-green-700 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-green-100"
+                        onClick={handleApprove}
+                        disabled={approveMutation.isPending}
+                    >
+                        {approveMutation.isPending ? "Finalizing..." : "APPROVE IDENTITY"}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    </div>
     );
 };
 

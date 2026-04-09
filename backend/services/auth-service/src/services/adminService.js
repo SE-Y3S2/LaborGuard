@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const emailService = require('./emailService');
 
 const getAllUsers = async (query) => {
     // Pagination setup
@@ -83,7 +84,44 @@ const approveUser = async (userId) => {
     user.isApproved = true;
     await user.save();
 
+    // Fire off the approval email
+    try {
+        await emailService.sendApprovalEmail(user.email, user.firstName);
+    } catch (err) {
+        console.error('Failed to send approval email:', err);
+    }
+
     return { message: `${user.role} user has been approved successfully` };
+};
+
+const rejectUser = async (userId, reason) => {
+    const user = await User.findById(userId);
+    if (!user) {
+        throw { statusCode: 404, message: 'User not found' };
+    }
+
+    if (user.isApproved) {
+        throw { statusCode: 400, message: 'Cannot reject an already approved user. Deactivate them instead.' };
+    }
+
+    // Capture detail before deleting
+    const email = user.email;
+    const name = user.firstName;
+
+    // Send the rejection email and reason FIRST
+    try {
+        await emailService.sendRejectionEmail(email, name, reason);
+    } catch (err) {
+        console.error('Failed to send rejection email:', err);
+    }
+
+    // Now delete the user records from the primary collection
+    await User.findByIdAndDelete(userId);
+    
+    // (Optional) We could also clean up VerificationCode and RefreshToken here
+    // but MongoDB handles orphaned records decently well via TTLs or they just sit idle.
+
+    return { message: `Pending ${user.role} account has been rejected and removed.` };
 };
 
 module.exports = {
@@ -91,5 +129,6 @@ module.exports = {
     updateUserRole,
     updateAccountStatus,
     deleteUser,
-    approveUser
+    approveUser,
+    rejectUser
 };

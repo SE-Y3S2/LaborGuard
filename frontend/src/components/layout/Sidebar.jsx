@@ -162,10 +162,10 @@ const Sidebar = ({ className }) => {
                             <p className="text-[10px] font-black text-white truncate uppercase tracking-widest leading-none mb-1">
                                 {user?.firstName} {user?.lastName}
                             </p>
-                            <p className="text-[8px] text-slate-500 font-bold uppercase tracking-tight truncate flex items-center gap-1.5 leading-none">
+                            <div className="text-[8px] text-slate-500 font-bold uppercase tracking-tight truncate flex items-center gap-1.5 leading-none">
                                 <div className="h-1 w-1 rounded-full bg-green-500" />
                                 {user?.role} Official
-                            </p>
+                            </div>
                         </div>
                     </div>
 

@@ -110,9 +110,15 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL}
       - FRONTEND_URL=${FRONTEND_URL}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+      - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
     depends_on:
       kafka:
         condition: service_healthy
+    volumes:
+      - ./backend/services/auth-service:/app
+      - /app/node_modules
     networks:
       - laborguard-network
     dns: [1.1.1.1, 8.8.8.8]

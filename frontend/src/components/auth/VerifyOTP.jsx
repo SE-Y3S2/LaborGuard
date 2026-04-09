@@ -11,8 +11,9 @@ const VerifyOTP = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Retrieve userId passed from successful registration
+    // Retrieve userId passed from successful registration or login intercept
     const userId = location.state?.userId || '';
+    const email = location.state?.email || '';
 
     const API_URL = 'http://localhost:5001/api/auth';
 
@@ -34,6 +35,24 @@ const VerifyOTP = () => {
             setTimeout(() => navigate('/login'), 2000);
         } catch (err) {
             setError(err.response?.data?.message || 'Verification failed');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleResend = async () => {
+        if (!email) {
+            setError('Email is required to resend. Please go back to Login and try again.');
+            return;
+        }
+        setError('');
+        setSuccess('');
+        setIsLoading(true);
+        try {
+            const response = await axios.post(`${API_URL}/resend-verification`, { email });
+            setSuccess(response.data.message || 'A fresh verification code was sent to your email.');
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to resend code');
         } finally {
             setIsLoading(false);
         }
@@ -73,10 +92,22 @@ const VerifyOTP = () => {
                         />
                     </div>
 
-                    <button type="submit" className="btn-primary" style={{ marginTop: '1rem' }} disabled={isLoading}>
+                    <button type="submit" className="btn-primary" style={{ marginTop: '1rem', width: '100%' }} disabled={isLoading}>
                         {isLoading ? 'Verifying...' : 'Verify Now'}
                     </button>
                 </form>
+
+                <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.85rem' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Didn't receive the code or expired? </span>
+                    <button 
+                        type="button" 
+                        onClick={handleResend} 
+                        disabled={isLoading || !email}
+                        style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontWeight: 'bold', cursor: 'pointer', padding: 0 }}
+                    >
+                        Resend OTP
+                    </button>
+                </div>
             </div>
         </div>
     );

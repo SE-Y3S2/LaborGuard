@@ -27,6 +27,12 @@ export const adminApi = {
   approveUser: (id) => authClient.put(`/admin/users/${id}/approve`),
 
   /**
+   * PUT /api/admin/users/:id/reject
+   * Reject a user
+   */
+  rejectUser: (id, reason) => authClient.put(`/admin/users/${id}/reject`, { reason }),
+
+  /**
    * PUT /api/admin/users/:id/status
    * Activate or deactivate a user account
    * Body: { isActive }
@@ -39,4 +45,10 @@ export const adminApi = {
    * Delete a user
    */
   deleteUser: (id) => authClient.delete(`/admin/users/${id}`),
+
+  /**
+   * GET /api/admin/users/:id/analyze
+   * Trigger AI document scanning
+   */
+  analyzeUserDocuments: (id) => authClient.get(`/admin/users/${id}/analyze`),
 };

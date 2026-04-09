@@ -56,7 +56,7 @@ services:
     ports:
       - "5001:5001"
     env_file:
-      - ./.env
+      - ../.env
     environment:
       - PORT=5001
       - SERVICE_NAME=auth-service
@@ -81,7 +81,7 @@ services:
     ports:
       - "3002:3002"
     env_file:
-      - ./.env
+      - ../.env
     environment:
       - PORT=3002
       - SERVICE_NAME=community-service
@@ -112,7 +112,7 @@ services:
     ports:
       - "3003:3003"
     env_file:
-      - ./.env
+      - ../.env
     environment:
       - PORT=3003
       - SERVICE_NAME=complaint-service
@@ -139,7 +139,7 @@ services:
     ports:
       - "3004:3004"
     env_file:
-      - ./.env
+      - ../.env
     environment:
       - PORT=3004
       - SERVICE_NAME=notification-service
@@ -164,7 +164,7 @@ services:
     ports:
       - "3005:3005"
     env_file:
-      - ./.env
+      - ../.env
     environment:
       - PORT=3005
       - SERVICE_NAME=messaging-service
@@ -189,7 +189,7 @@ services:
     ports:
       - "5006:5006"
     env_file:
-      - ./.env
+      - ../.env
     environment:
       - PORT=5006
       - SERVICE_NAME=job-service

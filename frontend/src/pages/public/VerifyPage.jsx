@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/common/Button";
 import { Input } from "@/components/common/Input";
@@ -21,11 +22,13 @@ const VerifyPage = () => {
     const [code, setCode] = useState("");
     const [type, setType] = useState("email");
     const [isLoading, setIsLoading] = useState(false);
+    const [isResending, setIsResending] = useState(false);
     const { verify } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
 
     const userId = location.state?.userId;
+    const email = location.state?.email;
 
     const handleVerify = async (e) => {
         e.preventDefault();
@@ -45,6 +48,22 @@ const VerifyPage = () => {
             // Error handled in hook
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleResend = async () => {
+        if (!email) {
+            toast.error('Email is required to resend. Please log in again to fetch it.');
+            return;
+        }
+        setIsResending(true);
+        try {
+            const response = await axios.post("http://localhost:5001/api/auth/resend-verification", { email });
+            toast.success(response.data.message || 'A fresh verification code was sent to your email.');
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to resend code');
+        } finally {
+            setIsResending(false);
         }
     };
 
@@ -129,9 +148,19 @@ const VerifyPage = () => {
                     </form>
 
                     <div className="text-center pt-2">
-                        <button className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-primary transition-colors underline underline-offset-4">
-                            Resend Verification Code
+                        <button 
+                            type="button"
+                            onClick={handleResend}
+                            disabled={isResending || !email}
+                            className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-primary transition-colors underline underline-offset-4 disabled:opacity-50"
+                        >
+                            {isResending ? "Sending..." : "Resend Verification Code"}
                         </button>
+                        {!email && (
+                            <p className="text-[10px] font-bold text-red-500 mt-2 uppercase tracking-widest">
+                                Email unavailable. Log in to resend.
+                            </p>
+                        )}
                     </div>
                 </div>
 

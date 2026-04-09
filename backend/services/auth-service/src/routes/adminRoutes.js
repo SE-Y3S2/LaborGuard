@@ -17,6 +17,12 @@ router.put('/users/:id/role', adminController.updateUserRole);
 // PUT /api/admin/users/:id/approve
 router.put('/users/:id/approve', adminController.approveUser);
 
+// PUT /api/admin/users/:id/reject
+router.put('/users/:id/reject', adminController.rejectUser);
+
+// GET /api/admin/users/:id/analyze
+router.get('/users/:id/analyze', adminController.analyzeUserDocuments);
+
 // PUT /api/admin/users/:id/status
 router.put('/users/:id/status', adminController.deactivateUser);
 
