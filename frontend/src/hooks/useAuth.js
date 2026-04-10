@@ -47,16 +47,23 @@ export const useAuth = () => {
       navigate(roleRoutes[user.role] || "/");
     },
     onError: (err) => {
-      toast.error(err.response?.data?.message || "Login failed");
+      const { status, data } = err.response || {};
+      if (status === 403 && data?.userId) {
+        toast.error("Please verify your account to log in");
+        navigate("/verify", { state: { userId: data.userId, email: data.email } });
+      } else {
+        toast.error(data?.message || "Login failed");
+      }
     },
   });
 
   // ── Register ────────────────────────────────────────────────────────────────
   const registerMutation = useMutation({
     mutationFn: (formData) => authApi.register(formData),
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       toast.success("Registration successful! Please verify your account.");
-      navigate("/verify", { state: { userId: res.data.data.userId } });
+      // variables is a FormData object from RegisterForm
+      navigate("/verify", { state: { userId: res.data.data.userId, email: variables.get("email") } });
     },
     onError: (err) => {
       toast.error(err.response?.data?.message || "Registration failed");

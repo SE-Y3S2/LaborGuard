@@ -29,7 +29,12 @@ const registerSchema = z.object({
   }, "You must be at least 18 years old"),
   email: z.string().email("Invalid email address"),
   phone: z.string().regex(/^07[0-9]{8}$/, "Phone must be in format 07XXXXXXXX"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Must contain at least one number")
+    .regex(/[!@#$%^&*]/, "Must contain at least one special character (!@#$%^&*)"),
   confirmPassword: z.string(),
   role: z.enum(["worker", "employer", "lawyer", "ngo"]),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -48,6 +53,8 @@ export const RegisterForm = () => {
     handleSubmit,
     watch,
     trigger,
+    getValues,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(registerSchema),
@@ -59,7 +66,7 @@ export const RegisterForm = () => {
       phone: "",
       password: "",
       confirmPassword: "",
-      role: "worker",
+      role: "",
     },
   });
 
@@ -73,9 +80,11 @@ export const RegisterForm = () => {
 
     const isValid = await trigger(fields);
     if (isValid) {
-      if (step === 3 && role === "worker") {
-        handleSubmit(onSubmit)();
-      } else {
+      const currentRole = getValues("role");
+      const isWorker = currentRole === "worker";
+
+      const totalSteps = isWorker ? 3 : 4;
+      if (step < totalSteps) {
         setStep(step + 1);
       }
     }
@@ -84,7 +93,27 @@ export const RegisterForm = () => {
   const prevStep = () => setStep(step - 1);
 
   const onSubmit = async (values) => {
-    if (role !== "worker" && docFiles.length === 0) {
+    // 🛡️ FORTRESS FIX: Always use getValues for the most up-to-date role
+    const currentRole = getValues("role");
+    
+    // Safety generic validation, should never trigger but just in case
+    if (!currentRole) {
+       toast.error("Please select a role to register.");
+       return;
+    }
+
+    const isWorker = currentRole === "worker";
+    const totalSteps = isWorker ? 3 : 4;
+
+    // 🛡️ FORTRESS FIX: If this is NOT the final step, DO NOT REGISTER.
+    // Ensure accidental Enter keystrokes only navigate forward.
+    if (step !== totalSteps) {
+      await nextStep();
+      return;
+    }
+
+    // Role-specific validation for non-workers
+    if (!isWorker && docFiles.length === 0) {
       toast.error("Please upload verification documents");
       return;
     }
@@ -96,8 +125,9 @@ export const RegisterForm = () => {
       docFiles.forEach((file) => formData.append("documents", file));
 
       await register.mutateAsync(formData);
+      console.log('✅ Registration request sent successfully');
     } catch (error) {
-      // Error handled in hook
+      console.error('❌ Registration failed:', error);
     } finally {
       setIsLoading(false);
     }
@@ -202,6 +232,7 @@ export const RegisterForm = () => {
               ].map((r) => (
                 <label 
                   key={r.id}
+                  onClick={() => setValue("role", r.id, { shouldValidate: true })}
                   className={cn(
                     "flex flex-col gap-2 p-4 border-2 rounded-2xl cursor-pointer transition-all duration-200 group",
                     role === r.id ? "border-primary bg-primary/5 ring-4 ring-primary/5 shadow-md" : "border-slate-100 hover:border-slate-200 hover:bg-slate-50"
@@ -239,13 +270,17 @@ export const RegisterForm = () => {
               Previous
             </Button>
           )}
-          {step < (role === "worker" ? 3 : 4) ? (
+          {step < 4 && !(step === 3 && role === "worker") ? (
             <Button type="button" onClick={nextStep} className="flex-1 rounded-full font-black uppercase tracking-widest text-xs h-12 shadow-lg shadow-primary/20">
               Continue
               <ChevronRight className="h-4 w-4 ml-2" />
             </Button>
           ) : (
-            <Button type="submit" disabled={isLoading} className="flex-1 rounded-full font-black uppercase tracking-widest text-xs h-12 shadow-lg shadow-primary/20">
+            <Button 
+                type="submit" 
+                disabled={isLoading || (step === 4 && role !== "worker" && docFiles.length === 0)} 
+                className="flex-1 rounded-full font-black uppercase tracking-widest text-xs h-12 shadow-lg shadow-primary/20"
+            >
               {isLoading ? "creating account..." : "Complete Registration"}
             </Button>
           )}

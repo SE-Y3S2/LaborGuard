@@ -31,6 +31,8 @@ const errorHandler = (err, req, res, next) => {
     res.status(statusCode).json({
         success: false,
         message: message,
+        userId: err.userId,
+        email: err.email,
         error: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
 };

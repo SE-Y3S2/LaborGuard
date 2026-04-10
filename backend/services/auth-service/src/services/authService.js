@@ -89,15 +89,16 @@ const registerUser = async (userData) => {
 const loginUser = async (email, password) => {
   const user = await User.findOne({ email }).select('+password');
   if (!user) throw { statusCode: 401, message: 'Invalid credentials' };
-  if (!user.isActive)
-    throw { statusCode: 403, message: 'Account is deactivated' };
-  if (!user.isEmailVerified && !user.isPhoneVerified)
-    throw { statusCode: 403, message: 'Please verify your email or phone number before logging in' };
-  if (!user.isApproved)
-    throw { statusCode: 403, message: 'Please wait for admin approval to login' };
-
+  if (!user.isActive) throw { statusCode: 403, message: 'Account is deactivated' };
+  
   const isMatch = await comparePassword(password, user.password);
   if (!isMatch) throw { statusCode: 401, message: 'Invalid credentials' };
+
+  if (!user.isEmailVerified && !user.isPhoneVerified)
+    throw { statusCode: 403, message: 'Please verify your email or phone number before logging in', userId: user._id, email: user.email };
+    
+  if (!user.isApproved)
+    throw { statusCode: 403, message: 'Your registration is currently pending review. We will email you once your professional credentials are approved.' };
 
   const accessToken  = generateAccessToken(user._id, user.email, user.role);
   const refreshToken = generateRefreshToken(user._id, accessToken);

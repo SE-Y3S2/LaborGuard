@@ -22,7 +22,7 @@ const handleTokenRefresh = async (error) => {
       if (!refreshToken) throw new Error('No refresh token available');
 
       const response = await axios.post(
-        `${import.meta.env.VITE_AUTH_SERVICE_URL}/api/auth/refresh`,
+        `${import.meta.env.VITE_AUTH_SERVICE_URL || 'http://localhost:5001'}/api/auth/refresh`,
         { refreshToken }
       );
 
@@ -48,33 +48,27 @@ const handleTokenRefresh = async (error) => {
 
 // ── Service clients ───────────────────────────────────────────────────────────
 export const authClient = axios.create({
-  baseURL: `${import.meta.env.VITE_AUTH_SERVICE_URL}/api`,
-  headers: { 'Content-Type': 'application/json' },
+  baseURL: `${import.meta.env.VITE_AUTH_SERVICE_URL || 'http://localhost:5001'}/api`,
 });
 
 export const communityClient = axios.create({
-  baseURL: `${import.meta.env.VITE_COMMUNITY_SERVICE_URL}/api`,
-  headers: { 'Content-Type': 'application/json' },
+  baseURL: `${import.meta.env.VITE_COMMUNITY_SERVICE_URL || 'http://localhost:3002'}/api`,
 });
 
 export const complaintClient = axios.create({
-  baseURL: `${import.meta.env.VITE_COMPLAINT_SERVICE_URL}/api`,
-  headers: { 'Content-Type': 'application/json' },
+  baseURL: `${import.meta.env.VITE_COMPLAINT_SERVICE_URL || 'http://localhost:3003'}/api`,
 });
 
 export const jobClient = axios.create({
-  baseURL: `${import.meta.env.VITE_JOB_SERVICE_URL}/api`,
-  headers: { 'Content-Type': 'application/json' },
+  baseURL: `${import.meta.env.VITE_JOB_SERVICE_URL || 'http://localhost:5006'}/api`,
 });
 
 export const messageClient = axios.create({
-  baseURL: `${import.meta.env.VITE_MESSAGING_SERVICE_URL}/api`,
-  headers: { 'Content-Type': 'application/json' },
+  baseURL: `${import.meta.env.VITE_MESSAGING_SERVICE_URL || 'http://localhost:3005'}/api`,
 });
 
 export const notificationClient = axios.create({
-  baseURL: `${import.meta.env.VITE_NOTIFICATION_SERVICE_URL}/api`,
-  headers: { 'Content-Type': 'application/json' },
+  baseURL: `${import.meta.env.VITE_NOTIFICATION_SERVICE_URL || 'http://localhost:3004'}/api`,
 });
 
 // ── Attach interceptors to every client ──────────────────────────────────────
