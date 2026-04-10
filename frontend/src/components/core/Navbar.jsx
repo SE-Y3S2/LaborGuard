@@ -1,18 +1,15 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import AuthContext from '../../contexts/complaint/AuthContext';
 
 const Navbar = () => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const navigate = useNavigate();
-    
-    // Check if user is logged in
-    const token = localStorage.getItem('accessToken');
-    const userRole = localStorage.getItem('userRole');
+    const { isAuthenticated, userRole, logout } = useContext(AuthContext);
+    const token = isAuthenticated;
 
     const handleLogout = () => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('userRole');
+        logout();
         navigate('/login');
     };
 
@@ -34,7 +31,15 @@ const Navbar = () => {
                 <div className="flex flex-col gap-5">
                     <Link to="/" className="text-[1.2rem] font-semibold text-text-primary no-underline py-2 transition-all duration-200 hover:text-accent-primary hover:translate-x-1" onClick={closeDrawer}>Home</Link>
                     <Link to="/jobs" className="text-[1.2rem] font-semibold text-text-primary no-underline py-2 transition-all duration-200 hover:text-accent-primary hover:translate-x-1" onClick={closeDrawer}>Jobs</Link>
-                    
+                    {token && (
+                      <Link
+                        to={userRole === 'worker' ? '/complaints/my' : userRole === 'admin' ? '/complaints/admin' : userRole === 'legal_officer' ? '/complaints/officer' : '/dashboard'}
+                        className="text-[1.2rem] font-semibold text-text-primary no-underline py-2 transition-all duration-200 hover:text-accent-primary hover:translate-x-1"
+                        onClick={closeDrawer}
+                      >
+                        Complaints
+                      </Link>
+                    )}
                     <Link to="#" className="text-[1.2rem] font-semibold text-text-primary no-underline py-2 transition-all duration-200 hover:text-accent-primary hover:translate-x-1" onClick={closeDrawer}>News</Link>
                     <Link to="#" className="text-[1.2rem] font-semibold text-text-primary no-underline py-2 transition-all duration-200 hover:text-accent-primary hover:translate-x-1" onClick={closeDrawer}>About</Link>
                     
@@ -70,6 +75,9 @@ const Navbar = () => {
                     <div className="hidden md:flex items-center gap-8">
                         <Link to="/" className="font-semibold text-[1.05rem] text-text-secondary transition-colors duration-300 no-underline hover:text-accent-primary">Home</Link>
                         <Link to="/jobs" className="font-semibold text-[1.05rem] text-text-secondary transition-colors duration-300 no-underline hover:text-accent-primary">Jobs</Link>
+                        {token && (
+                          <Link to={userRole === 'worker' ? '/complaints/my' : userRole === 'admin' ? '/complaints/admin' : userRole === 'legal_officer' ? '/complaints/officer' : '/dashboard'} className="font-semibold text-[1.05rem] text-text-secondary transition-colors duration-300 no-underline hover:text-accent-primary">Complaints</Link>
+                        )}
                         <Link to="#" className="font-semibold text-[1.05rem] text-text-secondary transition-colors duration-300 no-underline hover:text-accent-primary">News</Link>
                         
                         {token ? (

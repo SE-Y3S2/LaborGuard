@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import AuthContext from '../../contexts/complaint/AuthContext';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -8,6 +9,7 @@ const Login = () => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
+    const { setSession } = useContext(AuthContext);
 
     // Make sure this matches your backend API URL
     const API_URL = 'http://localhost:5001/api/auth';
@@ -18,12 +20,17 @@ const Login = () => {
         setIsLoading(true);
         try {
             const response = await axios.post(`${API_URL}/login`, { email, password });
-            localStorage.setItem('accessToken', response.data.data.accessToken);
-            localStorage.setItem('userRole', response.data.data.user.role);
+            const token = response.data.data.accessToken;
+            const role = response.data.data.user.role;
+            setSession({ accessToken: token, userRole: role, profile: response.data.data.user });
             
-            // Navigate based on role: Workers to Home, others to Dashboard
-            if (response.data.data.user.role === 'worker') {
-                navigate('/');
+            // Navigate based on role: Workers to complaints, others to dashboard
+            if (role === 'worker') {
+                navigate('/complaints/my');
+            } else if (role === 'admin') {
+                navigate('/complaints/admin');
+            } else if (role === 'legal_officer') {
+                navigate('/complaints/officer');
             } else {
                 navigate('/dashboard');
             }
