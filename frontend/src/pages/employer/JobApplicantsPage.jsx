@@ -20,8 +20,10 @@ import { Button } from "@/components/common/Button";
 import { Badge } from "@/components/common/Badge";
 import { Spinner } from "@/components/common/Spinner";
 import { Avatar, AvatarFallback } from "@/components/common/Avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 const JobApplicantsPage = () => {
     const { id } = useParams();
@@ -31,11 +33,35 @@ const JobApplicantsPage = () => {
     const { data: job, isLoading: jobLoading } = useGetJob(id);
     const { data: applicants, isLoading: appsLoading } = useGetJobApplications(id);
 
-    const handleStatusUpdate = async (appId, status) => {
+    // Modal State
+    const [activeAction, setActiveAction] = useState(null); // { appId, status }
+    const [formData, setFormData] = useState({
+        arrivalDate: "",
+        location: "",
+        orgDetails: "",
+        rejectionReason: ""
+    });
+
+    const handleOpenModal = (appId, status) => {
+        setActiveAction({ appId, status });
+        setFormData({ arrivalDate: "", location: job?.location?.city || "", orgDetails: "", rejectionReason: "" });
+    };
+
+    const submitStatusUpdate = async () => {
+        if (!activeAction) return;
         try {
-            await updateApplicationStatus.mutateAsync({ appId, status, jobId: id });
+            await updateApplicationStatus.mutateAsync({ 
+                appId: activeAction.appId, 
+                status: activeAction.status, 
+                jobId: id,
+                ...formData
+            });
+            toast.success(`Application successfully ${activeAction.status}. Evaluated by AI.`, {
+                description: activeAction.status === 'accepted' ? "Formal contract generated and emailed." : "Rejection feedback sent."
+            });
+            setActiveAction(null);
         } catch (error) {
-            // Handled in hook
+            toast.error("Failed to update status");
         }
     };
 
@@ -159,7 +185,7 @@ const JobApplicantsPage = () => {
                                                 <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
                                                     <Button 
                                                         className="w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[9px] bg-green-600 hover:bg-green-700 shadow-lg shadow-green-100"
-                                                        onClick={() => handleStatusUpdate(app._id, 'accepted')}
+                                                        onClick={() => handleOpenModal(app._id, 'accepted')}
                                                         disabled={updateApplicationStatus.isPending}
                                                     >
                                                         <UserCheck className="h-4 w-4 mr-2" />
@@ -168,7 +194,7 @@ const JobApplicantsPage = () => {
                                                     <Button 
                                                         variant="ghost" 
                                                         className="w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[9px] text-red-500 hover:bg-red-50"
-                                                        onClick={() => handleStatusUpdate(app._id, 'rejected')}
+                                                        onClick={() => handleOpenModal(app._id, 'rejected')}
                                                         disabled={updateApplicationStatus.isPending}
                                                     >
                                                         <XCircle className="h-4 w-4 mr-2" />
@@ -179,7 +205,7 @@ const JobApplicantsPage = () => {
                                                 <Button 
                                                     variant="outline" 
                                                     className="w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[9px] border-2 border-slate-100"
-                                                    onClick={() => handleStatusUpdate(app._id, 'pending')}
+                                                    onClick={() => updateApplicationStatus.mutateAsync({ appId: app._id, status: 'pending', jobId: id })}
                                                     disabled={updateApplicationStatus.isPending}
                                                 >
                                                     <AlertCircle className="h-4 w-4 mr-2" />
@@ -200,6 +226,105 @@ const JobApplicantsPage = () => {
                     </div>
                 )}
             </div>
+            {/* Action Modal */}
+            <Dialog open={!!activeAction} onOpenChange={(open) => !open && setActiveAction(null)}>
+                <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden rounded-[32px] border-none shadow-2xl">
+                    <div className={cn(
+                        "px-8 py-6 text-white border-b border-white/10",
+                        activeAction?.status === 'accepted' ? "bg-green-600" : "bg-red-500"
+                    )}>
+                        <DialogHeader>
+                            <DialogTitle className="text-2xl font-black tracking-tight">
+                                {activeAction?.status === 'accepted' ? 'Formalize Employment' : 'Decline Candidate'}
+                            </DialogTitle>
+                            <DialogDescription className="text-white/80 font-bold text-xs">
+                                {activeAction?.status === 'accepted' ? 'Configure AI Contract Variables' : 'Provide feedback for AI coaching'}
+                            </DialogDescription>
+                        </DialogHeader>
+                    </div>
+
+                    <div className="p-8 space-y-6 bg-slate-50">
+                        {activeAction?.status === 'accepted' && (
+                            <div className="space-y-4">
+                                <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 mb-6">
+                                    <p className="text-[10px] uppercase font-black tracking-widest text-blue-600 flex items-center gap-2">
+                                        <BadgeCheck className="h-3 w-3" />
+                                        AI Agent Enabled
+                                    </p>
+                                    <p className="text-xs font-bold text-slate-600 mt-1">
+                                        Submitting this will automatically generate a legally formatted PDF/HTML Employment Contract and email it to the worker.
+                                    </p>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Arrival Date & Time</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="e.g. Monday 9:00 AM" 
+                                        className="w-full h-12 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-white focus:ring-2 focus:ring-green-500 focus:outline-none transition-all"
+                                        value={formData.arrivalDate}
+                                        onChange={(e) => setFormData({...formData, arrivalDate: e.target.value})}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Site Location Details</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="e.g. Building C, North Gate" 
+                                        className="w-full h-12 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-white focus:ring-2 focus:ring-green-500 focus:outline-none transition-all"
+                                        value={formData.location}
+                                        onChange={(e) => setFormData({...formData, location: e.target.value})}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Organization / Manager</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="e.g. John Doe, Supervisor" 
+                                        className="w-full h-12 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-white focus:ring-2 focus:ring-green-500 focus:outline-none transition-all"
+                                        value={formData.orgDetails}
+                                        onChange={(e) => setFormData({...formData, orgDetails: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {activeAction?.status === 'rejected' && (
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Rejection Feedback (Required)</label>
+                                    <textarea 
+                                        rows={4}
+                                        placeholder="Explain why they weren't selected so they can improve..." 
+                                        className="w-full p-4 rounded-xl border border-slate-200 text-sm font-bold bg-white focus:ring-2 focus:ring-red-500 focus:outline-none transition-all resize-none"
+                                        value={formData.rejectionReason}
+                                        onChange={(e) => setFormData({...formData, rejectionReason: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <DialogFooter className="p-6 bg-white border-t border-slate-100 flex items-center justify-end gap-3">
+                        <Button 
+                            variant="ghost" 
+                            onClick={() => setActiveAction(null)}
+                            className="h-12 px-6 rounded-xl font-black uppercase tracking-widest text-[9px]"
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            onClick={submitStatusUpdate}
+                            disabled={updateApplicationStatus.isPending || (activeAction?.status === 'rejected' && !formData.rejectionReason.trim())}
+                            className={cn(
+                                "h-12 px-8 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg text-white",
+                                activeAction?.status === 'accepted' ? "bg-green-600 hover:bg-green-700 shadow-green-200" : "bg-red-500 hover:bg-red-600 shadow-red-200"
+                            )}
+                        >
+                            {updateApplicationStatus.isPending ? "Hold..." : "Confirm & Send"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

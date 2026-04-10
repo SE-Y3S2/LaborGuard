@@ -11,7 +11,9 @@ import {
   ChevronRight,
   PlusCircle,
   Search,
-  Bell
+  Bell,
+  User,
+  ShieldAlert
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -154,7 +156,7 @@ const WorkerDashboard = () => {
                              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Account Utilities</p>
                              <div className="grid grid-cols-1 gap-2">
                                 {[
-                                    { label: "My Profile Settings", icon: UserIcon, path: "/worker/profile" },
+                                    { label: "My Profile Settings", icon: User, path: "/worker/profile" },
                                     { label: "Assigned Appointments", icon: Calendar, path: "/worker/appointments" },
                                     { label: "Community Feed", icon: TrendingUp, path: "/community" },
                                     { label: "Secure Messaging", icon: MessageSquare, path: "/messages" },

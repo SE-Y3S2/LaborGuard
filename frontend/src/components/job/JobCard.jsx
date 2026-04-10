@@ -5,13 +5,15 @@ import {
   Clock, 
   CheckCircle2, 
   Zap,
-  ArrowRight
+  ArrowRight,
+  Edit
 } from "lucide-react";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/common/Button";
 import { cn } from "@/lib/utils";
 
-const JobCard = ({ job, hasApplied, onApply, onDetail }) => {
+const JobCard = ({ job, hasApplied, onApply, onDetail, currentUserId }) => {
+  const isOwner = currentUserId && job.employerId === currentUserId;
   const {
     _id,
     title,
@@ -91,13 +93,24 @@ const JobCard = ({ job, hasApplied, onApply, onDetail }) => {
                     >
                         View Details
                     </Button>
-                    <Button 
-                        onClick={() => onApply?.(job)}
-                        className="rounded-2xl h-14 font-black uppercase tracking-widest text-[9px] shadow-xl shadow-primary/20 group"
-                    >
-                        Apply Fast
-                        <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </Button>
+                    {isOwner ? (
+                        <Button 
+                            variant="outline"
+                            className="rounded-2xl h-14 font-black uppercase tracking-widest text-[9px] border-2 border-primary/20 text-primary hover:bg-primary/5"
+                            onClick={() => window.location.href = `/employer/jobs/${_id}/edit`}
+                        >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit My Job
+                        </Button>
+                    ) : (
+                        <Button 
+                            onClick={() => onApply?.(job)}
+                            className="rounded-2xl h-14 font-black uppercase tracking-widest text-[9px] shadow-xl shadow-primary/20 group"
+                        >
+                            Apply Fast
+                            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        </Button>
+                    )}
                 </div>
             )}
             <div className="flex justify-center">
