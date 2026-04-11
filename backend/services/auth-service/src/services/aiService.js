@@ -15,10 +15,10 @@ const analyzeDocuments = async (documents, userRole) => {
     const availableModels = await listGroqModels(key);
     
     // 2. Look for the best Vision/Multimodal model (2026 names: Compound, Scout)
-    const visionModel = availableModels.find(m => m.includes('scout') && !m.includes('preview')) ||
-                        availableModels.find(m => m.includes('compound') && !m.includes('preview')) ||
-                        availableModels.find(m => m.includes('90b-vision') && !m.includes('preview')) ||
-                        availableModels.find(m => m.includes('11b-vision') && !m.includes('preview')) ||
+    const visionModel = availableModels.find(m => m.includes('scout')) ||
+                        availableModels.find(m => m.includes('compound')) ||
+                        availableModels.find(m => m.includes('90b-vision')) ||
+                        availableModels.find(m => m.includes('11b-vision')) ||
                         availableModels.find(m => m.includes('vision')); 
 
     if (!visionModel) {

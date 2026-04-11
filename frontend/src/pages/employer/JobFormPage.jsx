@@ -26,7 +26,7 @@ import { Button } from "@/components/common/Button";
 import { Input } from "@/components/common/Input";
 import { Badge } from "@/components/common/Badge";
 import { Spinner } from "@/components/common/Spinner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select"; // Redirected from common to ui
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select"; 
 import { Textarea } from "@/components/ui/Textarea";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Label } from "@/components/ui/Label";
