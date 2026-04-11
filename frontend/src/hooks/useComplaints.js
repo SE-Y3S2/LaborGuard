@@ -11,7 +11,7 @@ export const useComplaints = (id) => {
       queryKey: ["complaints", params],
       queryFn: async () => {
         const res = await complaintApi.getAllComplaints(params);
-        return res.data.data || [];
+        return res.data?.data || [];
       },
       placeholderData: (prev) => prev,
     });
@@ -23,7 +23,7 @@ export const useComplaints = (id) => {
       queryKey: ["my-complaints", params],
       queryFn: async () => {
         const res = await complaintApi.getMyComplaints(params);
-        return res.data.data || [];
+        return res.data?.data || [];
       },
     });
   };
@@ -34,7 +34,7 @@ export const useComplaints = (id) => {
       queryKey: ["complaint", complaintId || id],
       queryFn: async () => {
         const res = await complaintApi.getComplaintById(complaintId || id);
-        return res.data.data;
+        return res.data?.data;
       },
       enabled: !!(complaintId || id),
     });
@@ -46,7 +46,7 @@ export const useComplaints = (id) => {
     onSuccess: (res) => {
       queryClient.invalidateQueries(["my-complaints"]);
       toast.success("Complaint filed successfully!");
-      return res.data.data;
+      return res.data?.data;
     },
     onError: (err) => {
       toast.error(err.response?.data?.message || "Failed to file complaint");
@@ -55,12 +55,12 @@ export const useComplaints = (id) => {
 
   // Update complaint status (Lawyer/Admin)
   const updateStatusMutation = useMutation({
-    mutationFn: ({ complaintId, status, reason }) => 
+    mutationFn: ({ complaintId, status, reason }) =>
       complaintApi.updateComplaintStatus(complaintId, { status, reason }),
     onSuccess: (res, { complaintId }) => {
       queryClient.invalidateQueries(["complaint", complaintId]);
       queryClient.invalidateQueries(["complaints"]);
-      toast.success(`Complaint status updated to ${res.data.data.status}`);
+      toast.success(`Complaint status updated to ${res.data?.data?.status}`);
     },
     onError: (err) => {
       toast.error(err.response?.data?.message || "Failed to update status");
@@ -69,7 +69,7 @@ export const useComplaints = (id) => {
 
   // Assign complaint (Admin)
   const assignComplaintMutation = useMutation({
-    mutationFn: ({ complaintId, officerId }) => 
+    mutationFn: ({ complaintId, officerId }) =>
       complaintApi.assignComplaint(complaintId, officerId),
     onSuccess: (res, { complaintId }) => {
       queryClient.invalidateQueries(["complaint", complaintId]);
@@ -80,7 +80,7 @@ export const useComplaints = (id) => {
 
   // Upload attachment
   const uploadAttachmentMutation = useMutation({
-    mutationFn: ({ complaintId, file }) => 
+    mutationFn: ({ complaintId, file }) =>
       complaintApi.uploadAttachment(complaintId, file),
     onSuccess: (res, { complaintId }) => {
       queryClient.invalidateQueries(["complaint", complaintId]);
@@ -92,7 +92,6 @@ export const useComplaints = (id) => {
   const downloadReport = async (complaintId) => {
     try {
       const res = await complaintApi.downloadReport(complaintId || id);
-      // Logic for handling binary response and triggering download
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement("a");
       link.href = url;
@@ -105,20 +104,26 @@ export const useComplaints = (id) => {
     }
   };
 
-  // Fetch my appointments (worker/lawyer)
+  // FIX: Strip empty/null/undefined params before sending to backend
+  // Prevents GET /api/appointments/my?status= which causes 400 Bad Request
   const useGetMyAppointments = (params) => {
+    const cleanParams = Object.fromEntries(
+      Object.entries(params || {}).filter(([, v]) => v !== "" && v != null)
+    );
+
     return useQuery({
-      queryKey: ["appointments", "my", params],
+      queryKey: ["appointments", "my", cleanParams],
       queryFn: async () => {
-        const res = await complaintApi.getMyAppointments(params);
-        return res.data.data || [];
+        const res = await complaintApi.getMyAppointments(cleanParams);
+        return res.data?.data || [];  // FIX: safe-chain to prevent undefined
       },
     });
   };
 
   // Confirm appointment (Admin/Legal)
   const confirmAppointmentMutation = useMutation({
-    mutationFn: ({ appointmentId, data }) => complaintApi.confirmAppointment(appointmentId, data),
+    mutationFn: ({ appointmentId, data }) =>
+      complaintApi.confirmAppointment(appointmentId, data),
     onSuccess: () => {
       queryClient.invalidateQueries(["appointments"]);
       toast.success("Appointment confirmed");
@@ -127,7 +132,8 @@ export const useComplaints = (id) => {
 
   // Reschedule appointment
   const rescheduleAppointmentMutation = useMutation({
-    mutationFn: ({ appointmentId, data }) => complaintApi.rescheduleAppointment(appointmentId, data),
+    mutationFn: ({ appointmentId, data }) =>
+      complaintApi.rescheduleAppointment(appointmentId, data),
     onSuccess: () => {
       queryClient.invalidateQueries(["appointments"]);
       toast.success("Appointment rescheduled");
@@ -136,7 +142,8 @@ export const useComplaints = (id) => {
 
   // Cancel appointment
   const cancelAppointmentMutation = useMutation({
-    mutationFn: ({ appointmentId, reason }) => complaintApi.cancelAppointment(appointmentId, { reason }),
+    mutationFn: ({ appointmentId, reason }) =>
+      complaintApi.cancelAppointment(appointmentId, { reason }),
     onSuccess: () => {
       queryClient.invalidateQueries(["appointments"]);
       toast.success("Appointment cancelled");

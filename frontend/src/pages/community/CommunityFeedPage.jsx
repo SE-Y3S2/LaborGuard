@@ -4,16 +4,11 @@ import { useCommunity } from "@/hooks/useCommunity";
 import { 
   PlusCircle, 
   Search, 
-  Target,
   Sparkles,
-  TrendingUp,
-  LayoutGrid,
-  ChevronRight,
+  Globe,
   Send,
   Image as ImageIcon,
   ShieldCheck,
-  Globe,
-  Filter,
   MessageCircle,
   X
 } from "lucide-react";
@@ -21,7 +16,7 @@ import { Button } from "@/components/common/Button";
 import { Badge } from "@/components/common/Badge";
 import { Input } from "@/components/common/Input";
 import { Spinner } from "@/components/common/Spinner";
-import { Textarea } from "@/components/ui/Textarea"; // Assuming from UI for now
+import { Textarea } from "@/components/ui/Textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/common/Avatar";
 import { StoryCard } from "@/components/community/StoryCard";
 import { PollCard } from "@/components/community/PollCard";
@@ -34,8 +29,11 @@ const CommunityFeedPage = () => {
     const [isPosting, setIsPosting] = useState(false);
     const [newPostContent, setNewPostContent] = useState("");
 
-    const { data: posts, isLoading: postsLoading } = useGetPosts({ search: searchTerm });
-    const { data: polls, isLoading: pollsLoading } = useGetPolls();
+    const { data: posts = [], isLoading: postsLoading } = useGetPosts({ search: searchTerm });
+    //           ^^^^^^ FIX: default to [] so .map() never crashes on undefined
+
+    const { data: polls = [], isLoading: pollsLoading } = useGetPolls();
+    //           ^^^^^^ FIX: same fix for polls
 
     const handlePostSubmit = (e) => {
         e.preventDefault();
@@ -61,7 +59,7 @@ const CommunityFeedPage = () => {
 
     return (
         <div className="space-y-16 animate-fade-in pb-20 mt-4">
-            {/* Header: Global Narrative */}
+            {/* Header */}
             <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-10 px-4">
                 <div className="space-y-4">
                     <Badge variant="outline" className="text-primary border-primary/20 font-black uppercase tracking-[0.2em] text-[9px] px-4 py-1.5 rounded-full bg-primary/5">The Labor Collective</Badge>
@@ -136,24 +134,25 @@ const CommunityFeedPage = () => {
                     </div>
                 </div>
 
-                {/* Experiential Stream (Masonry) */}
+                {/* Experiential Stream */}
                 <div className="lg:col-span-3">
                     <div className="columns-1 md:columns-2 gap-8 space-y-8">
-                        {/* Interactive Polls Mixed with Stories */}
-                        {polls?.length > 0 && (
+                        {/* FIX: polls is now safely [] by default, no crash */}
+                        {polls.length > 0 && (
                             <PollCard 
                                 poll={polls[0]} 
                                 onVote={(id, opt) => votePoll.mutate({ pollId: id, optionIndex: opt })} 
                             />
                         )}
 
-                        {posts?.length === 0 ? (
+                        {posts.length === 0 ? (
                             <div className="col-span-full py-32 text-center bg-slate-50 rounded-[56px] border-2 border-dashed border-slate-200">
                                 <MessageCircle className="h-16 w-16 text-slate-300 mx-auto mb-6" />
                                 <h3 className="text-2xl font-black text-slate-900 tracking-tight">The Silence is Waiting.</h3>
                                 <p className="text-sm font-bold text-slate-400 uppercase italic mt-2">Be the first to break the cycle and share your experience.</p>
                             </div>
                         ) : (
+                            // FIX: posts is now safely [] by default — .map() will never crash
                             posts.map((post) => (
                                 <StoryCard 
                                     key={post._id} 
@@ -167,7 +166,7 @@ const CommunityFeedPage = () => {
                 </div>
             </div>
 
-            {/* Posting Modal Backdrop */}
+            {/* Posting Modal */}
             {isPosting && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-xl animate-in fade-in duration-300">
                     <div className="bg-white w-full max-w-2xl rounded-[48px] shadow-3xl overflow-hidden animate-in zoom-in-95 duration-300">
