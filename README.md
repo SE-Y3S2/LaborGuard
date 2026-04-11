@@ -1,134 +1,669 @@
-# LaborGuard
+# LaborGuard 🛡️
 
-**SDG 8: Decent Work and Economic Growth**
+> **SDG 8: Decent Work and Economic Growth** — A microservices-based full-stack web application that protects the rights of informal workers by connecting them with legal aid, NGOs, employers, and a support community.
 
-A microservices-based web application for protecting the rights of informal workers.
+***
+
+## 🔗 Live URLs
+
+| Resource | URL |
+|---|---|
+| **Frontend (Vercel)** | `https://laborguard.vercel.app` |
+| **Backend API Gateway** | `https://laborguard-api.up.railway.app` |
+
+***
+
+## 📋 Table of Contents
+
+- [Project Overview](#project-overview)
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Microservices](#microservices)
+- [User Roles & Portals](#user-roles--portals)
+- [Setup Instructions (Local)](#setup-instructions-local)
+- [Environment Variables](#environment-variables)
+- [API Endpoint Documentation](#api-endpoint-documentation)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Project Structure](#project-structure)
+- [Team](#team)
+
+***
+
+## 📌 Project Overview
+
+LaborGuard is a comprehensive platform for informal worker rights protection. The system enables:
+
+- **Workers** to file complaints, search for jobs, book legal appointments, and participate in community discussions
+- **Employers** to post jobs, manage listings, and review applicants
+- **Lawyers / Legal Officers** to review and manage assigned cases
+- **NGOs** to monitor case trends, generate impact reports, and track worker outcomes
+- **Admins** to oversee the platform, manage users and content moderation
+
+***
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Docker Network                           │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-│  │   MongoDB   │  │  Zookeeper  │  │    Kafka    │             │
-│  │   :27017    │  │    :2181    │  │    :9092    │             │
-│  └─────────────┘  └─────────────┘  └─────────────┘             │
-│                                                                 │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │                    Microservices                          │  │
-│  │                                                           │  │
-│  │  ┌─────────────────┐    ┌─────────────────┐              │  │
-│  │  │  Auth Service   │    │ Community Svc   │              │  │
-│  │  │     :3001       │    │     :3002       │              │  │
-│  │  └─────────────────┘    └─────────────────┘              │  │
-│  │                                                           │  │
-│  │  ┌─────────────────┐    ┌─────────────────┐              │  │
-│  │  │ Complaint Svc   │    │ Notification Svc│              │  │
-│  │  │     :3003       │    │     :3004       │              │  │
-│  │  └─────────────────┘    └─────────────────┘              │  │
-│  │                                                           │  │
-│  │  ┌─────────────────┐                                      │  │
-│  │  │ Messaging Svc   │                                      │  │
-│  │  │     :3005       │                                      │  │
-│  │  └─────────────────┘                                      │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```2
+┌────────────────────────────────────────────────────────────────────────┐
+│                         React Frontend (Vite)                          │
+│                  Tailwind CSS · Context API · React Router             │
+└────────────────────────────┬───────────────────────────────────────────┘
+                             │ HTTP / REST
+┌────────────────────────────▼───────────────────────────────────────────┐
+│                         Docker Network                                 │
+│                                                                        │
+│  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐              │
+│  │   MongoDB     │  │  Zookeeper    │  │    Kafka      │              │
+│  │   :27017      │  │    :2181      │  │    :9092      │              │
+│  └───────────────┘  └───────────────┘  └───────────────┘              │
+│                                                                        │
+│  ┌────────────────────────────────────────────────────────────────┐   │
+│  │                        Microservices                           │   │
+│  │                                                                │   │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │   │
+│  │  │ auth-service │  │community-svc │  │complaint-svc │         │   │
+│  │  │    :3001     │  │    :3002     │  │    :3003     │         │   │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘         │   │
+│  │                                                                │   │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │   │
+│  │  │notification  │  │ messaging-   │  │ job-service  │         │   │
+│  │  │  svc :3004   │  │  svc :3005   │  │   :3006      │         │   │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘         │   │
+│  └────────────────────────────────────────────────────────────────┘   │
+└────────────────────────────────────────────────────────────────────────┘
+```
 
-## 🚀 Quick Start
+Each microservice is independently containerized, connected through Kafka for async event-driven communication and a shared MongoDB instance.
+
+***
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Frontend** | React 18, Vite, Tailwind CSS, React Router v6, Context API, Axios, Sonner |
+| **Backend** | Node.js, Express.js (per service) |
+| **Database** | MongoDB with Mongoose ODM |
+| **Messaging** | Apache Kafka + Zookeeper |
+| **Auth** | JWT, Google OAuth 2.0 |
+| **Containerization** | Docker, Docker Compose |
+| **Testing** | Jest, Supertest, Artillery.io |
+| **Third-Party APIs** | Google Perspective API (content moderation), Nodemailer (email), Gemini AI |
+
+***
+
+## 📦 Microservices
+
+| Service | Port | Responsibility | Third-Party Integration |
+|---|---|---|---|
+| **auth-service** | 3001 | User registration, login, JWT, Google OAuth, role-based access | Google OAuth 2.0 |
+| **community-service** | 3002 | Community feed posts, statuses, user profiles, advocacy hub | Google Perspective API |
+| **complaint-service** | 3003 | Worker complaints lifecycle, email notifications, legal case assignment | Nodemailer (Gmail) |
+| **notification-service** | 3004 | Push/in-app notifications via Kafka events | — |
+| **messaging-service** | 3005 | Real-time actor-to-actor chat | — |
+| **job-service** | 3006 | Job listings CRUD, applicant management, PDF generation | PDFKit |
+
+***
+
+## 👥 User Roles & Portals
+
+| Role | Dashboard | Key Capabilities |
+|---|---|---|
+| `worker` | `/worker/dashboard` | File complaints, job board, appointments, community |
+| `employer` | `/employer/dashboard` | Post/manage jobs, review applicants |
+| `lawyer` | `/legal/dashboard` | Review cases, manage appointments |
+| `ngo` | `/ngo/dashboard` | Case monitoring, impact reports |
+| `admin` | `/admin/dashboard` | Platform management, complaint board, user oversight |
+
+***
+
+## 🚀 Setup Instructions (Local)
 
 ### Prerequisites
-- Docker & Docker Compose installed
 
-### Run All Services
+- [Docker Desktop](https://docs.docker.com/desktop/) installed and running
+- [Node.js 18+](https://nodejs.org/) (for frontend dev server)
+- Git
+
+### 1. Clone the Repository
+
 ```bash
-cd backend
+git clone https://github.com/SE-Y3S2/LaborGuard.git
+cd LaborGuard
+```
+
+### 2. Configure Environment Variables
+
+Copy the example env file for each service and fill in your secrets:
+
+```bash
+# Backend — create .env in each service directory
+cp backend/services/auth-service/.env.example backend/services/auth-service/.env
+cp backend/services/community-service/.env.example backend/services/community-service/.env
+cp backend/services/complaint-service/.env.example backend/services/complaint-service/.env
+cp backend/services/notification-service/.env.example backend/services/notification-service/.env
+cp backend/services/messaging-service/.env.example backend/services/messaging-service/.env
+cp backend/services/job-service/.env.example backend/services/job-service/.env
+
+# Frontend
+cp frontend/.env.example frontend/.env
+```
+
+### 3. Start All Backend Services
+
+```bash
+# From the root directory
 docker compose up --build
 ```
 
+All 6 microservices + MongoDB + Kafka will start automatically.
+
+### 4. Start the Frontend (Dev Mode)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend is available at: **http://localhost:5173**
+
+### 5. Verify Services Are Running
+
+```bash
+curl http://localhost:3001/health   # auth-service
+curl http://localhost:3002/health   # community-service
+curl http://localhost:3003/health   # complaint-service
+curl http://localhost:3004/health   # notification-service
+curl http://localhost:3005/health   # messaging-service
+curl http://localhost:3006/health   # job-service
+```
+
 ### Stop All Services
-```bash
-docker compose down
-```
-
-### Stop & Remove Volumes
-```bash
-docker compose down -v
-```
-
-## 📦 Services
-
-| Service | Port | Description |
-|---------|------|-------------|
-| **auth-service** | 3001 | Authentication & User Management |
-| **community-service** | 3002 | Community Management |
-| **complaint-service** | 3003 | Complaint Management |
-| **notification-service** | 3004 | Notifications |
-| **messaging-service** | 3005 | Actor-to-Actor Messaging |
-
-## 🔗 Infrastructure
-
-| Service | Port | Description |
-|---------|------|-------------|
-| **MongoDB** | 27017 | Database |
-| **Zookeeper** | 2181 | Kafka coordination |
-| **Kafka** | 9092 | Message broker |
-
-## ✅ Health Check
-
-After starting, verify each service is running:
 
 ```bash
-curl http://localhost:3001/health  # auth-service
-curl http://localhost:3002/health  # community-service
-curl http://localhost:3003/health  # complaint-service
-curl http://localhost:3004/health  # notification-service
-curl http://localhost:3005/health  # messaging-service
+docker compose down        # stop containers
+docker compose down -v     # stop + remove volumes
 ```
+
+***
+
+## 🔐 Environment Variables
+
+> ⚠️ Never commit actual secrets. Use `.env.example` files as templates.
+
+### auth-service
+
+```env
+PORT=3001
+MONGODB_URI=mongodb://mongodb:27017/laborguard-auth
+JWT_SECRET=your_jwt_secret_here
+JWT_EXPIRES_IN=7d
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_CALLBACK_URL=http://localhost:3001/api/auth/google/callback
+FRONTEND_URL=http://localhost:5173
+KAFKA_BROKER=kafka:9092
+```
+
+### community-service
+
+```env
+PORT=3002
+MONGODB_URI=mongodb://mongodb:27017/laborguard-community
+KAFKA_BROKER=kafka:9092
+PERSPECTIVE_API_KEY=your_perspective_api_key
+```
+
+### complaint-service
+
+```env
+PORT=3003
+MONGODB_URI=mongodb://mongodb:27017/laborguard-complaints
+KAFKA_BROKER=kafka:9092
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_app_password
+```
+
+### notification-service
+
+```env
+PORT=3004
+MONGODB_URI=mongodb://mongodb:27017/laborguard-notifications
+KAFKA_BROKER=kafka:9092
+```
+
+### messaging-service
+
+```env
+PORT=3005
+MONGODB_URI=mongodb://mongodb:27017/laborguard-messaging
+KAFKA_BROKER=kafka:9092
+```
+
+### job-service
+
+```env
+PORT=3006
+MONGODB_URI=mongodb://mongodb:27017/laborguard-jobs
+KAFKA_BROKER=kafka:9092
+```
+
+### frontend
+
+```env
+VITE_AUTH_SERVICE_URL=http://localhost:3001
+VITE_COMMUNITY_SERVICE_URL=http://localhost:3002
+VITE_COMPLAINT_SERVICE_URL=http://localhost:3003
+VITE_NOTIFICATION_SERVICE_URL=http://localhost:3004
+VITE_MESSAGING_SERVICE_URL=http://localhost:3005
+VITE_JOB_SERVICE_URL=http://localhost:3006
+VITE_GOOGLE_CLIENT_ID=your_google_client_id
+```
+
+***
+
+## 📡 API Endpoint Documentation
+
+> Full Postman Collection: *(add your published Postman link here)*  
+> Base URLs (local): `http://localhost:{port}/api`
+
+### 🔑 Auth Service (Port 3001)
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/api/auth/register` | ❌ | Register a new user |
+| `POST` | `/api/auth/login` | ❌ | Login with email/password → returns JWT |
+| `POST` | `/api/auth/verify-email` | ❌ | Verify email OTP |
+| `POST` | `/api/auth/forgot-password` | ❌ | Send password reset link |
+| `POST` | `/api/auth/reset-password` | ❌ | Reset password with token |
+| `GET` | `/api/auth/google` | ❌ | Initiate Google OAuth flow |
+| `GET` | `/api/auth/google/callback` | ❌ | Google OAuth callback |
+| `GET` | `/api/auth/me` | ✅ JWT | Get current user profile |
+| `PUT` | `/api/auth/me` | ✅ JWT | Update profile |
+| `GET` | `/api/users` | ✅ Admin | List all users |
+| `DELETE` | `/api/users/:id` | ✅ Admin | Delete a user |
+| `GET` | `/health` | ❌ | Health check |
+
+**Register Request Example:**
+```json
+POST /api/auth/register
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "SecurePass123!",
+  "role": "worker"
+}
+```
+**Response (201):**
+```json
+{
+  "message": "Registration successful. Please verify your email.",
+  "userId": "64f3a..."
+}
+```
+
+***
+
+### 🤝 Community Service (Port 3002)
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/community/feed` | ✅ JWT | Get community feed posts |
+| `POST` | `/api/community/posts` | ✅ JWT | Create a new post |
+| `PUT` | `/api/community/posts/:id` | ✅ JWT (owner) | Update post |
+| `DELETE` | `/api/community/posts/:id` | ✅ JWT (owner/admin) | Delete post |
+| `POST` | `/api/community/posts/:id/like` | ✅ JWT | Like a post |
+| `GET` | `/api/community/statuses` | ✅ JWT | Get user statuses |
+| `POST` | `/api/community/statuses` | ✅ JWT | Create status update |
+| `GET` | `/api/community/profiles/:userId` | ✅ JWT | Get user profile |
+| `PUT` | `/api/community/profiles/:userId` | ✅ JWT (owner) | Update user profile |
+| `GET` | `/health` | ❌ | Health check |
+
+**Create Post Request Example:**
+```json
+POST /api/community/posts
+Authorization: Bearer <token>
+{
+  "content": "Looking for support regarding wage theft...",
+  "category": "legal-aid"
+}
+```
+**Response (201):**
+```json
+{
+  "_id": "65a1b...",
+  "content": "Looking for support regarding wage theft...",
+  "author": { "name": "John Doe", "role": "worker" },
+  "createdAt": "2026-04-11T14:00:00Z"
+}
+```
+
+***
+
+### 📋 Complaint Service (Port 3003)
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/complaints` | ✅ Admin/Lawyer | Get all complaints |
+| `GET` | `/api/complaints/my` | ✅ Worker | Get own complaints |
+| `POST` | `/api/complaints` | ✅ Worker | File a new complaint |
+| `GET` | `/api/complaints/:id` | ✅ JWT | Get complaint details |
+| `PUT` | `/api/complaints/:id` | ✅ JWT | Update complaint |
+| `DELETE` | `/api/complaints/:id` | ✅ Admin | Delete complaint |
+| `PUT` | `/api/complaints/:id/assign` | ✅ Admin | Assign lawyer to complaint |
+| `PUT` | `/api/complaints/:id/status` | ✅ Lawyer/Admin | Update complaint status |
+| `POST` | `/api/appointments` | ✅ Worker | Book a legal appointment |
+| `GET` | `/api/appointments` | ✅ JWT | Get appointments |
+| `GET` | `/health` | ❌ | Health check |
+
+**File Complaint Request Example:**
+```json
+POST /api/complaints
+Authorization: Bearer <token>
+{
+  "title": "Unpaid wages for March 2026",
+  "description": "My employer has not paid me for 3 months...",
+  "category": "wage-theft",
+  "employer": "XYZ Company Pvt Ltd"
+}
+```
+**Response (201):**
+```json
+{
+  "_id": "66b2c...",
+  "title": "Unpaid wages for March 2026",
+  "status": "pending",
+  "ticketNumber": "LG-2026-001",
+  "createdAt": "2026-04-11T14:00:00Z"
+}
+```
+
+***
+
+### 🔔 Notification Service (Port 3004)
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/notifications` | ✅ JWT | Get notifications for current user |
+| `PUT` | `/api/notifications/:id/read` | ✅ JWT | Mark notification as read |
+| `PUT` | `/api/notifications/read-all` | ✅ JWT | Mark all notifications as read |
+| `DELETE` | `/api/notifications/:id` | ✅ JWT | Delete notification |
+| `GET` | `/health` | ❌ | Health check |
+
+***
+
+### 💬 Messaging Service (Port 3005)
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/messages/conversations` | ✅ JWT | Get all conversations |
+| `GET` | `/api/messages/:conversationId` | ✅ JWT | Get messages in a conversation |
+| `POST` | `/api/messages` | ✅ JWT | Send a message |
+| `DELETE` | `/api/messages/:id` | ✅ JWT (owner) | Delete a message |
+| `GET` | `/health` | ❌ | Health check |
+
+***
+
+### 💼 Job Service (Port 3006)
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/jobs` | ❌ | Get all job listings (with filters, pagination) |
+| `GET` | `/api/jobs/:id` | ❌ | Get job details |
+| `POST` | `/api/jobs` | ✅ Employer | Create job listing |
+| `PUT` | `/api/jobs/:id` | ✅ Employer (owner) | Update job listing |
+| `DELETE` | `/api/jobs/:id` | ✅ Employer/Admin | Delete job listing |
+| `POST` | `/api/jobs/:id/apply` | ✅ Worker | Apply for a job |
+| `GET` | `/api/jobs/:id/applicants` | ✅ Employer | Get applicants for job |
+| `GET` | `/api/jobs/:id/report` | ✅ Employer | Download job report (PDF) |
+| `GET` | `/health` | ❌ | Health check |
+
+**Filter Jobs Example:**
+```
+GET /api/jobs?category=construction&location=Colombo&page=1&limit=10
+```
+**Response (200):**
+```json
+{
+  "jobs": [...],
+  "total": 45,
+  "page": 1,
+  "totalPages": 5
+}
+```
+
+***
+
+## 🧪 Testing
+
+### Running All Tests
+
+```bash
+cd backend/services/<service-name>
+npm test
+```
+
+***
+
+### Unit Tests
+
+Tests validate individual functions and helpers in isolation.
+
+**Auth Service:**
+```bash
+cd backend/services/auth-service
+npm test
+# Runs: src/tests/unit/passwordHelper.test.js
+```
+
+**Community Service:**
+```bash
+cd backend/services/community-service
+npm test
+# Runs: tests/perspectiveApi.test.js, tests/userProfileController.test.js, tests/statusController.test.js
+```
+
+**Complaint Service:**
+```bash
+cd backend/services/complaint-service
+npm test
+# Runs: tests/complaintController.test.js, tests/emailService.test.js
+```
+
+**Notification Service:**
+```bash
+cd backend/services/notification-service
+npm test
+# Runs: tests/notificationController.test.js
+```
+
+**Messaging Service:**
+```bash
+cd backend/services/messaging-service
+npm test
+# Runs: tests/messageController.test.js
+```
+
+***
+
+### Integration Tests
+
+Tests verify that controllers, services, and MongoDB work together end-to-end.
+
+**Auth Service Integration:**
+```bash
+cd backend/services/auth-service
+npm run test:integration
+# Runs: src/tests/integration/auth.test.js
+# Requires: MongoDB running (use docker compose up mongodb)
+```
+
+**Environment for Integration Tests:**
+```env
+MONGODB_URI=mongodb://localhost:27017/laborguard-test
+JWT_SECRET=test_secret
+```
+
+***
+
+### Performance Tests
+
+Load testing using Artillery.io to validate API throughput under concurrent requests.
+
+**Install Artillery:**
+```bash
+npm install -g artillery
+```
+
+**Run Performance Test on Auth Service:**
+```bash
+cd backend/services/auth-service
+artillery run tests/performance/load-test.yml
+```
+
+**Sample Artillery config (`load-test.yml`):**
+```yaml
+config:
+  target: "http://localhost:3001"
+  phases:
+    - duration: 60
+      arrivalRate: 10
+      name: "Warm up"
+    - duration: 120
+      arrivalRate: 50
+      name: "Load test"
+scenarios:
+  - name: "Login endpoint"
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "test@example.com"
+            password: "TestPass123!"
+```
+
+> 📝 **Note:** If `load-test.yml` files are not yet in the repo, create them in each service under `tests/performance/`. See [Artillery docs](https://www.artillery.io/docs).
+
+***
+
+### Testing Environment Configuration
+
+```env
+# Use a separate test database — never test against production
+MONGODB_URI=mongodb://localhost:27017/laborguard-test
+JWT_SECRET=test_secret_key
+NODE_ENV=test
+```
+
+***
+
+## ☁️ Deployment
+
+#### Deployed Service URLs 
+
+| Service | URL |
+|---|---|
+| auth-service | `https://laborguard-auth.onrender.com` |
+| community-service | `https://laborguard-community.onrender.com` |
+| complaint-service | `https://laborguard-complaint.onrender.com` |
+| notification-service | `https://laborguard-notification.onrender.com` |
+| messaging-service | `https://laborguard-messaging.onrender.com` |
+| job-service | `https://laborguard-jobs.onrender.com` |
+
+***
+
+### Frontend Deployment — Vercel
+
+1. Go to [vercel.com](https://vercel.com) → **New Project**
+2. Import GitHub repo: `SE-Y3S2/LaborGuard`
+3. Set **Root Directory**: `frontend`
+4. Set **Build Command**: `npm run build`
+5. Set **Output Directory**: `dist`
+6. Add environment variables (VITE_ prefixed, pointing to deployed Render URLs)
+7. Click **Deploy**
+
+**Live Frontend URL:** `https://laborguard.vercel.app` 
+
+***
+
 
 ## 📁 Project Structure
 
 ```
-backend/
+LaborGuard/
 ├── docker-compose.yml
-└── services/
-    ├── auth-service/
-    │   ├── Dockerfile
-    │   ├── package.json
-    │   └── src/index.js
-    ├── community-service/
-    │   ├── Dockerfile
-    │   ├── package.json
-    │   └── src/index.js
-    ├── complaint-service/
-    │   ├── Dockerfile
-    │   ├── package.json
-    │   └── src/index.js
-    ├── notification-service/
-    │   ├── Dockerfile
-    │   ├── package.json
-    │   └── src/index.js
-    └── messaging-service/
-        ├── Dockerfile
-        ├── package.json
-        └── src/index.js
+├── README.md
+├── backend/
+│   └── services/
+│       ├── auth-service/
+│       │   ├── Dockerfile
+│       │   ├── package.json
+│       │   ├── .env.example
+│       │   └── src/
+│       │       ├── index.js
+│       │       ├── models/
+│       │       ├── controllers/
+│       │       ├── routes/
+│       │       ├── middleware/
+│       │       └── tests/
+│       │           ├── unit/
+│       │           └── integration/
+│       ├── community-service/
+│       │   ├── Dockerfile
+│       │   ├── package.json
+│       │   └── src/ + tests/
+│       ├── complaint-service/
+│       │   ├── Dockerfile
+│       │   ├── package.json
+│       │   └── src/ + tests/
+│       ├── notification-service/
+│       │   └── ...
+│       ├── messaging-service/
+│       │   └── ...
+│       └── job-service/
+│           └── ...
+└── frontend/
+    ├── package.json
+    ├── vite.config.js
+    ├── tailwind.config.js
+    ├── .env.example
+    └── src/
+        ├── App.jsx
+        ├── main.jsx
+        ├── api/
+        ├── components/
+        │   ├── auth/
+        │   └── layout/
+        ├── contexts/
+        ├── hooks/
+        ├── pages/
+        │   ├── public/
+        │   ├── worker/
+        │   ├── employer/
+        │   ├── legal/
+        │   ├── ngo/
+        │   ├── admin/
+        │   ├── community/
+        │   ├── messaging/
+        │   └── complaint/
+        └── store/
 ```
 
-## 🛠️ Development
+***
 
-Each service includes:
-- Express.js server
-- MongoDB connection with Mongoose
-- Kafka producer/consumer setup
-- Health check endpoint (`GET /health`)
-- CORS enabled
+## 👨‍💻 Team
 
-### Adding New Features
+| Member | Role | Services |
+|---|---|---|
+| Nivakaran | Full-Stack | Community service, Frontend, Integration |
+| Kaveen | Full-Stack | Auth Service, Job Service, Frontend |
+| Chenuli | Full-Stack | Complaint Service, Frontend |
+| Dhushanthini | Full-Stack | Messaging Service, Notification Service, Frontend |
 
-1. Add routes in relevant `src/index.js`
-2. Create models in `src/models/`
-3. Create controllers in `src/controllers/`
-4. Publish/subscribe to Kafka topics for inter-service communication
+***
+
+## 📜 License
+
+This project is developed for academic purposes as part of SE3040 – Application Frameworks, SLIIT Year 3 Semester 2, 2026.
