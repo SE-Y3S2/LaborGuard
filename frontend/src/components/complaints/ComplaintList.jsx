@@ -1,72 +1,112 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { Eye, Clock, Building2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-const ComplaintList = ({ complaints, role, onRefresh, pagination, onPageChange }) => {
-  if (!complaints?.length) {
+const STATUS_CONFIG = {
+  pending:      { label: 'Pending',    cls: 'bg-amber-100 text-amber-700' },
+  under_review: { label: 'In Review',  cls: 'bg-blue-100 text-blue-700' },
+  resolved:     { label: 'Resolved',   cls: 'bg-green-100 text-green-700' },
+  rejected:     { label: 'Rejected',   cls: 'bg-red-100 text-red-700' },
+};
+
+const ComplaintList = ({ complaints = [], role = 'worker', pagination, onPageChange }) => {
+  const navigate = useNavigate();
+
+  const getDetailPath = (id) => {
+    if (role === 'admin')  return `/admin/complaints/${id}`;
+    if (role === 'lawyer') return `/legal/cases/${id}`;
+    if (role === 'ngo')    return `/ngo/cases/${id}`;
+    return `/worker/complaints/${id}`;
+  };
+
+  if (complaints.length === 0) {
     return (
-      <div className="rounded-[20px] border border-slate-200 bg-white p-8 text-center">
-        <p className="text-text-secondary">No complaints found for the selected filters.</p>
+      <div className="py-20 text-center text-slate-400">
+        <p className="text-sm font-bold">No complaints found.</p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-[24px] border border-slate-200 bg-white shadow-sm">
-      <table className="min-w-full border-collapse">
-        <thead className="bg-slate-50 text-left text-[0.85rem] text-text-secondary uppercase tracking-[0.08em]">
-          <tr>
-            <th className="px-6 py-4">Complaint</th>
-            <th className="px-6 py-4">Category</th>
-            <th className="px-6 py-4">Status</th>
-            <th className="px-6 py-4">Submitted</th>
-            <th className="px-6 py-4 text-right">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {complaints.map((complaint) => (
-            <tr key={complaint._id} className="border-t border-slate-200 hover:bg-slate-50 transition-colors">
-              <td className="px-6 py-4">
-                <div className="font-semibold text-text-primary">{complaint.title}</div>
-                <div className="text-[0.85rem] text-text-secondary mt-1">{complaint.employerInfo?.name || 'Employer details not provided'}</div>
-              </td>
-              <td className="px-6 py-4 text-text-secondary">{complaint.category || 'General'}</td>
-              <td className="px-6 py-4">
-                <span className={`inline-flex rounded-full px-3 py-1 text-[0.75rem] font-bold uppercase ${complaint.status === 'resolved' ? 'bg-emerald-100 text-emerald-700' : complaint.status === 'under_review' ? 'bg-sky-100 text-sky-700' : complaint.status === 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
-                  {complaint.status}
-                </span>
-              </td>
-              <td className="px-6 py-4 text-text-secondary">{new Date(complaint.createdAt).toLocaleDateString()}</td>
-              <td className="px-6 py-4 text-right">
-                <Link
-                  to={`/complaints/${complaint._id}`}
-                  className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-text-primary transition hover:bg-slate-100"
-                >
-                  View
-                </Link>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-4">
+      {complaints.map((c) => {
+        const sc = STATUS_CONFIG[c.status] || { label: c.status, cls: 'bg-slate-100 text-slate-700' };
+        return (
+          <div key={c._id}
+            className="bg-white rounded-2xl border border-slate-100 p-5 hover:shadow-md transition-all group cursor-pointer"
+            onClick={() => navigate(getDetailPath(c._id))}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === 'Enter' && navigate(getDetailPath(c._id))}>
+            <div className="flex items-start gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <h4 className="text-sm font-black text-slate-900 truncate">{c.title}</h4>
+                  <span className={cn("text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full", sc.cls)}>
+                    {sc.label}
+                  </span>
+                  {c.priority === 'critical' && (
+                    <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-red-100 text-red-600">
+                      Critical
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-500 line-clamp-2 mt-1">{c.description}</p>
+                <div className="flex items-center gap-4 mt-2 flex-wrap">
+                  {c.organizationName && (
+                    <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
+                      <Building2 className="h-3 w-3" /> {c.organizationName}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
+                    <Clock className="h-3 w-3" />
+                    {new Date(c.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+              <div className="shrink-0">
+                <Eye className="h-5 w-5 text-slate-300 group-hover:text-primary transition-colors" />
+              </div>
+            </div>
+          </div>
+        );
+      })}
 
-      {pagination && (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 p-4 text-sm text-text-secondary">
-          <span>{`Showing ${pagination.currentPage} of ${pagination.totalPages} pages`}</span>
-          <div className="flex gap-3">
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between pt-4">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+            Page {pagination.currentPage} of {pagination.totalPages}
+          </p>
+          <div className="flex items-center gap-2">
             <button
-              type="button"
-              className="rounded-full border border-slate-300 bg-white px-4 py-2 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-              onClick={() => onPageChange(Math.max(1, pagination.currentPage - 1))}
+              onClick={() => onPageChange(pagination.currentPage - 1)}
               disabled={pagination.currentPage <= 1}
-            >
-              Previous
+              className="h-9 w-9 rounded-full border border-slate-200 flex items-center justify-center text-slate-500
+                         hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+              <ChevronLeft className="h-4 w-4" />
             </button>
+            {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+              const page = i + 1;
+              return (
+                <button key={page}
+                  onClick={() => onPageChange(page)}
+                  className={cn(
+                    "h-9 w-9 rounded-full border text-xs font-black transition-all",
+                    pagination.currentPage === page
+                      ? "bg-primary border-primary text-white"
+                      : "border-slate-200 text-slate-500 hover:border-primary hover:text-primary"
+                  )}>
+                  {page}
+                </button>
+              );
+            })}
             <button
-              type="button"
-              className="rounded-full border border-slate-300 bg-white px-4 py-2 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-              onClick={() => onPageChange(Math.min(pagination.totalPages, pagination.currentPage + 1))}
+              onClick={() => onPageChange(pagination.currentPage + 1)}
               disabled={pagination.currentPage >= pagination.totalPages}
-            >
-              Next
+              className="h-9 w-9 rounded-full border border-slate-200 flex items-center justify-center text-slate-500
+                         hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+              <ChevronRight className="h-4 w-4" />
             </button>
           </div>
         </div>
