@@ -32,7 +32,7 @@ import {
     DialogFooter 
 } from "@/components/ui/Dialog"; // Using UI dialog for now as it's standard
 import { Textarea } from "@/components/ui/Textarea";
-import { Label } from "@/components/ui/label";
+import { Label } from "@/components/ui/Label";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
