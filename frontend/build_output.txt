@@ -1,0 +1,29 @@
+
+> laborguard-frontend@1.0.0 build
+> vite build
+
+vite v6.4.1 building for production...
+transforming...
+✓ 2441 modules transformed.
+✗ Build failed in 9.41s
+error during build:
+src/pages/complaint/OfficerComplaintBoard.jsx (3:9): "getAssignedComplaints" is not exported by "src/services/complaint/complaintService.js", imported by "src/pages/complaint/OfficerComplaintBoard.jsx".
+file: C:/Users/LENOVO/Desktop/S3S2/frontend/src/pages/complaint/OfficerComplaintBoard.jsx:3:9
+
+1: import { useEffect, useState } from 'react';
+2: import { useAuth } from '@/hooks/useAuth';
+3: import { getAssignedComplaints } from '../../services/complaint/complaintService';
+            ^
+4: import ComplaintFilters from '../../components/complaints/ComplaintFilters';
+5: import ComplaintList from '../../components/complaints/ComplaintList';
+
+    at getRollupError (file:///C:/Users/LENOVO/Desktop/S3S2/frontend/node_modules/rollup/dist/es/shared/parseAst.js:406:41)
+    at error (file:///C:/Users/LENOVO/Desktop/S3S2/frontend/node_modules/rollup/dist/es/shared/parseAst.js:402:42)
+    at Module.error (file:///C:/Users/LENOVO/Desktop/S3S2/frontend/node_modules/rollup/dist/es/shared/node-entry.js:17380:16)
+    at Module.traceVariable (file:///C:/Users/LENOVO/Desktop/S3S2/frontend/node_modules/rollup/dist/es/shared/node-entry.js:17813:29)
+    at ModuleScope.findVariable (file:///C:/Users/LENOVO/Desktop/S3S2/frontend/node_modules/rollup/dist/es/shared/node-entry.js:15403:39)
+    at ReturnValueScope.findVariable (file:///C:/Users/LENOVO/Desktop/S3S2/frontend/node_modules/rollup/dist/es/shared/node-entry.js:5676:38)
+    at FunctionBodyScope.findVariable (file:///C:/Users/LENOVO/Desktop/S3S2/frontend/node_modules/rollup/dist/es/shared/node-entry.js:5676:38)
+    at ReturnValueScope.findVariable (file:///C:/Users/LENOVO/Desktop/S3S2/frontend/node_modules/rollup/dist/es/shared/node-entry.js:5676:38)
+    at FunctionBodyScope.findVariable (file:///C:/Users/LENOVO/Desktop/S3S2/frontend/node_modules/rollup/dist/es/shared/node-entry.js:5676:38)
+    at BlockScope.findVariable (file:///C:/Users/LENOVO/Desktop/S3S2/frontend/node_modules/rollup/dist/es/shared/node-entry.js:5676:38)
