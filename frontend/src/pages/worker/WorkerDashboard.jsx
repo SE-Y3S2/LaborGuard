@@ -8,6 +8,7 @@ import {
   AlertCircle,
   TrendingUp,
   ShieldCheck,
+  ShieldAlert,
   ChevronRight,
   PlusCircle,
   Search,
@@ -18,6 +19,7 @@ import {
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useComplaints } from "@/hooks/useComplaints";
+import { useNotifications } from "@/hooks/useNotifications";
 import { useJobs } from "@/hooks/useJobs";
 import { Button } from "@/components/common/Button";
 import { Badge } from "@/components/common/Badge";
@@ -29,7 +31,9 @@ import { ComplaintCard } from "@/components/complaint/ComplaintCard";
 const WorkerDashboard = () => {
     const { user } = useAuth();
     const { useGetMyComplaints } = useComplaints();
+    const { useGetUnreadCount } = useNotifications();
     const { data: complaintsData, isLoading: complaintsLoading } = useGetMyComplaints({ limit: 5 });
+    const { data: notifUnread } = useGetUnreadCount();
 
     const complaints = complaintsData?.complaints || [];
     const stats = {
@@ -160,6 +164,7 @@ const WorkerDashboard = () => {
                                     { label: "Assigned Appointments", icon: Calendar, path: "/worker/appointments" },
                                     { label: "Community Feed", icon: TrendingUp, path: "/community" },
                                     { label: "Secure Messaging", icon: MessageSquare, path: "/messages" },
+                                    { label: "Notifications", icon: Bell, path: "/worker/dashboard", badge: notifUnread || 0 },
                                 ].map((item, i) => (
                                     <Link key={i} to={item.path} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl hover:bg-primary/5 hover:border-primary/10 border border-transparent transition-all group">
                                         <div className="flex items-center gap-3">
@@ -168,7 +173,12 @@ const WorkerDashboard = () => {
                                             </div>
                                             <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors">{item.label}</span>
                                         </div>
-                                        <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                                        <div className="flex items-center gap-2">
+                                            {item.badge > 0 && (
+                                                <Badge className="h-5 min-w-5 flex items-center justify-center rounded-full bg-primary text-white text-[9px] font-black px-1.5">{item.badge}</Badge>
+                                            )}
+                                            <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                                        </div>
                                     </Link>
                                 ))}
                              </div>

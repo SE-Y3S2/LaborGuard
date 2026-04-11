@@ -3,33 +3,35 @@ import { notificationApi } from "@/api/notificationApi";
 import { useNotificationStore } from "@/store/notificationStore";
 import { toast } from "sonner";
 
-export const useNotifications = (userId) => {
+/**
+ * useNotifications — JWT-based (no userId needed in API calls)
+ * Backend extracts userId from the Bearer token automatically.
+ */
+export const useNotifications = () => {
   const queryClient = useQueryClient();
   const { setUnreadCount } = useNotificationStore();
 
-  // Fetch all notifications with optional params
+  // Fetch all notifications
   const useGetNotifications = (params) => {
     return useQuery({
-      queryKey: ["notifications", userId, params],
+      queryKey: ["notifications", params],
       queryFn: async () => {
-        const res = await notificationApi.getNotifications(userId, params);
+        const res = await notificationApi.getNotifications();
         return res.data.data || [];
       },
-      enabled: !!userId,
     });
   };
 
   // Fetch unread count for the notification badge
   const useGetUnreadCount = () => {
     return useQuery({
-      queryKey: ["notifications-unread", userId],
+      queryKey: ["notifications-unread"],
       queryFn: async () => {
-        const res = await notificationApi.getUnreadCount(userId);
-        const count = res.data.data || 0;
+        const res = await notificationApi.getUnreadCount();
+        const count = res.data.data?.count ?? res.data.data ?? 0;
         setUnreadCount(count);
         return count;
       },
-      enabled: !!userId,
       refetchInterval: 30000, // Poll every 30 seconds
     });
   };
@@ -38,27 +40,27 @@ export const useNotifications = (userId) => {
   const markAsReadMutation = useMutation({
     mutationFn: (id) => notificationApi.markAsRead(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(["notifications", userId]);
-      queryClient.invalidateQueries(["notifications-unread", userId]);
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-unread"] });
     },
   });
 
   // Mark all as read
   const markAllAsReadMutation = useMutation({
-    mutationFn: () => notificationApi.markAllAsRead(userId),
+    mutationFn: () => notificationApi.markAllAsRead(),
     onSuccess: () => {
-      queryClient.invalidateQueries(["notifications", userId]);
-      queryClient.invalidateQueries(["notifications-unread", userId]);
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-unread"] });
+      setUnreadCount(0);
       toast.success("All notifications marked as read");
     },
   });
 
-  // Delete notification
-  const deleteNotificationMutation = useMutation({
-    mutationFn: (id) => notificationApi.deleteNotification(id),
+  // Update notification settings
+  const updateSettingsMutation = useMutation({
+    mutationFn: (data) => notificationApi.updateSettings(data),
     onSuccess: () => {
-      queryClient.invalidateQueries(["notifications", userId]);
-      queryClient.invalidateQueries(["notifications-unread", userId]);
+      toast.success("Notification settings updated");
     },
   });
 
@@ -67,6 +69,6 @@ export const useNotifications = (userId) => {
     useGetUnreadCount,
     markAsRead: markAsReadMutation,
     markAllAsRead: markAllAsReadMutation,
-    deleteNotification: deleteNotificationMutation,
+    updateSettings: updateSettingsMutation,
   };
 };

@@ -27,7 +27,7 @@ import { Badge } from "@/components/common/Badge";
 import { Spinner } from "@/components/common/Spinner";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Input } from "@/components/common/Input";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { complaintApi } from "@/api/complaintApi";
 import { cn } from "@/lib/utils";
@@ -38,6 +38,7 @@ import { useTranslation } from "react-i18next";
 const NGODashboard = () => {
     const { t } = useTranslation();
     const { user } = useAuth();
+    const navigate = useNavigate();
     const { useGetComplaints } = useComplaints();
     const [searchParams, setSearchParams] = useSearchParams();
     const activeTab = searchParams.get("tab") || "intelligence";
@@ -276,7 +277,12 @@ const NGODashboard = () => {
                                                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500">Unassigned Crisis</span>
                                             </div>
                                             <div className="flex gap-2">
-                                                <Button variant="ghost" size="icon" className="h-14 w-14 rounded-full bg-slate-50 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all">
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    className="h-14 w-14 rounded-full bg-slate-50 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
+                                                    onClick={() => navigate(`/messages?case=${c._id}`)}
+                                                >
                                                     <MessageSquare className="h-4 w-4" />
                                                 </Button>
                                                 <Button asChild className="h-16 px-10 rounded-full font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-primary/20 group">

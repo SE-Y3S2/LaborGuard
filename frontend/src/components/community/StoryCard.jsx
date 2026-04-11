@@ -15,34 +15,61 @@ import { Button } from "@/components/common/Button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/common/Avatar";
 import { cn } from "@/lib/utils";
 
+/**
+ * StoryCard — Community experience post renderer.
+ *
+ * Backend Post model shape:
+ *   { _id, authorId, content, mediaUrls, likes, shareCount, hashtags, poll, createdAt }
+ *
+ * The component also accepts optional enrichment fields: user, isAnonymous, isVerified, category
+ */
 const StoryCard = ({ story, onLike, onComment, onShare }) => {
     const {
         _id,
         content,
-        user,
-        media,
+        authorId,
+        user,          // may be undefined if not populated
+        mediaUrls,     // Post model uses mediaUrls (array of strings)
+        media,         // legacy field (array of objects with .url)
         likes,
         comments,
         createdAt,
         isAnonymous,
         isVerified,
-        category
+        category,
+        hashtags
     } = story;
+
+    // Normalize media: backend stores mediaUrls (string[]), some enriched data may use media (object[])
+    const displayMedia = media?.length > 0 
+        ? media 
+        : mediaUrls?.length > 0 
+            ? mediaUrls.map(url => ({ url })) 
+            : [];
+
+    // Author display — authorId is always available; user object may or may not be populated
+    const authorName = user?.firstName 
+        ? `${user.firstName} ${user.lastName?.charAt(0) || ''}.`
+        : isAnonymous 
+            ? 'Anonymous Citizen' 
+            : `Citizen ${authorId?.slice(-4) || ''}`;
+
+    const authorInitial = user?.firstName?.charAt(0) || authorId?.charAt(0)?.toUpperCase() || '?';
 
     return (
         <div className="group break-inside-avoid mb-8 bg-white rounded-[48px] border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-700 overflow-hidden flex flex-col hover:-translate-y-2">
             {/* Story Visual (if any) */}
-            {media && media.length > 0 && (
+            {displayMedia.length > 0 && (
                 <div className="relative h-64 overflow-hidden shrink-0">
                     <img 
-                        src={media[0].url} 
+                        src={displayMedia[0].url} 
                         className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700 grayscale-[0.2] group-hover:grayscale-0" 
                         alt="Story visual"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                     <div className="absolute bottom-6 left-8">
                         <Badge className="bg-primary/90 text-white border-none font-black uppercase tracking-widest text-[9px] px-3">
-                            {category || 'Community Experience'}
+                            {category || (hashtags?.length > 0 ? `#${hashtags[0]}` : 'Community Experience')}
                         </Badge>
                     </div>
                 </div>
@@ -54,6 +81,18 @@ const StoryCard = ({ story, onLike, onComment, onShare }) => {
                     <div className="absolute -top-4 -left-4 text-primary/10 transition-colors group-hover:text-primary/20">
                         <Quote className="h-12 w-12 fill-current" />
                     </div>
+
+                    {/* Hashtag tags */}
+                    {hashtags?.length > 0 && !displayMedia.length && (
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                            {hashtags.slice(0, 3).map((tag, i) => (
+                                <Badge key={i} className="bg-primary/5 text-primary/80 border-none font-bold text-[8px] tracking-widest uppercase">
+                                    #{tag}
+                                </Badge>
+                            ))}
+                        </div>
+                    )}
+
                     <p className="text-lg font-bold text-slate-700 leading-relaxed italic relative z-10 line-clamp-6">
                         "{content}"
                     </p>
@@ -67,14 +106,14 @@ const StoryCard = ({ story, onLike, onComment, onShare }) => {
                                     <AvatarFallback className="bg-slate-900 text-white"><Lock className="h-4 w-4" /></AvatarFallback>
                                 ) : (
                                     <>
-                                        <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${user?.firstName}`} />
-                                        <AvatarFallback className="bg-primary/20 text-primary font-black uppercase text-xs">{user?.firstName?.charAt(0)}</AvatarFallback>
+                                        <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${authorName}`} />
+                                        <AvatarFallback className="bg-primary/20 text-primary font-black uppercase text-xs">{authorInitial}</AvatarFallback>
                                     </>
                                 )}
                             </Avatar>
                             <div>
                                 <h4 className="text-sm font-black text-slate-900 leading-tight">
-                                    {isAnonymous ? "Anonymous Citizen" : `${user?.firstName} ${user?.lastName?.charAt(0)}.`}
+                                    {authorName}
                                 </h4>
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                     {isVerified && <ShieldCheck className="h-3 w-3 text-blue-500" />}
@@ -112,7 +151,12 @@ const StoryCard = ({ story, onLike, onComment, onShare }) => {
                             </button>
                         </div>
 
-                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-slate-300 hover:text-primary transition-all">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-10 w-10 rounded-full hover:bg-primary/5 text-slate-300 hover:text-primary transition-all"
+                            onClick={() => onShare?.(_id)}
+                        >
                             <Share2 className="h-4 w-4" />
                         </Button>
                     </div>

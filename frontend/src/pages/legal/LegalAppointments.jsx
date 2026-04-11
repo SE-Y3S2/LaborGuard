@@ -15,7 +15,8 @@ import {
   Filter,
   Search,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Target
 } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { Badge } from "@/components/common/Badge";

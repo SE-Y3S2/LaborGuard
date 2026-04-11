@@ -1,6 +1,9 @@
-FROM node:20-alpine AS builder
+FROM node:20-alpine3.20 AS builder
 WORKDIR /app
 COPY package*.json ./
+RUN npm config set fetch-retry-maxtimeout 600000 && \
+    npm config set fetch-retries 10 && \
+    npm config set maxsockets 3
 RUN npm ci --legacy-peer-deps
 COPY . .
 ARG VITE_AUTH_SERVICE_URL=http://localhost:5001
@@ -17,7 +20,7 @@ ENV VITE_MESSAGING_SERVICE_URL=$VITE_MESSAGING_SERVICE_URL
 ENV VITE_JOB_SERVICE_URL=$VITE_JOB_SERVICE_URL
 RUN npm run build
 
-FROM nginx:1.27-alpine AS production
+FROM nginx:1.27-alpine3.20 AS production
 RUN rm /etc/nginx/conf.d/default.conf
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /usr/share/nginx/html

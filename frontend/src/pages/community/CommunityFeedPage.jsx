@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 
 const CommunityFeedPage = () => {
     const { user } = useAuth();
-    const { useGetPosts, useGetPolls, createPost, likePost, votePoll } = useCommunity();
+    const { useGetPosts, useGetPolls, createPost, likePost, sharePost, votePoll } = useCommunity();
     const [searchTerm, setSearchTerm] = useState("");
     const [isPosting, setIsPosting] = useState(false);
     const [newPostContent, setNewPostContent] = useState("");
@@ -40,7 +40,11 @@ const CommunityFeedPage = () => {
     const handlePostSubmit = (e) => {
         e.preventDefault();
         if (!newPostContent.trim()) return;
-        createPost.mutate({ content: newPostContent }, {
+        
+        const formData = new FormData();
+        formData.append('content', newPostContent);
+        
+        createPost.mutate(formData, {
             onSuccess: () => {
                 setNewPostContent("");
                 setIsPosting(false);
@@ -155,6 +159,7 @@ const CommunityFeedPage = () => {
                                     key={post._id} 
                                     story={post} 
                                     onLike={(id) => likePost.mutate(id)}
+                                    onShare={(id) => sharePost.mutate(id)}
                                 />
                             ))
                         )}

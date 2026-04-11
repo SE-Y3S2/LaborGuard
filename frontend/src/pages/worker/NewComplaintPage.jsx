@@ -14,7 +14,8 @@ import {
   Upload,
   Info,
   Calendar,
-  Building2
+  Building2,
+  Zap
 } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { Input } from "@/components/common/Input";

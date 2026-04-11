@@ -64,6 +64,8 @@ const connectKafka = async () => {
         // Subscribe to relevant topics
         await consumer.subscribe({ topic: 'notification-events', fromBeginning: false });
         await consumer.subscribe({ topic: 'messaging-events', fromBeginning: false });
+        await consumer.subscribe({ topic: 'community-events', fromBeginning: false });
+        await consumer.subscribe({ topic: 'complaint-events', fromBeginning: false });
 
         // Start consuming messages
         await consumer.run({
@@ -73,15 +75,13 @@ const connectKafka = async () => {
 
                 try {
                     const event = JSON.parse(msgValue);
+                    const Notification = require('./models/Notification');
 
                     if (topic === 'messaging-events' && event.type === 'message_sent') {
                         const { senderId, recipientIds, contentPreview, conversationId, isGroup, groupName } = event.payload;
-
-                        // Import model inline to prevent circular dependency issues during initialization
-                        const Notification = require('./models/Notification');
                         const { sendEmailNotification } = require('./utils/resendClient');
 
-                        const title = isGroup ? `New message in ${groupName || 'Group'}` : `New message from user ${senderId}`;
+                        const title = isGroup ? `New message in ${groupName || 'Group'}` : `New message`;
 
                         // Create a notification for each recipient
                         const notifications = [];
@@ -96,7 +96,6 @@ const connectKafka = async () => {
                             });
 
                             // Send an email alert for this new message
-                            // Note: In a production environment, we'd fetch the user's actual email from the DB here
                             await sendEmailNotification(
                                 'user@example.com', // Placeholder
                                 `LaborGuard: ${title}`,
@@ -107,6 +106,51 @@ const connectKafka = async () => {
                         if (notifications.length > 0) {
                             await Notification.insertMany(notifications);
                             console.log(`[${SERVICE_NAME}] Created ${notifications.length} message notifications and emitted emails`);
+                        }
+                    } else if (topic === 'community-events') {
+                        if (event.type === 'post_liked') {
+                            const { likerId, authorId, postId } = event.payload;
+                            await Notification.create({
+                                userId: authorId,
+                                type: 'system',
+                                title: 'New Like',
+                                body: `Someone liked your community post.`,
+                                relatedId: postId
+                            });
+                            console.log(`[${SERVICE_NAME}] Created like notification for user ${authorId}`);
+                        } else if (event.type === 'post_commented') {
+                            const { commenterId, authorId, postId } = event.payload;
+                            await Notification.create({
+                                userId: authorId,
+                                type: 'system',
+                                title: 'New Comment',
+                                body: `Someone commented on your community post.`,
+                                relatedId: postId
+                            });
+                            console.log(`[${SERVICE_NAME}] Created comment notification for user ${authorId}`);
+                        }
+                    } else if (topic === 'complaint-events') {
+                        if (event.type === 'complaint_status_updated') {
+                            const { complaintId, workerId, newStatus, title } = event.payload;
+                            const statusLabel = newStatus.replace('_', ' ').toUpperCase();
+                            await Notification.create({
+                                userId: workerId,
+                                type: 'system',
+                                title: 'Case Status Updated',
+                                body: `Your case '${title}' has been updated to: ${statusLabel}.`,
+                                relatedId: complaintId
+                            });
+                            console.log(`[${SERVICE_NAME}] Created status update notification for user ${workerId}`);
+                        } else if (event.type === 'complaint_assigned') {
+                            const { complaintId, officerId, title } = event.payload;
+                            await Notification.create({
+                                userId: officerId,
+                                type: 'system',
+                                title: 'New Case Assignment',
+                                body: `You have been assigned to evaluate the case: '${title}'.`,
+                                relatedId: complaintId
+                            });
+                            console.log(`[${SERVICE_NAME}] Created case assignment notification for officer ${officerId}`);
                         }
                     }
                 } catch (err) {

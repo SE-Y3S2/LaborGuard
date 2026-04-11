@@ -51,7 +51,7 @@ const Sidebar = ({ className }) => {
                 { title: t("nav.jobs", "Active Listings"), href: "/employer/jobs", icon: Briefcase },
             ],
             // FIX: 'lawyer' key replaced with 'legal_officer' to match JWT role name
-            legal_officer: [
+            lawyer: [
                 { title: t("nav.dashboard", "Legal Command"), href: "/legal/dashboard", icon: Gavel },
                 { title: t("nav.cases", "Active Docket"), href: "/legal/cases", icon: ShieldCheck },
                 { title: t("nav.appointments", "Consultations"), href: "/legal/appointments", icon: Calendar },
