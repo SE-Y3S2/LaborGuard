@@ -13,7 +13,7 @@ const createTransporter = () => {
     });
 };
 
-const sendApplicationStatusEmail = async (toEmail, workerName, jobTitle, status) => {
+const sendApplicationStatusEmail = async (toEmail, workerName, jobTitle, status, extraData = {}) => {
     try {
         const transporter = createTransporter();
         const isAccepted = status === 'accepted';
@@ -25,8 +25,15 @@ const sendApplicationStatusEmail = async (toEmail, workerName, jobTitle, status)
         const html = isAccepted ? `
             <div style="font-family: sans-serif; padding: 20px; color: #333;">
                 <h2 style="color: #2589f5;">Congratulations, ${workerName}!</h2>
-                <p>Your application for the position of <strong>${jobTitle}</strong> has been <strong>ACCEPTED</strong>.</p>
-                <p>The employer will contact you shortly with the next steps. Thank you for using LaborGuard!</p>
+                <p>Your application for the formal position of <strong>${jobTitle}</strong> has been <strong>ACCEPTED</strong>.</p>
+                <div style="background-color: #f8fafc; border-left: 4px solid #2589f5; padding: 15px; margin: 20px 0;">
+                    <h3 style="margin-top: 0;">Arrival & Logistics</h3>
+                    <p><strong>Organization Details:</strong> ${extraData.orgDetails || 'LaborGuard Partner'}</p>
+                    <p><strong>Date to Arrive:</strong> ${extraData.arrivalDate || 'To be communicated'}</p>
+                    <p><strong>Site Location:</strong> ${extraData.location || 'See attached contract'}</p>
+                </div>
+                ${extraData.contractHtml ? '<p>We have automatically generated a <strong>Formal AI Employment Contract</strong> attached to this email. Please review it carefully.</p>' : ''}
+                <p>Thank you for participating in the formalization initiative via LaborGuard!</p>
                 <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
                 <p style="font-size: 0.85rem; color: #777;">Secure Fair Work • LaborGuard Team</p>
             </div>
@@ -35,18 +42,35 @@ const sendApplicationStatusEmail = async (toEmail, workerName, jobTitle, status)
                 <h2 style="color: #64748b;">Application Status Updated</h2>
                 <p>Hello ${workerName},</p>
                 <p>We wanted to inform you that your application for the position of <strong>${jobTitle}</strong> was not selected at this time.</p>
-                <p>Don't be discouraged! There are many other opportunities waiting for you on the platform.</p>
+                
+                <div style="background-color: #fffbfa; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0;">
+                    <h3 style="margin-top: 0; color: #ef4444;">Feedback / Reason</h3>
+                    <p><em>"${extraData.rejectionReason || 'Did not meet current role requirements.'}"</em></p>
+                </div>
+
+                <p>Don't be discouraged! Continue upskilling and improving your profile to land your next formal opportunity.</p>
                 <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
                 <p style="font-size: 0.85rem; color: #777;">Secure Fair Work • LaborGuard Team</p>
             </div>
         `;
 
-        await transporter.sendMail({
+        const mailOptions = {
             from: process.env.EMAIL_USER,
             to: toEmail,
             subject,
-            html
-        });
+            html,
+            attachments: []
+        };
+
+        if (isAccepted && extraData.contractHtml) {
+            mailOptions.attachments.push({
+                filename: `Employment_Contract_${workerName.replace(/\s+/g, '_')}.html`,
+                content: Buffer.from(extraData.contractHtml, 'utf-8'),
+                contentType: 'text/html'
+            });
+        }
+
+        await transporter.sendMail(mailOptions);
 
         console.log(`Application ${status} email sent to ${toEmail}`);
         return true;

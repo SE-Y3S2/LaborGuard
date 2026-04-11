@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -18,6 +18,8 @@ import {
   Users,
   ShieldCheck,
   PlusCircle,
+  UploadCloud,
+  X,
   ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/common/Button";
@@ -49,6 +51,10 @@ const JobFormPage = () => {
     const navigate = useNavigate();
     const isEdit = !!id;
     const { useGetJob, createJob, updateJob } = useJobs();
+    
+    // Drag & Drop State
+    const [dragActive, setDragActive] = useState(false);
+    const [previewImage, setPreviewImage] = useState(null);
 
     const { data: job, isLoading: jobLoading } = useGetJob(id, { enabled: isEdit });
 
@@ -83,8 +89,61 @@ const JobFormPage = () => {
                 imageUrl: job.imageUrl,
                 status: job.status
             });
+            if (job.imageUrl && !job.imageUrl.includes('unsplash.com')) {
+                setPreviewImage(job.imageUrl);
+            }
         }
     }, [job, reset]);
+
+    // Drag & Drop Handlers
+    const handleDrag = useCallback((e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true);
+        } else if (e.type === "dragleave") {
+            setDragActive(false);
+        }
+    }, []);
+
+    const handleDrop = useCallback((e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleFile(e.dataTransfer.files[0]);
+        }
+    }, []);
+
+    const handleFileChange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+            handleFile(e.target.files[0]);
+        }
+    };
+
+    const handleFile = (file) => {
+        if (!file.type.startsWith('image/')) {
+            toast.error("Please upload an image file (JPG, PNG)");
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("Image must be smaller than 5MB");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64String = reader.result;
+            setPreviewImage(base64String);
+            setValue("imageUrl", base64String); // Update form data
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const removeImage = () => {
+        setPreviewImage(null);
+        setValue("imageUrl", "");
+    };
 
     const onSubmit = async (data) => {
         const payload = {
@@ -282,14 +341,55 @@ const JobFormPage = () => {
                                 <h3 className="text-lg font-black uppercase tracking-tight">Visual Identity</h3>
                             </div>
                             <div className="space-y-3">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Job Banner URL</Label>
-                                <Input 
-                                    placeholder="https://..." 
-                                    className="h-14 rounded-2xl bg-white/5 border-none px-6 text-sm font-bold text-white shadow-inner focus:bg-white/10" 
-                                    {...register("imageUrl")} 
-                                />
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Job Banner Image</Label>
+                                
+                                <div 
+                                    className={cn(
+                                        "relative h-48 w-full rounded-3xl border-2 border-dashed flex flex-col items-center justify-center transition-all bg-white/5",
+                                        dragActive ? "border-primary bg-primary/10" : "border-white/10 hover:border-white/20",
+                                        previewImage ? "border-none p-0 overflow-hidden" : "p-6 text-center cursor-pointer"
+                                    )}
+                                    onDragEnter={handleDrag}
+                                    onDragLeave={handleDrag}
+                                    onDragOver={handleDrag}
+                                    onDrop={handleDrop}
+                                    onClick={() => !previewImage && document.getElementById('image-upload').click()}
+                                >
+                                    <input 
+                                        type="file" 
+                                        id="image-upload" 
+                                        accept="image/png, image/jpeg, image/webp" 
+                                        className="hidden" 
+                                        onChange={handleFileChange}
+                                    />
+                                    
+                                    {previewImage ? (
+                                        <div className="relative w-full h-full group">
+                                            <img src={previewImage} alt="Banner Preview" className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <Button 
+                                                    type="button" 
+                                                    variant="ghost" 
+                                                    onClick={(e) => { e.stopPropagation(); removeImage(); }} 
+                                                    className="h-12 w-12 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/50"
+                                                >
+                                                    <X className="h-5 w-5" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <UploadCloud className={cn("h-8 w-8 mb-3 transition-colors", dragActive ? "text-primary" : "text-slate-400")} />
+                                            <p className="text-sm font-bold text-slate-300">Drag & Drop an image here</p>
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-2 text-center leading-relaxed">
+                                                PNG, JPG or WEBP up to 5MB.<br/>Leave empty to use automatic industry default template.
+                                            </p>
+                                        </>
+                                    )}
+                                </div>
+                                <input type="hidden" {...register("imageUrl")} />
                             </div>
-                            <div className="p-6 bg-white/5 rounded-3xl border border-white/10 flex gap-4 items-center">
+                            <div className="p-6 bg-white/5 rounded-3xl border border-white/10 flex gap-4 items-center mt-6">
                                 <div className="h-10 w-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary">
                                     <Users className="h-5 w-5" />
                                 </div>

@@ -59,6 +59,14 @@ const JobBoardPage = () => {
             navigate("/login");
             return;
         }
+        
+        if (user?.role !== 'worker') {
+            toast.error("Action Denied", {
+                description: "You must be a verified worker to apply to this formal position."
+            });
+            return;
+        }
+
         setSelectedJob(job);
     };
 
@@ -134,6 +142,7 @@ const JobBoardPage = () => {
                                 hasApplied={hasApplied(job._id)} 
                                 onApply={handleOpenApply}
                                 onDetail={handleOpenApply}
+                                currentUserId={user?.id}
                             />
                         ))}
                     </div>

@@ -28,9 +28,24 @@ const analyzeDocuments = async (documents, userRole) => {
     console.log(`[AI GROQ V3] Successfully selected: ${visionModel}`);
 
     const prompt = `
-      You are an AI Document Verification Assistant.
-      Analyze these documents for a: "${userRole}".
-      Return ONLY JSON: { "summary": "string", "isValid": boolean, "assessment": "Valid"|"Invalid" }
+      You are an AI Document Verification Assistant for LaborGuard.
+      Analyze these documents for a user with the role: "${userRole}".
+      
+      REQUIRED JSON OUTPUT:
+      {
+        "summary": "string",
+        "appropriateness": "string",
+        "isValid": boolean,
+        "validationScore": number,
+        "assessment": "Valid" | "Invalid" | "Suspicious",
+        "reasoning": "string",
+        "details": {
+          "documentType": "string",
+          "foundInformation": ["string"],
+          "concerns": ["string"]
+        }
+      }
+      ONLY JSON. DO NOT INCLUDE ANY OTHER TEXT.
     `;
 
     const messageContent = [
