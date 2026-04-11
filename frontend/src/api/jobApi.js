@@ -14,9 +14,7 @@ export const jobApi = {
 
   // Worker
   // FIX: renamed from applyToJob → applyForJob to match useJobs hook call
-  applyForJob:   (jobId, data) => jobClient.post(`/jobs/${jobId}/apply`, data, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
+  applyForJob:   (jobId, data) => jobClient.post(`/jobs/${jobId}/apply`, data),
   // FIX: added — useJobs hook calls jobApi.getMyApplications() but old file had no such method
   getMyApplications: () => jobClient.get('/jobs/my-applications'),
 
@@ -26,6 +24,7 @@ export const jobApi = {
 
   // FIX: was PATCH /applications/:appId/status (wrong method + wrong path prefix)
   // Backend: PUT /api/jobs/applications/:appId/status
-  updateApplicationStatus: (appId, status) =>
-    jobClient.put(`/jobs/applications/${appId}/status`, { status }),
+  // FIX: was (appId, status) — now (appId, data) to include rejectionReason, arrivalDate, etc.
+  updateApplicationStatus: (appId, data) =>
+    jobClient.put(`/jobs/applications/${appId}/status`, data),
 };

@@ -15,8 +15,8 @@ const createTransporter = () => {
 
 const sendApplicationStatusEmail = async (toEmail, workerName, jobTitle, status, extraData = {}) => {
     try {
-        const transporter = createTransporter();
         const isAccepted = status === 'accepted';
+        const hasCredentials = process.env.EMAIL_USER && process.env.EMAIL_PASSWORD;
 
         const subject = isAccepted 
             ? `Congratulations! Your application for "${jobTitle}" was Accepted`
@@ -54,6 +54,19 @@ const sendApplicationStatusEmail = async (toEmail, workerName, jobTitle, status,
             </div>
         `;
 
+        if (!hasCredentials) {
+            console.log('\n--- [EMAIL PREVIEW MODE] ---');
+            console.log(`TO: ${toEmail}`);
+            console.log(`SUBJECT: ${subject}`);
+            console.log(`STATUS: ${status.toUpperCase()}`);
+            if (!isAccepted) console.log(`REASON: ${extraData.rejectionReason}`);
+            console.log('--- CONTENT START ---');
+            console.log(html.replace(/<[^>]*>?/gm, '')); 
+            console.log('--- [END PREVIEW] ---\n');
+            return true;
+        }
+
+        const transporter = createTransporter();
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: toEmail,
@@ -62,16 +75,15 @@ const sendApplicationStatusEmail = async (toEmail, workerName, jobTitle, status,
             attachments: []
         };
 
-        if (isAccepted && extraData.contractHtml) {
+        if (isAccepted && extraData.contractPdfBuffer) {
             mailOptions.attachments.push({
-                filename: `Employment_Contract_${workerName.replace(/\s+/g, '_')}.html`,
-                content: Buffer.from(extraData.contractHtml, 'utf-8'),
-                contentType: 'text/html'
+                filename: `Employment_Contract_${workerName.replace(/\s+/g, '_')}.pdf`,
+                content: extraData.contractPdfBuffer,
+                contentType: 'application/pdf'
             });
         }
 
         await transporter.sendMail(mailOptions);
-
         console.log(`Application ${status} email sent to ${toEmail}`);
         return true;
     } catch (error) {

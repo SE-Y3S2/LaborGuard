@@ -98,7 +98,7 @@ export const useJobs = (id) => {
 
   // Employer: update an applicant's status
   const updateApplicationStatusMutation = useMutation({
-    mutationFn: ({ appId, status }) => jobApi.updateApplicationStatus(appId, status),
+    mutationFn: ({ appId, ...data }) => jobApi.updateApplicationStatus(appId, data),
     onSuccess: (res, { jobId }) => {
       queryClient.invalidateQueries(["job-applicants", jobId]);
       toast.success("Application status updated");

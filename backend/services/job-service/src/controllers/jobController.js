@@ -2,6 +2,7 @@ const Job = require('../models/Job');
 const Application = require('../models/Application');
 const { sendApplicationStatusEmail } = require('../services/emailService');
 const { generateEmploymentContract } = require('../services/aiContractService');
+const { generatePdfContract } = require('../services/pdfService');
 
 // @desc    Create a new Job Posting
 // @route   POST /api/jobs
@@ -243,6 +244,12 @@ const updateApplicationStatus = async (req, res, next) => {
                 );
             }
 
+            let contractPdfBuffer = null;
+            if (status === 'accepted' && contractHtml) {
+                // Convert AI HTML to a professional PDF
+                contractPdfBuffer = await generatePdfContract(contractHtml);
+            }
+
             await sendApplicationStatusEmail(
                 application.workerEmail,
                 application.workerName,
@@ -253,7 +260,7 @@ const updateApplicationStatus = async (req, res, next) => {
                     arrivalDate,
                     location,
                     orgDetails,
-                    contractHtml
+                    contractPdfBuffer // Sending Buffer instead of HTML
                 }
             );
         }
