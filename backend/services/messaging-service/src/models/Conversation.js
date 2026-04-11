@@ -25,6 +25,10 @@ const conversationSchema = new mongoose.Schema({
         senderId: String,
         content: String,
         timestamp: Date
+    },
+    relatedCaseId: {
+        type: String,
+        default: null
     }
 }, {
     timestamps: true

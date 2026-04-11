@@ -19,7 +19,8 @@ import {
   LayoutGrid,
   ChevronRight,
   MoreVertical,
-  Download
+  Download,
+  Building2
 } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { Badge } from "@/components/common/Badge";

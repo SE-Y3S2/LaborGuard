@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useComplaints } from "@/hooks/useComplaints";
 import { 
   FileText, 
@@ -147,10 +147,12 @@ const ComplaintDetailsPage = () => {
                                 <span className="text-sm font-black uppercase tracking-widest text-slate-800">{complaint.priority}</span>
                              </div>
                          </div>
-                         <Button className="w-full h-16 rounded-[32px] font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-primary/20 group">
-                             <MessageSquare className="h-4 w-4 mr-2" />
-                             Contact Assigned Officer
-                             <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                         <Button asChild className="w-full h-16 rounded-[32px] font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-primary/20 group">
+                             <Link to={`/messages?case=${complaint._id}`}>
+                                 <MessageSquare className="h-4 w-4 mr-2" />
+                                 Contact Assigned Officer
+                                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                             </Link>
                          </Button>
                     </div>
                  </div>

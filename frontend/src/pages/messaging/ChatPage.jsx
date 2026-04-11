@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { messageApi } from "@/api/messageApi";
 import { useRealtime } from "@/hooks/useRealtime";
 import { useMessagingStore } from "@/store/messagingStore";
+import { useSearchParams } from "react-router-dom";
 import { 
   Send, 
   Search, 
@@ -39,6 +40,8 @@ const ChatPage = () => {
     const [newMessage, setNewMessage] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
     const scrollRef = useRef();
+    const [searchParams] = useSearchParams();
+    const caseId = searchParams.get('case');
 
     // Enable Real-time Listening
     useRealtime();
@@ -51,6 +54,19 @@ const ChatPage = () => {
             return res.data.data || [];
         }
     });
+
+    // Auto-select conversation if ?case= param is present
+    useEffect(() => {
+        if (caseId && conversations?.length > 0 && !activeConversationId) {
+            // Try to find a conversation related to this case
+            const matchingConv = conversations.find(c => 
+                c.relatedCaseId === caseId || c.metadata?.caseId === caseId
+            );
+            if (matchingConv) {
+                setActiveConversation(matchingConv._id);
+            }
+        }
+    }, [caseId, conversations, activeConversationId, setActiveConversation]);
 
     // Active Conversation Messages (Hydrated via TanStack + Realtime Sync)
     const { data: messages, isLoading: messagesLoading } = useQuery({

@@ -1,6 +1,7 @@
 const Complaint = require('../models/Complaint');
 const { sendComplaintConfirmationEmail, sendStatusUpdateEmail } = require('./emailService');
 const { isEligibleForAppointment, autoCreateAppointment } = require('./appointmentService');
+const { emitEvent } = require('../utils/kafkaProducer');
 
 // Create a new complaint filed by a worker
 const createComplaint = async (data, user) => {
@@ -221,13 +222,20 @@ const updateComplaintStatus = async (complaintId, { status, reason }, user) => {
     console.error('[complaint-service] Status update email failed:', err.message)
   );
 
-  // Auto-book appointment if complaint moves to under_review
-  // and meets eligibility criteria (category + priority)
+  // Auto-book appointment if complaint meets criteria
   if (status === 'under_review' && isEligibleForAppointment(complaint.category, complaint.priority)) {
     autoCreateAppointment(complaint, user).catch((err) =>
       console.error('[complaint-service] Auto-booking failed:', err.message)
     );
   }
+
+  // Emit Kafka event strictly for UI Notification generation
+  emitEvent('complaint-events', 'complaint_status_updated', {
+    complaintId: complaint._id,
+    workerId: complaint.workerId,
+    newStatus: status,
+    title: complaint.title
+  }).catch((err) => console.error('[complaint-service] Kafka emit failed:', err.message));
 
   return complaint;
 };
@@ -257,6 +265,15 @@ const assignComplaint = async (complaintId, officerId, user) => {
   }
 
   await complaint.save();
+
+  // Emit Kafka event to notify the assigned officer
+  emitEvent('complaint-events', 'complaint_assigned', {
+    complaintId: complaint._id,
+    officerId: officerId,
+    workerId: complaint.workerId,
+    title: complaint.title
+  }).catch((err) => console.error('[complaint-service] Kafka emit failed:', err.message));
+
   return complaint;
 };
 

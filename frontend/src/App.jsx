@@ -1,4 +1,4 @@
-﻿import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 
 // Layouts
@@ -45,7 +45,6 @@ import NGOReportPage from './pages/ngo/NGOReportPage';
 
 import { AuthProvider } from './contexts/complaint/AuthContext';
 import MyComplaintsPage from './pages/complaint/MyComplaintsPage';
-import NewComplaintPage from './pages/complaint/NewComplaintPage';
 import AdminComplaintBoard from './pages/complaint/AdminComplaintBoard';
 import OfficerComplaintBoard from './pages/complaint/OfficerComplaintBoard';
 import ComplaintDetailPage from './pages/complaint/ComplaintDetailPage';

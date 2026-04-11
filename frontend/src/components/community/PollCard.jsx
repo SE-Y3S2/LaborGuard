@@ -13,18 +13,24 @@ import { Button } from "@/components/common/Button";
 import { Badge } from "@/components/common/Badge";
 import { cn } from "@/lib/utils";
 
-const PollCard = ({ poll, onVote }) => {
+const PollCard = ({ poll: rawPoll, onVote }) => {
+    // Normalize: data may be a full post object with .poll inside, or a flat poll
+    const pollData = rawPoll?.poll || rawPoll;
     const {
-        _id,
         question,
-        options,
+        options = [],
         totalVotes,
         hasVoted,
         category,
         expiresAt
-    } = poll;
+    } = pollData || {};
+    const _id = rawPoll?._id || pollData?._id;
 
     const [votedOption, setVotedOption] = useState(null);
+
+    // Backend stores votes as userId arrays — calculate totals from array lengths
+    const calculatedTotal = options.reduce((sum, opt) => sum + (Array.isArray(opt.votes) ? opt.votes.length : (opt.votes || 0)), 0);
+    const displayTotal = totalVotes || calculatedTotal;
 
     const handleVote = (optionIndex) => {
         if (hasVoted) return;
@@ -46,7 +52,7 @@ const PollCard = ({ poll, onVote }) => {
                         </Badge>
                         <div className="flex items-center gap-2">
                             <Users className="h-4 w-4 text-slate-500" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{totalVotes || 0} Citizens Voted</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{displayTotal} Citizens Voted</span>
                         </div>
                     </div>
                     
@@ -58,7 +64,8 @@ const PollCard = ({ poll, onVote }) => {
                 {/* Poll Options System */}
                 <div className="space-y-4 flex-1">
                     {options.map((opt, i) => {
-                        const percentage = totalVotes > 0 ? Math.round((opt.votes / totalVotes) * 100) : 0;
+                        const optVoteCount = Array.isArray(opt.votes) ? opt.votes.length : (opt.votes || 0);
+                        const percentage = displayTotal > 0 ? Math.round((optVoteCount / displayTotal) * 100) : 0;
                         const isSelected = votedOption === i || (hasVoted && i === opt.selectedIndex);
 
                         return (
@@ -93,7 +100,7 @@ const PollCard = ({ poll, onVote }) => {
                                             "text-xs font-black uppercase tracking-widest whitespace-pre-wrap leading-tight",
                                             isSelected ? "text-primary" : "text-slate-300 group-hover/opt:text-white"
                                         )}>
-                                            {opt.label}
+                                            {opt.text || opt.label}
                                         </span>
                                     </div>
                                     {hasVoted && (

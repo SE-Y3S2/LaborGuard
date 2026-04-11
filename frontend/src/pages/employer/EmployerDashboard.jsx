@@ -17,7 +17,10 @@ import {
   TrendingUp,
   BarChart3,
   ChevronRight,
-  ArrowUpRight
+  ArrowUpRight,
+  MessageSquare,
+  Globe,
+  Bell
 } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { Badge } from "@/components/common/Badge";
@@ -210,6 +213,42 @@ const EmployerDashboard = () => {
                         ))}
                     </div>
                 )}
+            </div>
+
+            {/* Platform Quick Links */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-2">
+                <Link to="/community" className="group bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-500 flex items-center gap-6">
+                    <div className="h-14 w-14 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
+                        <Globe className="h-7 w-7" />
+                    </div>
+                    <div className="flex-1">
+                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Community Feed</h4>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Engage with verified workers</p>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-slate-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                </Link>
+
+                <Link to="/messages" className="group bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-500 flex items-center gap-6">
+                    <div className="h-14 w-14 rounded-2xl bg-green-50 flex items-center justify-center text-green-500 group-hover:scale-110 transition-transform">
+                        <MessageSquare className="h-7 w-7" />
+                    </div>
+                    <div className="flex-1">
+                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Secure Messaging</h4>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Direct communication channel</p>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-slate-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                </Link>
+
+                <div className="bg-slate-900 p-8 rounded-[40px] text-white flex items-center gap-6 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-primary/20 blur-3xl" />
+                    <div className="h-14 w-14 rounded-2xl bg-white/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                        <Bell className="h-7 w-7" />
+                    </div>
+                    <div className="flex-1 relative z-10">
+                        <h4 className="text-sm font-black uppercase tracking-tight">Stay Informed</h4>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Real-time recruitment alerts</p>
+                    </div>
+                </div>
             </div>
         </div>
     );

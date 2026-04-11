@@ -65,13 +65,47 @@ const connectKafka = async () => {
 
         // Subscribe to relevant topics
         await consumer.subscribe({ topic: 'messaging-events', fromBeginning: false });
+        await consumer.subscribe({ topic: 'complaint-events', fromBeginning: false });
 
         // Start consuming messages
         await consumer.run({
             eachMessage: async ({ topic, partition, message }) => {
                 const msgValue = message.value.toString();
                 console.log(`[${SERVICE_NAME}] Received message from ${topic}:`, msgValue);
-                // Notification service handles the messaging-events, this is just for logging/extensibility here
+                
+                try {
+                    const event = JSON.parse(msgValue);
+                    
+                    if (topic === 'complaint-events' && event.type === 'complaint_assigned') {
+                        const { complaintId, officerId, workerId, title } = event.payload;
+                        const Conversation = require('./models/Conversation');
+                        
+                        // Check if conversation already exists for this case
+                        const existingConv = await Conversation.findOne({ relatedCaseId: complaintId });
+                        
+                        if (!existingConv) {
+                            const newConversation = new Conversation({
+                                participants: [workerId, officerId],
+                                participantRoles: [
+                                    { userId: workerId, role: 'worker' },
+                                    { userId: officerId, role: 'lawyer' } // Or ngo_representative, etc.
+                                ],
+                                isGroup: false,
+                                relatedCaseId: complaintId,
+                                lastMessage: {
+                                    senderId: "system",
+                                    content: `Case '${title}' encrypted vault established.`,
+                                    timestamp: new Date()
+                                }
+                            });
+                            
+                            await newConversation.save();
+                            console.log(`[${SERVICE_NAME}] Auto-created conversation for Case ID ${complaintId}`);
+                        }
+                    }
+                } catch (err) {
+                    console.error(`[${SERVICE_NAME}] Error processing message:`, err.message);
+                }
             }
         });
     } catch (error) {
