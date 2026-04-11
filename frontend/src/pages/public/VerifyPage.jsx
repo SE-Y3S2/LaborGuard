@@ -2,9 +2,9 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/common/Button";
-import { Input } from "@/components/common/Input";
-import { Badge } from "@/components/common/Badge";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+
 import { 
   ShieldCheck, 
   Mail, 

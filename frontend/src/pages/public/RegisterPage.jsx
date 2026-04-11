@@ -1,5 +1,8 @@
 import { RegisterForm } from "@/components/auth/RegisterForm";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 
 const RegisterPage = () => {
     return (
