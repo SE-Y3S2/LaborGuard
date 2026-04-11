@@ -28,7 +28,7 @@ const JobSchema = new mongoose.Schema({
         },
         frequency: {
             type: String,
-            enum: ['hourly', 'daily', 'weekly', 'monthly', 'yearly', 'per-task'],
+            enum: ['hourly', 'daily', 'weekly', 'monthly', 'yearly', 'per_task'],
             required: [true, 'Wage payment frequency is required']
         }
     },
@@ -41,11 +41,11 @@ const JobSchema = new mongoose.Schema({
         address: { type: String },
         city: { type: String, required: [true, 'City is required'] },
         state: { type: String },
-        country: { type: String, default: 'USA' }, // Default adjust as needed
+        country: { type: String, default: 'Sri Lanka' }, // Updated default to Sri Lanka
     },
     jobType: {
         type: String,
-        enum: ['full-time', 'part-time', 'contract', 'temporary', 'freelance'],
+        enum: ['full_time', 'part_time', 'contract', 'temporary', 'freelance', 'daily_wage'],
         required: [true, 'Job type is required']
     },
     status: {

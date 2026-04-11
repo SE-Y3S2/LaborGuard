@@ -48,7 +48,7 @@ const JobBoardPage = () => {
     });
     
     const [selectedJob, setSelectedJob] = useState(null);
-    const [applyData, setApplyData] = useState({ experience: "", details: "" });
+    const [applyData, setApplyData] = useState({ workerExperience: "", details: "" });
 
     const { data: jobs, isLoading: jobsLoading } = useGetJobs(params);
     const { data: myApplications } = useGetMyApplications();
@@ -78,7 +78,7 @@ const JobBoardPage = () => {
                 data: applyData 
             });
             setSelectedJob(null);
-            setApplyData({ experience: "", details: "" });
+            setApplyData({ workerExperience: "", details: "" });
         } catch (error) {
             // Handled in hook
         }
@@ -181,8 +181,8 @@ const JobBoardPage = () => {
                             <Textarea 
                                 placeholder="Describe your past work in this field..." 
                                 className="min-h-[160px] rounded-[32px] border-none bg-slate-50 p-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-primary/20 shadow-inner transition-all placeholder:text-slate-300"
-                                value={applyData.experience}
-                                onChange={(e) => setApplyData({ ...applyData, experience: e.target.value })}
+                                value={applyData.workerExperience}
+                                onChange={(e) => setApplyData({ ...applyData, workerExperience: e.target.value })}
                             />
                         </div>
 
