@@ -79,6 +79,11 @@ const AdminDashboard = () => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [aiResult, setAiResult] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    
+    // UI States for actions
+    const [isConfirmingApprove, setIsConfirmingApprove] = useState(false);
+    const [isRejecting, setIsRejecting] = useState(false);
+    const [rejectReason, setRejectReason] = useState("");
 
     // Fetch users (Governance Registry)
     const { data: usersData, isLoading: usersLoading } = useQuery({
@@ -142,35 +147,23 @@ const AdminDashboard = () => {
     });
 
     const handleApprove = () => {
-        if (window.confirm("Are you sure you want to AUTHORIZE this identity and grant platform access?")) {
-            approveMutation.mutate(selectedUser._id);
-        }
+        approveMutation.mutate(selectedUser._id);
     };
 
     const handleReject = () => {
-        if (!window.confirm("Are you sure you want to REJECT this identity? This action will permanently remove their application.")) return;
-        const reason = window.prompt("Please enter a reason for rejecting this user (will be emailed to them):");
-        if (reason === null) return; // cancelled
-        rejectMutation.mutate({ userId: selectedUser._id, reason: reason || "Did not meet verification standards." });
+        rejectMutation.mutate({ userId: selectedUser._id, reason: rejectReason || "Did not meet verification standards." });
     };
 
     const handleAiValidate = () => {
-        if (window.confirm("Are you sure you want to run AI heuristics on these sensitive documents?")) {
-            analyzeMutation.mutate(selectedUser._id);
-        }
+        analyzeMutation.mutate(selectedUser._id);
     };
 
     const handleToggleStatus = (u) => {
-        const action = u.isActive === false ? "ACTIVATE" : "DEACTIVATE";
-        if (window.confirm(`Are you sure you want to ${action} this user's account?`)) {
-            statusMutation.mutate({ userId: u._id, isActive: u.isActive === false });
-        }
+        statusMutation.mutate({ userId: u._id, isActive: u.isActive === false });
     };
 
     const handleDelete = (u) => {
-        if (window.confirm("CRITICAL WARNING: Are you sure you want to permanently DELETE this user? This destroys their identity from the registry entirely!")) {
-            deleteMutation.mutate(u._id);
-        }
+        deleteMutation.mutate(u._id);
     };
 
     const filteredUsers = (usersData || []).filter(u => {
@@ -479,6 +472,9 @@ const AdminDashboard = () => {
         <Dialog open={!!selectedUser} onOpenChange={() => {
             setSelectedUser(null);
             setAiResult(null);
+            setIsConfirmingApprove(false);
+            setIsRejecting(false);
+            setRejectReason("");
         }}>
             <DialogContent className="sm:max-w-[680px] p-0 overflow-hidden rounded-[40px] border-none shadow-3xl bg-white max-h-[95vh] flex flex-col">
                 <div className="bg-slate-900 px-8 py-5 text-white flex items-center justify-between gap-4 border-b border-white/5">
@@ -645,29 +641,46 @@ const AdminDashboard = () => {
                     </div>
                 </div>
 
-                <DialogFooter className="p-6 bg-slate-50/80 backdrop-blur-sm gap-3 border-t border-slate-100 flex flex-row items-center justify-end shadow-inner">
-                    <Button 
-                        variant="ghost" 
-                        onClick={() => setSelectedUser(null)} 
-                        className="h-14 px-6 rounded-2xl font-black uppercase tracking-widest text-[9px]"
-                    >
-                        Close
-                    </Button>
-                    <Button 
-                        variant="outline"
-                        onClick={handleReject}
-                        disabled={rejectMutation.isPending || approveMutation.isPending}
-                        className="h-14 px-6 rounded-2xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 font-black uppercase tracking-widest text-[9px] shadow-sm"
-                    >
-                        {rejectMutation.isPending ? "Hold..." : "Reject"}
-                    </Button>
-                    <Button 
-                        className="flex-1 h-14 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-black uppercase tracking-widest text-[10px] shadow-xl shadow-green-100"
-                        onClick={handleApprove}
-                        disabled={approveMutation.isPending}
-                    >
-                        {approveMutation.isPending ? "Syncing..." : "APPROVE IDENTITY"}
-                    </Button>
+                <DialogFooter className="p-6 bg-slate-50/80 backdrop-blur-sm border-t border-slate-100 flex flex-col md:flex-row items-stretch md:items-center justify-end shadow-inner transition-all duration-300">
+                    {isConfirmingApprove ? (
+                        <div className="flex w-full items-center justify-between animate-in fade-in zoom-in-95">
+                            <span className="text-xs font-black text-slate-800 uppercase tracking-widest pl-2">Confirm Authorization?</span>
+                            <div className="flex gap-2">
+                                <Button variant="ghost" onClick={() => setIsConfirmingApprove(false)} className="h-12 px-6 rounded-xl font-bold uppercase tracking-widest text-[9px]">Cancel</Button>
+                                <Button onClick={handleApprove} disabled={approveMutation.isPending} className="h-12 px-8 rounded-xl bg-green-600 hover:bg-green-700 text-white font-black uppercase tracking-widest text-[10px] shadow-lg shadow-green-200">
+                                    {approveMutation.isPending ? "Hold..." : "Yes, Authorize"}
+                                </Button>
+                            </div>
+                        </div>
+                    ) : isRejecting ? (
+                        <div className="flex w-full items-center gap-3 animate-in fade-in zoom-in-95">
+                            <Input 
+                                placeholder="Reason for rejection (e.g. invalid document)..." 
+                                value={rejectReason}
+                                onChange={(e) => setRejectReason(e.target.value)}
+                                className="flex-1 h-12 rounded-xl text-xs font-bold"
+                                autoFocus
+                            />
+                            <Button variant="ghost" onClick={() => setIsRejecting(false)} className="h-12 px-4 rounded-xl font-bold uppercase tracking-widest text-[9px]">Cancel</Button>
+                            <Button 
+                                onClick={handleReject} 
+                                disabled={rejectMutation.isPending || !rejectReason.trim()} 
+                                className="h-12 px-6 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest text-[10px] shadow-lg shadow-red-200"
+                            >
+                                {rejectMutation.isPending ? "Hold..." : "Confirm Reject"}
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="flex w-full items-center justify-end gap-3 fade-in">
+                            <Button variant="ghost" onClick={() => setSelectedUser(null)} className="h-14 px-6 rounded-2xl font-black uppercase tracking-widest text-[9px]">Close</Button>
+                            <Button variant="outline" onClick={() => setIsRejecting(true)} disabled={rejectMutation.isPending || approveMutation.isPending} className="h-14 px-6 rounded-2xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 font-black uppercase tracking-widest text-[9px] shadow-sm">
+                                Reject
+                            </Button>
+                            <Button className="flex-1 h-14 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-black uppercase tracking-widest text-[10px] shadow-xl shadow-green-100" onClick={() => setIsConfirmingApprove(true)} disabled={approveMutation.isPending}>
+                                APPROVE IDENTITY
+                            </Button>
+                        </div>
+                    )}
                 </DialogFooter>
             </DialogContent>
         </Dialog>

@@ -33,7 +33,7 @@ import {
   SelectItem, 
   SelectTrigger, 
   SelectValue 
-} from "@/components/ui/Select"; // Redirected from common to ui
+} from "@/components/ui/select"; // Redirected from common to ui
 import {
   DropdownMenu,
   DropdownMenuContent,
