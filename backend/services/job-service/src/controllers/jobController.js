@@ -1,6 +1,7 @@
 const Job = require('../models/Job');
 const Application = require('../models/Application');
 const { sendApplicationStatusEmail } = require('../services/emailService');
+const { generateEmploymentContract } = require('../services/aiContractService');
 
 // @desc    Create a new Job Posting
 // @route   POST /api/jobs
@@ -226,11 +227,34 @@ const updateApplicationStatus = async (req, res, next) => {
         await application.save();
 
         if (status === 'accepted' || status === 'rejected') {
+            const { rejectionReason, arrivalDate, location, orgDetails } = req.body;
+            
+            let contractHtml = null;
+            if (status === 'accepted') {
+                // Generate AI Contract
+                contractHtml = await generateEmploymentContract(
+                    application.workerName, 
+                    req.user.email.split('@')[0], // Employer proxy name
+                    application.jobId.title,
+                    application.jobId.description,
+                    `${application.jobId.wage.amount} ${application.jobId.wage.currency} / ${application.jobId.wage.frequency}`,
+                    arrivalDate || "TBD",
+                    location || application.jobId.location?.city || "TBD",
+                );
+            }
+
             await sendApplicationStatusEmail(
                 application.workerEmail,
                 application.workerName,
                 application.jobId.title,
-                status
+                status,
+                {
+                    rejectionReason,
+                    arrivalDate,
+                    location,
+                    orgDetails,
+                    contractHtml
+                }
             );
         }
 

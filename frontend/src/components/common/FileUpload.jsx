@@ -7,9 +7,10 @@ import { Button } from "./Button"
 const FileUpload = ({
   onFilesChange,
   maxFiles = 5,
-  accept = { "image/*": [".jpg", ".jpeg", ".png"], "application/pdf": [".pdf"] },
+  accept = { "image/*": [".jpg", ".jpeg", ".png"] },
   maxSize = 10 * 1024 * 1024, // 10MB
   className,
+  supportText = "Support JPG, PNG",
 }) => {
   const [files, setFiles] = React.useState([])
 
@@ -52,7 +53,7 @@ const FileUpload = ({
           {isDragActive ? "Drop the files here" : "Drag & drop files here"}
         </p>
         <p className="text-xs text-muted-foreground mt-1 text-center">
-          Support JPG, PNG, PDF (Max {maxSize / (1024 * 1024)}MB per file, up to {maxFiles} files)
+          {supportText} (Max {maxSize / (1024 * 1024)}MB per file, up to {maxFiles} files)
         </p>
       </div>
 

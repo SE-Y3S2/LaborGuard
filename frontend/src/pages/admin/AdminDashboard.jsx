@@ -480,21 +480,26 @@ const AdminDashboard = () => {
             setSelectedUser(null);
             setAiResult(null);
         }}>
-            <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden rounded-[48px] border-none shadow-3xl bg-white">
-                <div className="bg-slate-900 px-10 py-10 text-white space-y-4">
-                    <Badge className="bg-amber-500/20 text-amber-500 border-none px-4 py-1.5 rounded-full font-black uppercase tracking-widest text-[9px]">Governance Review</Badge>
-                    <DialogHeader>
-                        <DialogTitle className="text-4xl font-black tracking-tight leading-tight">
-                            Verify <br />
-                            <span className="text-primary italic tracking-tight">{selectedUser?.firstName} {selectedUser?.lastName}</span>
-                        </DialogTitle>
-                        <DialogDescription className="text-slate-400 font-bold text-sm uppercase italic pt-2">
-                            Assigned Role: <span className="text-white not-italic">{selectedUser?.role}</span>
-                        </DialogDescription>
-                    </DialogHeader>
+            <DialogContent className="sm:max-w-[680px] p-0 overflow-hidden rounded-[40px] border-none shadow-3xl bg-white max-h-[95vh] flex flex-col">
+                <div className="bg-slate-900 px-8 py-5 text-white flex items-center justify-between gap-4 border-b border-white/5">
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-3">
+                             <Badge className="bg-amber-500/20 text-amber-500 border-none px-3 py-1 rounded-full font-black uppercase tracking-widest text-[8px]">Review Protocol</Badge>
+                             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter italic">ID: {selectedUser?._id?.substring(0,8)}</span>
+                        </div>
+                        <DialogHeader>
+                            <DialogTitle className="text-xl font-black tracking-tight flex items-center gap-2">
+                                Verify <span className="text-primary italic">{selectedUser?.firstName} {selectedUser?.lastName}</span>
+                            </DialogTitle>
+                        </DialogHeader>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Assigned Role</p>
+                        <Badge className="bg-white/10 text-white border-none font-bold text-xs uppercase px-4 py-1 rounded-lg">{selectedUser?.role}</Badge>
+                    </div>
                 </div>
 
-                <div className="p-10 space-y-10 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                <div className="flex-1 p-8 space-y-8 overflow-y-auto custom-scrollbar">
                     {/* Documents View */}
                     <div className="space-y-6">
                         <div className="flex items-center justify-between">
@@ -528,16 +533,16 @@ const AdminDashboard = () => {
 
                     {/* AI Validation Panel */}
                     <div className="space-y-6">
-                        <div className="p-1 bg-slate-50 rounded-[40px] border border-slate-100">
+                        <div className="p-0.5 bg-slate-50/50 rounded-[32px] border border-slate-100">
                              <div className={cn(
-                                "p-10 rounded-[36px] space-y-8 transition-all duration-500",
-                                aiResult ? (aiResult.isValid ? "bg-green-50 border border-green-100" : "bg-red-50 border border-red-100") : "bg-white"
+                                "p-8 rounded-[30px] space-y-6 transition-all duration-500",
+                                aiResult ? (aiResult.isValid ? "bg-green-50/50 border border-green-100" : "bg-red-50/50 border border-red-100") : "bg-white"
                              )}>
                                 <div className="flex justify-between items-center">
                                     <div className="space-y-1">
                                          <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
                                             <Cpu className="h-4 w-4" />
-                                            Gemini Flash Analysis
+                                            Groq Llama Intelligence
                                         </h4>
                                         <p className="text-[10px] font-bold text-slate-400 uppercase italic">Multi-modal identity correlation</p>
                                     </div>
@@ -640,11 +645,11 @@ const AdminDashboard = () => {
                     </div>
                 </div>
 
-                <DialogFooter className="p-8 bg-slate-50 gap-4 border-t border-slate-100 flex flex-col sm:flex-row shadow-inner">
+                <DialogFooter className="p-6 bg-slate-50/80 backdrop-blur-sm gap-3 border-t border-slate-100 flex flex-row items-center justify-end shadow-inner">
                     <Button 
                         variant="ghost" 
                         onClick={() => setSelectedUser(null)} 
-                        className="h-16 px-8 rounded-[28px] font-black uppercase tracking-widest text-[10px]"
+                        className="h-14 px-6 rounded-2xl font-black uppercase tracking-widest text-[9px]"
                     >
                         Close
                     </Button>
@@ -652,16 +657,16 @@ const AdminDashboard = () => {
                         variant="outline"
                         onClick={handleReject}
                         disabled={rejectMutation.isPending || approveMutation.isPending}
-                        className="h-16 px-8 rounded-[28px] border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 font-black uppercase tracking-widest text-[10px] shadow-sm"
+                        className="h-14 px-6 rounded-2xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 font-black uppercase tracking-widest text-[9px] shadow-sm"
                     >
-                        {rejectMutation.isPending ? "Rejecting..." : "Reject"}
+                        {rejectMutation.isPending ? "Hold..." : "Reject"}
                     </Button>
                     <Button 
-                        className="flex-1 h-16 rounded-[28px] bg-green-600 hover:bg-green-700 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-green-100"
+                        className="flex-1 h-14 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-black uppercase tracking-widest text-[10px] shadow-xl shadow-green-100"
                         onClick={handleApprove}
                         disabled={approveMutation.isPending}
                     >
-                        {approveMutation.isPending ? "Finalizing..." : "APPROVE IDENTITY"}
+                        {approveMutation.isPending ? "Syncing..." : "APPROVE IDENTITY"}
                     </Button>
                 </DialogFooter>
             </DialogContent>
