@@ -1,12 +1,8 @@
 import { useState } from "react";
 import { useComplaints } from "@/hooks/useComplaints";
 import { AppointmentCard } from "@/components/complaint/AppointmentCard";
-import { 
-  Calendar, 
-  Filter, 
-  PlusCircle, 
-  Clock, 
-  ChevronDown,
+import {
+  Calendar,
   Info
 } from "lucide-react";
 import { Button } from "@/components/common/Button";
@@ -14,7 +10,6 @@ import { Badge } from "@/components/common/Badge";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Spinner } from "@/components/common/Spinner";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
-import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const MyAppointments = () => {
@@ -24,13 +19,16 @@ const MyAppointments = () => {
   const [cancelId, setCancelId] = useState(null);
 
   const { useGetMyAppointments, cancelAppointment } = useComplaints();
-  const { data: appointments, isLoading } = useGetMyAppointments(params);
+
+  // FIX: Default to [] — prevents "Cannot read properties of undefined (reading 'length')"
+  // when API errors or is still loading
+  const { data: appointments = [], isLoading } = useGetMyAppointments(params);
 
   const handleCancel = async () => {
     if (!cancelId) return;
-    await cancelAppointment.mutateAsync({ 
-        appointmentId: cancelId, 
-        reason: "Cancelled by worker" 
+    await cancelAppointment.mutateAsync({
+      appointmentId: cancelId,
+      reason: "Cancelled by worker"
     });
     setCancelId(null);
   };
@@ -47,10 +45,10 @@ const MyAppointments = () => {
 
       <div className="p-4 bg-blue-50 border border-blue-100 rounded-3xl flex gap-4 items-start">
         <div className="bg-white p-2 rounded-xl shadow-sm">
-            <Info className="h-5 w-5 text-blue-500" />
+          <Info className="h-5 w-5 text-blue-500" />
         </div>
         <p className="text-xs font-bold text-blue-700 leading-relaxed uppercase italic">
-            Appointments are automatically booked when you file a high-priority complaint. Legal officers will confirm the final time slot soon.
+          Appointments are automatically booked when you file a high-priority complaint. Legal officers will confirm the final time slot soon.
         </p>
       </div>
 
@@ -67,8 +65,8 @@ const MyAppointments = () => {
             onClick={() => setParams({ ...params, status: s.value })}
             className={cn(
               "px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-              params.status === s.value 
-                ? "bg-white text-primary shadow-sm" 
+              params.status === s.value
+                ? "bg-white text-primary shadow-sm"
                 : "text-slate-500 hover:text-slate-800"
             )}
           >
@@ -84,11 +82,12 @@ const MyAppointments = () => {
             <p className="mt-4 text-xs font-black uppercase tracking-widest text-slate-400">Syncing Calendar...</p>
           </div>
         ) : appointments.length > 0 ? (
+          // FIX: appointments is always [] by default — .length and .map() are safe
           <div className="grid grid-cols-1 gap-6">
             {appointments.map((appt) => (
-              <AppointmentCard 
-                key={appt._id} 
-                appointment={appt} 
+              <AppointmentCard
+                key={appt._id}
+                appointment={appt}
                 onCancel={(id) => setCancelId(id)}
               />
             ))}
@@ -97,9 +96,11 @@ const MyAppointments = () => {
           <EmptyState
             icon={Calendar}
             title="No appointments found"
-            description={params.status 
-              ? `You don't have any ${params.status.replace('_', ' ')} appointments.` 
-              : "Your legal calendar is currently empty. High-priority cases will auto-book time slots here."}
+            description={
+              params.status
+                ? `You don't have any ${params.status.replace("_", " ")} appointments.`
+                : "Your legal calendar is currently empty. High-priority cases will auto-book time slots here."
+            }
             className="h-[400px]"
           />
         )}

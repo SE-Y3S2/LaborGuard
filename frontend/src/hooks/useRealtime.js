@@ -13,15 +13,10 @@ export const useRealtime = () => {
 
   const handleNewMessage = useCallback((payload) => {
     const { conversationId, message } = payload;
-    
-    // Update messaging store (conversations list)
     addMessage(conversationId, message);
-    
-    // Update TanStack Query cache for messages in the active conversation
     if (conversationId === activeConversationId) {
       queryClient.setQueryData(['messages', conversationId], (oldData) => {
         if (!oldData) return [message];
-        // Check if message already exists to avoid duplicates
         if (oldData.find(m => m._id === message._id)) return oldData;
         return [...oldData, message];
       });
@@ -29,7 +24,6 @@ export const useRealtime = () => {
   }, [activeConversationId, addMessage, queryClient]);
 
   const handleNotification = useCallback((payload) => {
-    // Only increment if it's for the current user
     if (payload.userId === user?.userId) {
       incrementUnread();
       queryClient.invalidateQueries(['notifications-unread', user?.userId]);
@@ -37,44 +31,69 @@ export const useRealtime = () => {
   }, [user?.userId, incrementUnread, queryClient]);
 
   useEffect(() => {
-    if (!accessToken || !user) return;
+    // FIX: Guard all three required values before attempting connection
+    if (!accessToken || !user || !import.meta.env.VITE_CENTRIFUGO_URL) {
+      console.warn('Centrifugo: skipping connection — missing token, user, or VITE_CENTRIFUGO_URL');
+      return;
+    }
 
-    const centrifuge = new Centrifuge(import.meta.env.VITE_CENTRIFUGO_URL, {
-        token: accessToken
-    });
+    let centrifuge;
+    try {
+      centrifuge = new Centrifuge(import.meta.env.VITE_CENTRIFUGO_URL, {
+        token: accessToken,
+      });
+    } catch (err) {
+      console.error('Centrifugo: failed to initialize:', err);
+      return;
+    }
 
     centrifuge.on('connected', () => {
-        console.log('Centrifugo connected');
+      console.log('Centrifugo connected');
     });
 
-    centrifuge.on('disconnected', () => {
-        console.log('Centrifugo disconnected');
+    centrifuge.on('disconnected', (ctx) => {
+      // FIX: Log reason code — helps debug; does NOT crash the app
+      console.warn('Centrifugo disconnected. Code:', ctx.code, '| Reason:', ctx.reason);
     });
 
-    // Subscribe to personal notification channel (Standard colon separator)
-    const subNotification = centrifuge.newSubscription(`notifications:${user._id || user.userId}`);
+    centrifuge.on('error', (err) => {
+      // FIX: Catch transport errors gracefully — no unhandled rejection
+      console.error('Centrifugo error:', err);
+    });
+
+    // Subscribe to personal notification channel
+    const subNotification = centrifuge.newSubscription(
+      `notifications:${user._id || user.userId}`
+    );
     subNotification.on('publication', (ctx) => {
-        handleNotification(ctx.data);
+      handleNotification(ctx.data);
+    });
+    subNotification.on('error', (err) => {
+      console.warn('Notification subscription error:', err);
     });
     subNotification.subscribe();
 
     // Subscribe to active conversation channel if exists
     let subChat = null;
     if (activeConversationId) {
-        subChat = centrifuge.newSubscription(`chat:${activeConversationId}`);
-        subChat.on('publication', (ctx) => {
-            handleNewMessage({ conversationId: activeConversationId, message: ctx.data });
-        });
-        subChat.subscribe();
+      subChat = centrifuge.newSubscription(`chat:${activeConversationId}`);
+      subChat.on('publication', (ctx) => {
+        handleNewMessage({ conversationId: activeConversationId, message: ctx.data });
+      });
+      subChat.on('error', (err) => {
+        console.warn('Chat subscription error:', err);
+      });
+      subChat.subscribe();
     }
 
     centrifuge.connect();
     setCentrifugoClient(centrifuge);
 
     return () => {
-        subNotification.unsubscribe();
-        if (subChat) subChat.unsubscribe();
-        centrifuge.disconnect();
+      // FIX: Safe cleanup — unsubscribe before disconnect
+      try { subNotification.unsubscribe(); } catch (_) {}
+      try { if (subChat) subChat.unsubscribe(); } catch (_) {}
+      try { centrifuge.disconnect(); } catch (_) {}
     };
   }, [user, accessToken, activeConversationId, handleNewMessage, handleNotification, setCentrifugoClient]);
 };
