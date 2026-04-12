@@ -7,7 +7,20 @@ const complaintService = require('../services/complaintService');
  */
 const createComplaint = async (req, res, next) => {
   try {
-    const complaint = await complaintService.createComplaint(req.body, req.user);
+    const attachments = (req.files || []).map((file) => ({
+      url: file.path,
+      fileType: file.mimetype.startsWith('image/') ? 'image' : 'document',
+      originalName: file.originalname,
+      uploadedAt: new Date()
+    }));
+
+    const complaint = await complaintService.createComplaint(
+      {
+        ...req.body,
+        attachments
+      },
+      req.user
+    );
 
     res.status(201).json({
       success: true,
@@ -22,7 +35,7 @@ const createComplaint = async (req, res, next) => {
 /**
  * @desc    Get all complaints with filters, search, and pagination
  * @route   GET /api/complaints
- * @access  Private (admin, legal_officer)
+ * @access  Private (admin, lawyer)
  */
 const getAllComplaints = async (req, res, next) => {
   try {
@@ -45,7 +58,7 @@ const getAllComplaints = async (req, res, next) => {
  */
 const getMyComplaints = async (req, res, next) => {
   try {
-    const result = await complaintService.getMyComplaints(req.user.id, req.query);
+    const result = await complaintService.getMyComplaints(req.user.userId, req.query);
 
     res.status(200).json({
       success: true,
@@ -60,7 +73,7 @@ const getMyComplaints = async (req, res, next) => {
 /**
  * @desc    Get a single complaint by ID
  * @route   GET /api/complaints/:id
- * @access  Private (worker — own only, admin, legal_officer)
+ * @access  Private (worker — own only, admin, lawyer)
  */
 const getComplaintById = async (req, res, next) => {
   try {

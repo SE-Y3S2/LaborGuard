@@ -11,7 +11,8 @@ describe('Complaint Controller', () => {
             params: {},
             body: {},
             query: {},
-            user: { id: 'user123', email: 'worker@example.com', name: 'John Doe', role: 'worker' }
+            files: [],
+            user: { userId: 'user123', email: 'worker@example.com', name: 'John Doe', role: 'worker' }
         };
         mockRes = {
             status: jest.fn().mockReturnThis(),
@@ -28,7 +29,10 @@ describe('Complaint Controller', () => {
 
             await complaintController.createComplaint(mockReq, mockRes, mockNext);
 
-            expect(complaintService.createComplaint).toHaveBeenCalledWith(mockReq.body, mockReq.user);
+            expect(complaintService.createComplaint).toHaveBeenCalledWith(
+                { ...mockReq.body, attachments: [] },
+                mockReq.user
+            );
             expect(mockRes.status).toHaveBeenCalledWith(201);
             expect(mockRes.json).toHaveBeenCalledWith({
                 success: true,

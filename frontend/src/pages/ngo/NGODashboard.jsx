@@ -59,11 +59,16 @@ const NGODashboard = () => {
     });
 
     // Fetch critical unassigned cases for intervention
-    const { data: criticalCases, isLoading: casesLoading } = useGetComplaints({ 
+    const { data: criticalCasesData, isLoading: casesLoading } = useGetComplaints({ 
         priority: 'critical', 
         status: 'pending',
         limit: 10
     });
+    const criticalCases = criticalCasesData?.complaints || [];
+
+    const casesList = criticalCases.filter((c) => 
+        c.title?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     if (statsLoading || casesLoading) return (
         <div className="p-32 flex flex-col items-center">

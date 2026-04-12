@@ -174,35 +174,59 @@ const listComplaintsRules = [
 
   query('status')
     .optional()
-    .isIn(['pending', 'under_review', 'resolved', 'rejected'])
+    .custom((value) => {
+      if (value === '') return true; // Allow empty string
+      return ['pending', 'under_review', 'resolved', 'rejected'].includes(value);
+    })
     .withMessage('Invalid status filter'),
 
   query('category')
     .optional()
-    .isIn([
-      'wage_theft',
-      'unsafe_conditions',
-      'wrongful_termination',
-      'harassment',
-      'discrimination',
-      'unpaid_overtime',
-      'other'
-    ]).withMessage('Invalid category filter'),
+    .custom((value) => {
+      if (value === '') return true; // Allow empty string
+      return [
+        'wage_theft',
+        'unsafe_conditions',
+        'wrongful_termination',
+        'harassment',
+        'discrimination',
+        'unpaid_overtime',
+        'other'
+      ].includes(value);
+    })
+    .withMessage('Invalid category filter'),
 
   query('priority')
     .optional()
-    .isIn(['low', 'medium', 'high', 'critical'])
+    .custom((value) => {
+      if (value === '') return true; // Allow empty string
+      return ['low', 'medium', 'high', 'critical'].includes(value);
+    })
     .withMessage('Invalid priority filter'),
 
   query('sortBy')
     .optional()
-    .isIn(['createdAt', 'updatedAt', 'priority', 'status'])
+    .custom((value) => {
+      if (value === '') return true; // Allow empty string
+      return ['createdAt', 'updatedAt', 'priority', 'status'].includes(value);
+    })
     .withMessage('Invalid sortBy field'),
 
   query('order')
     .optional()
-    .isIn(['asc', 'desc'])
-    .withMessage('Order must be asc or desc')
+    .custom((value) => {
+      if (value === '') return true; // Allow empty string
+      return ['asc', 'desc'].includes(value);
+    })
+    .withMessage('Order must be asc or desc'),
+
+  query('search')
+    .optional()
+    .isLength({ min: 0, max: 100 }).withMessage('Search query too long'),
+
+  query('assignedTo')
+    .optional()
+    .isMongoId().withMessage('Invalid assignedTo ID format')
 ];
 
 // ─────────────────────────────────────────────

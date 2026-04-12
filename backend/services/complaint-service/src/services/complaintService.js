@@ -7,7 +7,7 @@ const { emitEvent } = require('../utils/kafkaProducer');
 const createComplaint = async (data, user) => {
   const complaint = await Complaint.create({
     ...data,
-    workerId: user.id
+    workerId: user.userId
   });
 
   // Send confirmation email in background — do not block response
@@ -122,9 +122,9 @@ const getComplaintById = async (complaintId, user) => {
     throw error;
   }
 
-  const isOwner = complaint.workerId.toString() === user.id;
-  const isAssigned = complaint.assignedTo?.toString() === user.id;
-  const isPrivileged = user.role === 'admin' || (user.role === 'legal_officer' && isAssigned)
+  const isOwner = complaint.workerId.toString() === user.userId;
+  const isAssigned = complaint.assignedTo?.toString() === user.userId;
+  const isPrivileged = user.role === 'admin' || (user.role === 'lawyer' && isAssigned) || user.role === 'ngo';
 
   if (!isOwner && !isPrivileged) {
     const error = new Error('Access denied. You can only view your own complaints.');
@@ -145,7 +145,7 @@ const updateComplaint = async (complaintId, data, user) => {
     throw error;
   }
 
-  const isOwner = complaint.workerId.toString() === user.id;
+  const isOwner = complaint.workerId.toString() === user.userId;
 
   if (!isOwner) {
     const error = new Error('Access denied. You can only edit your own complaints.');
@@ -184,8 +184,8 @@ const updateComplaint = async (complaintId, data, user) => {
 const updateComplaintStatus = async (complaintId, { status, reason }, user) => {
   const complaint = await Complaint.findById(complaintId);
 
-  if (user.role === 'legal_officer') {
-    const isAssigned = complaint.assignedTo?.toString() === user.id;
+  if (user.role === 'lawyer') {
+    const isAssigned = complaint.assignedTo?.toString() === user.userId;
     if (!isAssigned) {
       const error = new Error('Access denied. You can only update status of complaints assigned to you.');
       error.statusCode = 403;
@@ -204,7 +204,7 @@ const updateComplaintStatus = async (complaintId, { status, reason }, user) => {
   // Record the status change in audit trail
   complaint.statusHistory.push({
     status,
-    changedBy: user.id,
+    changedBy: user.userId,
     changedByRole: user.role,
     reason: reason || null,
     changedAt: new Date()
@@ -257,7 +257,7 @@ const assignComplaint = async (complaintId, officerId, user) => {
     complaint.status = 'under_review';
     complaint.statusHistory.push({
       status: 'under_review',
-      changedBy: user.id,
+      changedBy: user.userId,
       changedByRole: user.role,
       reason: 'Assigned to legal officer',
       changedAt: new Date()
@@ -289,7 +289,7 @@ const deleteComplaint = async (complaintId, user) => {
     throw error;
   }
 
-  const isOwner = complaint.workerId.toString() === user.id;
+  const isOwner = complaint.workerId.toString() === user.userId;
   const isAdmin = user.role === 'admin';
 
   if (!isOwner && !isAdmin) {
@@ -355,7 +355,7 @@ const addAttachment = async (complaintId, fileData, user) => {
 
   // Authorization: Only owner can add attachments to pending/under_review
   // Admins can add anytime
-  const isOwner = complaint.workerId.toString() === user.id;
+  const isOwner = complaint.workerId.toString() === user.userId;
   const isAdmin = user.role === 'admin';
 
   if (!isOwner && !isAdmin) {

@@ -11,7 +11,10 @@ export const useComplaints = (id) => {
       queryKey: ["complaints", params],
       queryFn: async () => {
         const res = await complaintApi.getAllComplaints(params);
-        return res.data?.data || [];
+        return {
+          complaints: res.data?.data || [],
+          pagination: res.data?.pagination || { total: 0, page: 1, limit: 10, totalPages: 0 }
+        };
       },
       placeholderData: (prev) => prev,
     });
@@ -23,7 +26,10 @@ export const useComplaints = (id) => {
       queryKey: ["my-complaints", params],
       queryFn: async () => {
         const res = await complaintApi.getMyComplaints(params);
-        return res.data?.data || [];
+        return {
+          complaints: res.data?.data || [],
+          pagination: res.data?.pagination || { total: 0, page: 1, limit: 10, totalPages: 0 }
+        };
       },
     });
   };

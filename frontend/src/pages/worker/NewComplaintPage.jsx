@@ -25,11 +25,11 @@ import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
 const complaintSchema = z.object({
-  title: z.string().min(5, "Title must be at least 5 characters"),
+  title: z.string().min(10, "Title must be at least 10 characters"),
   category: z.enum(["wage_theft", "unsafe_conditions", "wrongful_termination", "harassment", "discrimination", "unpaid_overtime", "other"]),
   priority: z.enum(["low", "medium", "high", "critical"]),
   organizationName: z.string().min(2, "Company/Employer name is required"),
-  description: z.string().min(20, "Description must be at least 20 characters"),
+  description: z.string().min(30, "Description must be at least 30 characters"),
 });
 
 const NewComplaintPage = () => {
