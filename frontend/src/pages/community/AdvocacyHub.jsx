@@ -1,10 +1,11 @@
-import { 
-  BarChart3, 
-  MapPin, 
-  TrendingUp, 
-  Users, 
-  ShieldCheck, 
-  Globe, 
+import { useNavigate } from "react-router-dom";
+import {
+  BarChart3,
+  MapPin,
+  TrendingUp,
+  Users,
+  ShieldCheck,
+  Globe,
   Target,
   ArrowRight,
   TrendingDown,
@@ -18,14 +19,42 @@ import {
   Building2,
   Calendar,
   MessageSquare,
-  FileBarChart2 as FileBarChart
+  FileBarChart2 as FileBarChart,
+  Quote
 } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { Badge } from "@/components/common/Badge";
 import { Card, CardContent } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
+import { useCommunity } from "@/hooks/useCommunity";
+import { StoryCard } from "@/components/community/StoryCard";
+import { toast } from "sonner";
 
 const AdvocacyHub = () => {
+    const navigate = useNavigate();
+    const { useGetTrending, likePost, sharePost } = useCommunity();
+    const { data: trending = [] } = useGetTrending();
+    const featuredStories = trending.slice(0, 3);
+
+    const handleRegionalComparison = () => {
+        navigate("/community/explore");
+    };
+
+    const handleDownloadReport = () => {
+        toast.success("Preparing national report...");
+        if (typeof window !== "undefined") {
+            setTimeout(() => window.print(), 300);
+        }
+    };
+
+    const handleRegisterOrg = () => {
+        navigate("/register?role=ngo");
+    };
+
+    const handleViewLedger = () => {
+        navigate("/community/explore");
+    };
+
     // Mock regional data for transparency
     const regions = [
         { name: "Colombo District", violations: 242, resolved: 84, trend: 'up' },
@@ -90,7 +119,11 @@ const AdvocacyHub = () => {
                                 <div className="h-full bg-primary shadow-glow transition-all duration-1000" style={{ width: '74%' }} />
                             </div>
                         </div>
-                        <Button variant="outline" className="w-full h-14 rounded-[32px] border-white/10 text-white hover:bg-white/5 text-[9px] font-black uppercase tracking-widest">
+                        <Button
+                            onClick={handleRegionalComparison}
+                            variant="outline"
+                            className="w-full h-14 rounded-[32px] border-white/10 text-white hover:bg-white/5 text-[9px] font-black uppercase tracking-widest"
+                        >
                             <Globe className="h-4 w-4 mr-2" />
                             Regional Comparison
                         </Button>
@@ -189,13 +222,43 @@ const AdvocacyHub = () => {
                                 </div>
                             ))}
                         </div>
-                        <Button className="w-full h-16 rounded-[32px] font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-primary/20 group">
+                        <Button
+                            onClick={handleDownloadReport}
+                            className="w-full h-16 rounded-[32px] font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-primary/20 group"
+                        >
                             <FileBarChart className="h-4 w-4 mr-2" />
                             Download National Report
                         </Button>
                     </div>
                 </div>
             </div>
+
+            {/* Community Voices */}
+            {featuredStories.length > 0 && (
+              <div className="space-y-8">
+                <div className="text-center space-y-3">
+                  <Badge variant="outline" className="text-primary border-primary/20 font-black uppercase tracking-[0.3em] text-[10px] px-6 py-2 rounded-full bg-primary/5">
+                    <Quote className="h-3 w-3 mr-2" />
+                    Community Voices
+                  </Badge>
+                  <h2 className="text-3xl font-black tracking-tight text-slate-900 uppercase italic">Worker Testimonies</h2>
+                  <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 max-w-xl mx-auto">
+                    Real stories from workers across Sri Lanka.
+                  </p>
+                </div>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {featuredStories.map((story) => (
+                    <StoryCard
+                      key={story._id}
+                      story={story}
+                      onLike={(id) => likePost.mutate(id)}
+                      onComment={() => navigate("/community")}
+                      onShare={(id) => sharePost.mutate(id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Advocacy Call to Action */}
             <div className="bg-primary/5 rounded-[56px] border-2 border-primary/20 p-20 text-center space-y-10 relative overflow-hidden">
@@ -206,11 +269,18 @@ const AdvocacyHub = () => {
                     </p>
                  </div>
                  <div className="flex flex-col sm:flex-row justify-center gap-4 relative z-10">
-                    <Button className="h-16 px-12 rounded-full font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-primary/30">
+                    <Button
+                        onClick={handleRegisterOrg}
+                        className="h-16 px-12 rounded-full font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-primary/30"
+                    >
                         Register Organization
                         <ChevronRight className="h-4 w-4 ml-2" />
                     </Button>
-                    <Button variant="outline" className="h-16 px-12 rounded-full font-black uppercase tracking-widest text-[11px] bg-white border-2 border-slate-100 hover:bg-slate-50">
+                    <Button
+                        onClick={handleViewLedger}
+                        variant="outline"
+                        className="h-16 px-12 rounded-full font-black uppercase tracking-widest text-[11px] bg-white border-2 border-slate-100 hover:bg-slate-50"
+                    >
                         View Public Ledger
                     </Button>
                  </div>

@@ -36,6 +36,7 @@ const Sidebar = ({ className }) => {
       lawyer: [
         { title: t("nav.dashboard", "Legal Command"),  href: "/legal/dashboard",      icon: Gavel },
         { title: t("nav.cases", "Active Docket"),      href: "/legal/cases",          icon: ShieldCheck },
+        { title: t("nav.complaints", "All Complaints"), href: "/complaints/officer",  icon: FileText },
         { title: t("nav.appointments","Consultations"),href: "/legal/appointments",   icon: Calendar },
       ],
       ngo: [
@@ -48,6 +49,7 @@ const Sidebar = ({ className }) => {
       admin: [
         { title: t("nav.dashboard", "System Governance"), href: "/admin/dashboard",             icon: ShieldAlert },
         { title: t("nav.users", "User Registry"),          href: "/admin/dashboard?tab=users",   icon: Users },
+        { title: t("nav.complaints", "Complaints"),        href: "/complaints/admin",            icon: FileText },
         { title: t("nav.analytics", "Global Analytics"),   href: "/admin/dashboard?tab=analytics",icon: BarChart3 },
       ],
     };

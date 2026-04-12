@@ -82,7 +82,12 @@ const NGOCasesPage = () => {
           <option value="medium">Medium</option>
           <option value="low">Low</option>
         </select>
-        <Button variant="ghost" className="h-14 w-14 rounded-[28px] bg-slate-50/50 hover:bg-primary/5 text-slate-400 hover:text-primary transition-all">
+        <Button
+          onClick={() => { setSearchTerm(""); setPriorityFilter("all"); }}
+          variant="ghost"
+          className="h-14 w-14 rounded-[28px] bg-slate-50/50 hover:bg-primary/5 text-slate-400 hover:text-primary transition-all"
+          title="Reset filters"
+        >
           <Filter className="h-5 w-5" />
         </Button>
       </div>

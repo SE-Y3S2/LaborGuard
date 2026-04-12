@@ -22,9 +22,13 @@ app.use(express.json());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Environment variables
-const PORT = process.env.PORT || 3004;
+const PORT = process.env.PORT || 5004;
 const SERVICE_NAME = process.env.SERVICE_NAME || 'notification-service';
 const MONGODB_URI = process.env.MONGODB_URI;
+if (process.env.NODE_ENV === 'production' && !process.env.KAFKA_BROKER) {
+    console.error('[notification-service] KAFKA_BROKER env var is required in production');
+    process.exit(1);
+}
 const KAFKA_BROKER = process.env.KAFKA_BROKER || 'localhost:9092';
 
 // MongoDB Connection
@@ -78,7 +82,7 @@ const connectKafka = async () => {
                     const Notification = require('./models/Notification');
 
                     if (topic === 'messaging-events' && event.type === 'message_sent') {
-                        const { senderId, recipientIds, contentPreview, conversationId, isGroup, groupName } = event.payload;
+                        const { senderId, recipientIds, recipientEmails, contentPreview, conversationId, isGroup, groupName } = event.payload;
                         const { sendEmailNotification } = require('./utils/resendClient');
 
                         const title = isGroup ? `New message in ${groupName || 'Group'}` : `New message`;
@@ -95,17 +99,25 @@ const connectKafka = async () => {
                                 relatedId: conversationId
                             });
 
-                            // Send an email alert for this new message
-                            await sendEmailNotification(
-                                'user@example.com', // Placeholder
-                                `LaborGuard: ${title}`,
-                                `<p>You have a new message on LaborGuard!</p><p><strong>${title}</strong></p><p><i>"${contentPreview}"</i></p>`
-                            );
+                            // Only email if the producer supplied a real recipient email.
+                            // Never fall back to a placeholder — silently skip instead.
+                            const recipientEmail =
+                                recipientEmails?.[userId] ||
+                                (typeof recipientEmails === 'string' ? recipientEmails : null);
+                            if (recipientEmail) {
+                                await sendEmailNotification(
+                                    recipientEmail,
+                                    `LaborGuard: ${title}`,
+                                    `<p>You have a new message on LaborGuard!</p><p><strong>${title}</strong></p><p><i>"${contentPreview}"</i></p>`
+                                );
+                            } else {
+                                console.warn(`[${SERVICE_NAME}] Skipping email for ${userId} — no recipientEmail in payload`);
+                            }
                         }
 
                         if (notifications.length > 0) {
                             await Notification.insertMany(notifications);
-                            console.log(`[${SERVICE_NAME}] Created ${notifications.length} message notifications and emitted emails`);
+                            console.log(`[${SERVICE_NAME}] Created ${notifications.length} message notifications`);
                         }
                     } else if (topic === 'community-events') {
                         if (event.type === 'post_liked') {

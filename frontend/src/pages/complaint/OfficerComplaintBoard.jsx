@@ -23,7 +23,7 @@ const OfficerComplaintBoard = () => {
         limit: filters.limit,
         status: filters.status || undefined,
         search: filters.search || undefined,
-        assignedTo: user?.id,
+        assignedTo: user?.userId,
       });
       setComplaints(response.data.data.complaints || []);
       setPagination(response.data.data.pagination || null);

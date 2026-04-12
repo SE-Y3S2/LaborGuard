@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const AUTH_BASE_URL = import.meta.env.VITE_AUTH_SERVICE_URL || 'http://localhost:5001';
-const COMPLAINT_BASE_URL = import.meta.env.VITE_COMPLAINT_SERVICE_URL || 'http://localhost:3003';
+const COMPLAINT_BASE_URL = import.meta.env.VITE_COMPLAINT_SERVICE_URL || 'http://localhost:5003';
 
 const authApi = axios.create({
   baseURL: AUTH_BASE_URL,
