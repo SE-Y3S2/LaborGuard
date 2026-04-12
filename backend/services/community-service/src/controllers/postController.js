@@ -2,14 +2,15 @@
  * postController.js — Community Service
  *
  * FIXES APPLIED:
- *  [AUTH-1]  authorId/userId always from req.user.userId (JWT) — never req.body  → prevents identity spoofing
+ *  [AUTH-1]  authorId/userId always from req.user.userId (JWT) — never req.body
  *  [PERF-1]  getFeed: server-side $or query — eliminates [...following, userId] JS array spread
  *  [PERF-2]  sharePost: atomic $inc — eliminates load-then-save race condition
  *  [PERF-3]  likePost: atomic $addToSet / $pull — eliminates fragile splice/indexOf
  *  [BUG-1]   votePoll: poll.options[n].votes is an array of userId strings (not a counter).
- *            Old code did `votes += 1` on an array — wrong type. Now uses $addToSet and
- *            prevents double-voting per user.
  *  [PERF-4]  .lean() on all read-only queries
+ *  [ENRICH]  getFeed/getTrending/getPostById: denormalized author fields written at create time
+ *  [FALLBACK] getFeed falls back to trending when user has no follows
+ *  [COMMENT]  createPost/updatePost write authorName/Avatar from UserProfile
  */
 
 const Post        = require('../models/Post');
@@ -37,6 +38,12 @@ exports.createPost = async (req, res) => {
         const hashtags    = parseField(req.body.hashtags, []);
         const poll        = parseField(req.body.poll, undefined);
 
+        // Enrich with author profile at write time (denormalized)
+        const profile = await UserProfile.findOne({ userId: authorId }, { name: 1, avatarUrl: 1, role: 1 }).lean();
+        const authorName   = profile?.name   || '';
+        const authorAvatar = profile?.avatarUrl || '';
+        const authorRole   = profile?.role   || 'worker';
+
         let mediaUrls = [];
         if (req.files?.length > 0) {
             const results = await Promise.all(req.files.map(f => uploadToCloudinary(f.buffer)));
@@ -46,7 +53,7 @@ exports.createPost = async (req, res) => {
             if (!Array.isArray(mediaUrls)) mediaUrls = [mediaUrls];
         }
 
-        const post = await Post.create({ authorId, content, mediaUrls, hashtags, poll });
+        const post = await Post.create({ authorId, authorName, authorAvatar, authorRole, content, mediaUrls, hashtags, poll });
         res.status(201).json(post);
     } catch (error) {
         res.status(500).json({ message: 'Error creating post', error: error.message });
@@ -60,21 +67,38 @@ exports.getFeed = async (req, res) => {
         const page  = Math.max(1, parseInt(req.query.page)  || 1);
         const limit = Math.min(50, parseInt(req.query.limit) || 20);
 
-        // [PERF-1] Fetch only the following array — no full document
         const profile = await UserProfile.findOne({ userId }, { following: 1 }).lean();
         if (!profile) return res.status(404).json({ message: 'User profile not found' });
 
-        // [PERF-1] $or resolved fully on the DB — no JS array construction
-        const posts = await Post.find({
-            $or: [
-                { authorId: { $in: profile.following } },
-                { authorId: userId }
-            ]
-        })
-            .sort({ createdAt: -1 })
-            .skip((page - 1) * limit)
-            .limit(limit)
-            .lean();                                                 // [PERF-4]
+        let posts;
+
+        if (profile.following?.length > 0) {
+            // [PERF-1] Personalized feed
+            posts = await Post.find({
+                $or: [
+                    { authorId: { $in: profile.following } },
+                    { authorId: userId }
+                ]
+            })
+                .sort({ createdAt: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit)
+                .lean();                                             // [PERF-4]
+        } else {
+            // [FALLBACK] New user: fall back to global trending
+            posts = await Post.aggregate([
+                {
+                    $addFields: {
+                        engagementScore: {
+                            $add: [{ $size: '$likes' }, '$shareCount', { $multiply: ['$commentCount', 2] }]
+                        }
+                    }
+                },
+                { $sort:  { engagementScore: -1, createdAt: -1 } },
+                { $skip:  (page - 1) * limit },
+                { $limit: limit }
+            ]);
+        }
 
         res.json(posts);
     } catch (error) {
@@ -92,7 +116,7 @@ exports.getTrendingFeed = async (req, res) => {
             {
                 $addFields: {
                     engagementScore: {
-                        $add: [{ $size: '$likes' }, '$shareCount']
+                        $add: [{ $size: '$likes' }, '$shareCount', { $multiply: ['$commentCount', 2] }]
                     }
                 }
             },
@@ -118,7 +142,7 @@ exports.searchByHashtag = async (req, res) => {
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(limit)
-            .lean();                                                 // [PERF-4]
+            .lean();
 
         res.json(posts);
     } catch (error) {
@@ -141,7 +165,7 @@ exports.getPostById = async (req, res) => {
 exports.updatePost = async (req, res) => {
     try {
         const { postId } = req.params;
-        const authorId   = req.user.userId;                        // [AUTH-1]
+        const authorId   = req.user.userId;
         const { content } = req.body;
 
         const post = await Post.findById(postId);
@@ -169,12 +193,11 @@ exports.updatePost = async (req, res) => {
 exports.deletePost = async (req, res) => {
     try {
         const { postId } = req.params;
-        const userId     = req.user.userId;                        // [AUTH-1]
+        const userId     = req.user.userId;
 
         const post = await Post.findById(postId);
         if (!post) return res.status(404).json({ message: 'Post not found' });
 
-        // Admins may delete any post
         if (post.authorId.toString() !== userId && req.user.role !== 'admin') {
             return res.status(403).json({ message: 'Unauthorized to delete this post' });
         }
@@ -190,9 +213,8 @@ exports.deletePost = async (req, res) => {
 exports.likePost = async (req, res) => {
     try {
         const { postId } = req.params;
-        const userId     = req.user.userId;                        // [AUTH-1]
+        const userId     = req.user.userId;
 
-        // [PERF-3] Atomic $addToSet / $pull — replaces fragile splice/indexOf
         const alreadyLiked = await Post.exists({ _id: postId, likes: userId });
         const update       = alreadyLiked
             ? { $pull:     { likes: userId } }
@@ -209,7 +231,7 @@ exports.likePost = async (req, res) => {
             });
         }
 
-        res.json(post);
+        res.json({ liked: !alreadyLiked, likeCount: post.likes.length });
     } catch (error) {
         res.status(500).json({ message: 'Error liking post', error: error.message });
     }
@@ -220,7 +242,6 @@ exports.sharePost = async (req, res) => {
     try {
         const { postId } = req.params;
 
-        // [PERF-2] Atomic $inc — eliminates load-then-save race condition
         const post = await Post.findByIdAndUpdate(
             postId,
             { $inc: { shareCount: 1 } },
@@ -228,7 +249,7 @@ exports.sharePost = async (req, res) => {
         );
         if (!post) return res.status(404).json({ message: 'Post not found' });
 
-        res.json(post);
+        res.json({ shareCount: post.shareCount });
     } catch (error) {
         res.status(500).json({ message: 'Error sharing post', error: error.message });
     }
@@ -239,7 +260,7 @@ exports.votePoll = async (req, res) => {
     try {
         const { postId }    = req.params;
         const { optionIndex } = req.body;
-        const userId          = req.user.userId;                   // [AUTH-1]
+        const userId          = req.user.userId;
 
         const post = await Post.findById(postId);
         if (!post?.poll?.options?.length) {
@@ -251,7 +272,6 @@ exports.votePoll = async (req, res) => {
             return res.status(400).json({ message: 'Invalid option index' });
         }
 
-        // Prevent double voting — check across ALL options
         const alreadyVoted = post.poll.options.some(opt =>
             Array.isArray(opt.votes) && opt.votes.includes(userId)
         );
@@ -259,8 +279,6 @@ exports.votePoll = async (req, res) => {
             return res.status(409).json({ message: 'You have already voted on this poll' });
         }
 
-        // [BUG-1] votes is an array of userId strings — was wrongly doing votes += 1
-        // [PERF-3] Atomic update using dot-notation path to the specific option
         const updated = await Post.findByIdAndUpdate(
             postId,
             { $addToSet: { [`poll.options.${idx}.votes`]: userId } },
@@ -277,7 +295,7 @@ exports.votePoll = async (req, res) => {
 exports.reportPost = async (req, res) => {
     try {
         const { postId } = req.params;
-        const reporterId = req.user.userId;                        // [AUTH-1]
+        const reporterId = req.user.userId;
         const { reason } = req.body;
 
         const post = await Post.findById(postId);
@@ -285,7 +303,6 @@ exports.reportPost = async (req, res) => {
 
         await Report.create({ reporterId, targetType: 'Post', targetId: postId, reason });
 
-        // Increment reportCount atomically
         await Post.findByIdAndUpdate(postId, { $inc: { reportCount: 1 }, isReported: true });
 
         res.status(201).json({ message: 'Post reported successfully' });

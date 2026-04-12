@@ -1,230 +1,232 @@
 import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { Search, TrendingUp, Users, Bookmark, Hash, Compass } from "lucide-react";
 import { useCommunity } from "@/hooks/useCommunity";
-import { 
-  PlusCircle, 
-  Search, 
-  Sparkles,
-  Globe,
-  Send,
-  Image as ImageIcon,
-  ShieldCheck,
-  MessageCircle,
-  X
-} from "lucide-react";
-import { Button } from "@/components/common/Button";
-import { Badge } from "@/components/common/Badge";
-import { Input } from "@/components/common/Input";
-import { Spinner } from "@/components/common/Spinner";
-import { Textarea } from "@/components/ui/Textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/common/Avatar";
-import { StoryCard } from "@/components/community/StoryCard";
-import { PollCard } from "@/components/community/PollCard";
+import { useAuth } from "@/hooks/useAuth";
+import { StoriesBar } from "@/components/community/StoriesBar";
+import { CommunityPostCard } from "@/components/community/CommunityPostCard";
+import { PostComposer } from "@/components/community/PostComposer";
+import { PostSkeleton } from "@/components/community/PostSkeleton";
+import { CommentThread } from "@/components/community/CommentThread";
+import { UserSuggestion } from "@/components/community/UserSuggestion";
 import { cn } from "@/lib/utils";
 
+const TABS = [
+  { id: "feed",     label: "For You",  icon: Users },
+  { id: "trending", label: "Trending", icon: TrendingUp },
+];
+
+const TRENDING_HASHTAGS = [
+  "WageTheft", "SafetyRights", "WorkersUnite", "FairPay", "LabourLaw",
+  "Apparel", "Construction", "TeaWorkers", "DomesticWorkers",
+];
+
 const CommunityFeedPage = () => {
-    const { user } = useAuth();
-    const { useGetPosts, useGetPolls, createPost, likePost, sharePost, votePoll } = useCommunity();
-    const [searchTerm, setSearchTerm] = useState("");
-    const [isPosting, setIsPosting] = useState(false);
-    const [newPostContent, setNewPostContent] = useState("");
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab]       = useState("feed");
+  const [selectedPost, setSelectedPost] = useState(null); // for comment thread
+  const [searchTag, setSearchTag]       = useState("");
+  const [hashtagSearch, setHashtagSearch] = useState("");
 
-    const { data: posts = [], isLoading: postsLoading } = useGetPosts({ search: searchTerm });
-    //           ^^^^^^ FIX: default to [] so .map() never crashes on undefined
+  const {
+    useGetPosts, useGetTrending, useSearchByHashtag,
+    likePost, sharePost, toggleBookmark, deletePost, reportPost,
+  } = useCommunity();
 
-    const { data: polls = [], isLoading: pollsLoading } = useGetPolls();
-    //           ^^^^^^ FIX: same fix for polls
+  const { data: feedPosts = [],     isLoading: feedLoading }     = useGetPosts();
+  const { data: trendingPosts = [], isLoading: trendingLoading } = useGetTrending();
+  const { data: hashtagPosts = [],  isLoading: hashtagLoading }  = useSearchByHashtag(hashtagSearch);
 
-    const handlePostSubmit = (e) => {
-        e.preventDefault();
-        if (!newPostContent.trim()) return;
-        
-        const formData = new FormData();
-        formData.append('content', newPostContent);
-        
-        createPost.mutate(formData, {
-            onSuccess: () => {
-                setNewPostContent("");
-                setIsPosting(false);
-            }
-        });
-    };
+  const isSearching = hashtagSearch.length > 0;
+  const activePosts   = isSearching ? hashtagPosts : (activeTab === "feed" ? feedPosts : trendingPosts);
+  const activeLoading = isSearching ? hashtagLoading : (activeTab === "feed" ? feedLoading : trendingLoading);
 
-    if (postsLoading || pollsLoading) return (
-        <div className="p-32 flex flex-col items-center">
-            <Spinner size="lg" />
-            <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-slate-400 font-mono italic">SYNCING COMMUNITY BROADCAST...</p>
-        </div>
-    );
+  // Story viewer (simple modal placeholder)
+  const [viewingStory, setViewingStory] = useState(null);
 
-    return (
-        <div className="space-y-16 animate-fade-in pb-20 mt-4">
-            {/* Header */}
-            <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-10 px-4">
-                <div className="space-y-4">
-                    <Badge variant="outline" className="text-primary border-primary/20 font-black uppercase tracking-[0.2em] text-[9px] px-4 py-1.5 rounded-full bg-primary/5">The Labor Collective</Badge>
-                    <h1 className="text-5xl md:text-6xl font-black tracking-tight text-slate-900 leading-tight">
-                        Shared <br />
-                        <span className="text-primary italic">Experiences.</span>
-                    </h1>
-                    <p className="text-sm font-bold text-slate-400 max-w-xl leading-relaxed uppercase italic">
-                        Real stories from the hidden engine of Sri Lanka. <span className="text-slate-800 not-italic font-black">Anonymous. Verified. Empowering.</span>
-                    </p>
-                </div>
-                
-                <div className="flex gap-4">
-                    <Button 
-                        onClick={() => setIsPosting(true)}
-                        className="h-16 px-10 rounded-full font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-primary/30 group"
-                    >
-                        <PlusCircle className="h-4 w-4 mr-2 group-hover:rotate-90 transition-transform" />
-                        Share My Experience
-                    </Button>
-                </div>
-            </header>
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {/* ── Stories Bar ─────────────────────────────────────────── */}
+      <StoriesBar
+        onAddStory={() => navigate("/community/status/new")}
+        onViewStory={setViewingStory}
+      />
 
-            {/* Discovery Hub */}
-            <div className="grid lg:grid-cols-4 gap-8 px-2">
-                {/* Search & Stats */}
-                <div className="lg:col-span-1 space-y-8">
-                    <div className="bg-white p-6 rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/20 space-y-6">
-                        <div className="flex items-center gap-3 px-2">
-                            <Search className="h-4 w-4 text-slate-400" />
-                            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900">Explore Topics</h3>
-                        </div>
-                        <Input 
-                            placeholder="Search keywords..." 
-                            className="bg-slate-50 border-none h-12 rounded-2xl text-xs font-bold px-5"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                        <div className="flex flex-wrap gap-2">
-                            {['Wage_Theft', 'Safety', 'Contracts', 'Transport'].map(t => (
-                                <Badge key={t} className="bg-slate-50 hover:bg-primary/10 text-slate-500 hover:text-primary transition-all cursor-pointer border-none font-bold text-[8px] tracking-widest uppercase">
-                                    #{t}
-                                </Badge>
-                            ))}
-                        </div>
-                    </div>
+      {/* ── Main Layout ─────────────────────────────────────────── */}
+      <div className="max-w-5xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                    <div className="bg-slate-900 p-8 rounded-[48px] text-white space-y-8 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-20 h-20 bg-primary/20 blur-3xl" />
-                        <div className="space-y-1">
-                            <h3 className="text-lg font-black uppercase tracking-tight">Active Pulse</h3>
-                            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Real-time Advocacy metrics</p>
-                        </div>
-                        <div className="space-y-6">
-                            {[
-                                { label: "Collective Intelligence", val: "2.4K", change: "+12%" },
-                                { label: "Verified Victories", val: "842", change: "+4%" },
-                            ].map((s, i) => (
-                                <div key={i} className="flex justify-between items-end border-b border-white/5 pb-4">
-                                    <div>
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">{s.label}</p>
-                                        <p className="text-2xl font-black">{s.val}</p>
-                                    </div>
-                                    <Badge className="bg-green-500/10 text-green-400 border-none text-[8px] mb-1">{s.change}</Badge>
-                                </div>
-                            ))}
-                        </div>
-                        <Button variant="outline" className="w-full h-12 rounded-2xl border-white/10 text-white hover:bg-white/5 text-[9px] font-black uppercase tracking-widest">
-                            <Globe className="h-3.5 w-3.5 mr-2" />
-                            Global Trends
-                        </Button>
-                    </div>
-                </div>
+        {/* ── Feed Column ─────────────────────────────────────────── */}
+        <div className="lg:col-span-2 space-y-4">
 
-                {/* Experiential Stream */}
-                <div className="lg:col-span-3">
-                    <div className="columns-1 md:columns-2 gap-8 space-y-8">
-                        {/* FIX: polls is now safely [] by default, no crash */}
-                        {polls.length > 0 && (
-                            <PollCard 
-                                poll={polls[0]} 
-                                onVote={(id, opt) => votePoll.mutate({ pollId: id, optionIndex: opt })} 
-                            />
-                        )}
+          {/* Post Composer */}
+          <PostComposer />
 
-                        {posts.length === 0 ? (
-                            <div className="col-span-full py-32 text-center bg-slate-50 rounded-[56px] border-2 border-dashed border-slate-200">
-                                <MessageCircle className="h-16 w-16 text-slate-300 mx-auto mb-6" />
-                                <h3 className="text-2xl font-black text-slate-900 tracking-tight">The Silence is Waiting.</h3>
-                                <p className="text-sm font-bold text-slate-400 uppercase italic mt-2">Be the first to break the cycle and share your experience.</p>
-                            </div>
-                        ) : (
-                            // FIX: posts is now safely [] by default — .map() will never crash
-                            posts.map((post) => (
-                                <StoryCard 
-                                    key={post._id} 
-                                    story={post} 
-                                    onLike={(id) => likePost.mutate(id)}
-                                    onShare={(id) => sharePost.mutate(id)}
-                                />
-                            ))
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* Posting Modal */}
-            {isPosting && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-xl animate-in fade-in duration-300">
-                    <div className="bg-white w-full max-w-2xl rounded-[48px] shadow-3xl overflow-hidden animate-in zoom-in-95 duration-300">
-                        <div className="p-10 space-y-8">
-                            <div className="flex justify-between items-start">
-                                <div className="space-y-2">
-                                    <h3 className="text-3xl font-black text-slate-900 tracking-tight uppercase italic flex items-center gap-3">
-                                        <Sparkles className="h-6 w-6 text-primary" />
-                                        Share My Story
-                                    </h3>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Your voice matters. Shared anonymously by default.</p>
-                                </div>
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="h-12 w-12 rounded-2xl bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-500 transition-all"
-                                    onClick={() => setIsPosting(false)}
-                                >
-                                    <X className="h-5 w-5" />
-                                </Button>
-                            </div>
-
-                            <form onSubmit={handlePostSubmit} className="space-y-8">
-                                <Textarea 
-                                    className="min-h-[240px] rounded-[32px] bg-slate-50 border-none p-8 text-lg font-bold placeholder:text-slate-300 focus:ring-2 focus:ring-primary/20 transition-all resize-none shadow-inner"
-                                    placeholder="Write your experience here... (e.g., 'Late transport again today in the apparel sector. Third time this week...')"
-                                    value={newPostContent}
-                                    onChange={(e) => setNewPostContent(e.target.value)}
-                                    autoFocus
-                                />
-
-                                <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
-                                    <div className="flex gap-4">
-                                        <Button type="button" variant="ghost" className="h-14 px-6 rounded-2xl bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-primary transition-all">
-                                            <ImageIcon className="h-4 w-4 mr-2" />
-                                            Add Evidence
-                                        </Button>
-                                        <div className="flex items-center gap-3 px-6 h-14 bg-green-50/50 rounded-2xl border border-green-100">
-                                            <ShieldCheck className="h-4 w-4 text-green-500" />
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-green-600">Identity Encrypted</span>
-                                        </div>
-                                    </div>
-                                    <Button 
-                                        type="submit"
-                                        disabled={!newPostContent.trim() || createPost.isPending}
-                                        className="h-16 px-12 rounded-full font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-primary/20 w-full sm:w-auto"
-                                    >
-                                        {createPost.isPending ? "Broadcasting..." : "Confirm & Share"}
-                                        <Send className="h-4 w-4 ml-2" />
-                                    </Button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
+          {/* Tab switcher */}
+          <div className="flex items-center bg-white rounded-2xl border border-slate-100 p-1 shadow-sm">
+            {TABS.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => { setActiveTab(id); setHashtagSearch(""); }}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-black uppercase tracking-wide transition-all",
+                  activeTab === id && !isSearching
+                    ? "bg-teal-500 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-700 hover:bg-slate-50"
+                )}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+              </button>
+            ))}
+            {isSearching && (
+              <button
+                onClick={() => setHashtagSearch("")}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-black uppercase tracking-wide bg-purple-500 text-white shadow-sm"
+              >
+                <Hash className="h-3.5 w-3.5" />
+                #{hashtagSearch}
+              </button>
             )}
+          </div>
+
+          {/* Posts */}
+          {activeLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => <PostSkeleton key={i} />)}
+            </div>
+          ) : activePosts.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-slate-100 py-20 flex flex-col items-center text-center space-y-4 shadow-sm">
+              <div className="h-20 w-20 rounded-full bg-slate-50 flex items-center justify-center">
+                <Users className="h-10 w-10 text-slate-200" />
+              </div>
+              <div>
+                <p className="text-lg font-black text-slate-800">No posts yet</p>
+                <p className="text-sm text-slate-400 font-medium mt-1 max-w-xs">
+                  {activeTab === "feed"
+                    ? "Follow some community members or be the first to share your experience!"
+                    : "No trending posts right now. Check back soon."}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {activePosts.map((post) => (
+                <CommunityPostCard
+                  key={post._id}
+                  post={post}
+                  onLike={(id) => likePost.mutate(id)}
+                  onComment={(p) => setSelectedPost(p)}
+                  onShare={(id) => sharePost.mutate(id)}
+                  onBookmark={(id) => toggleBookmark.mutate(id)}
+                  onDelete={(id) => deletePost.mutate(id)}
+                  onReport={(id) => reportPost.mutate({ postId: id, reason: "Reported by user" })}
+                />
+              ))}
+            </div>
+          )}
         </div>
-    );
+
+        {/* ── Right Sidebar ────────────────────────────────────────── */}
+        <aside className="hidden lg:block space-y-5">
+
+          {/* Search */}
+          <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                placeholder="Search by hashtag..."
+                value={searchTag}
+                onChange={(e) => setSearchTag(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && searchTag.trim()) {
+                    setHashtagSearch(searchTag.trim().replace(/^#/, ""));
+                    setSearchTag("");
+                  }
+                }}
+                className="w-full bg-slate-50 rounded-xl pl-9 pr-4 py-2.5 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-200 transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Trending Hashtags */}
+          <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="h-4 w-4 text-teal-600" />
+              <h3 className="text-xs font-black text-slate-700 uppercase tracking-wide">Trending Topics</h3>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {TRENDING_HASHTAGS.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => setHashtagSearch(tag)}
+                  className={cn(
+                    "text-xs font-bold px-3 py-1.5 rounded-full transition-all",
+                    hashtagSearch === tag
+                      ? "bg-teal-500 text-white"
+                      : "bg-slate-50 text-teal-700 hover:bg-teal-50 hover:text-teal-800"
+                  )}
+                >
+                  #{tag}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick links */}
+          <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+            <h3 className="text-xs font-black text-slate-700 uppercase tracking-wide mb-3">Discover</h3>
+            <div className="space-y-1">
+              {[
+                { icon: Compass, label: "Explore Community", path: "/community/explore" },
+                { icon: Bookmark, label: "My Bookmarks",     path: "/community/bookmarks" },
+                { icon: Users,   label: "My Profile",        path: `/community/profile/${user?.userId}` },
+              ].map(({ icon: Icon, label, path }) => (
+                <button
+                  key={path}
+                  onClick={() => navigate(path)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-left transition-colors group"
+                >
+                  <div className="h-8 w-8 rounded-lg bg-teal-50 flex items-center justify-center group-hover:bg-teal-100 transition-colors">
+                    <Icon className="h-4 w-4 text-teal-600" />
+                  </div>
+                  <span className="text-sm font-bold text-slate-600 group-hover:text-slate-900 transition-colors">
+                    {label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      {/* ── Comment Thread Overlay ──────────────────────────────── */}
+      {selectedPost && (
+        <CommentThread
+          post={selectedPost}
+          onClose={() => setSelectedPost(null)}
+        />
+      )}
+
+      {/* ── Story Viewer (basic overlay) ───────────────────────── */}
+      {viewingStory && (
+        <div
+          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center animate-in fade-in"
+          onClick={() => setViewingStory(null)}
+        >
+          <div className="max-w-sm w-full mx-4 rounded-3xl overflow-hidden bg-slate-900 aspect-[9/16] relative flex items-end">
+            {viewingStory.mediaUrl && (
+              <img src={viewingStory.mediaUrl} alt="Story" className="absolute inset-0 w-full h-full object-cover" />
+            )}
+            <div className="relative z-10 p-6 bg-gradient-to-t from-black/80 via-transparent">
+              <p className="text-sm font-bold text-white">{viewingStory.content}</p>
+              <p className="text-xs text-white/60 mt-1">{viewingStory.authorName}</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default CommunityFeedPage;

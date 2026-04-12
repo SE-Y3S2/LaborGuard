@@ -8,7 +8,10 @@ const router = express.Router();
 
 router.use(protect); // Protect all routes
 
-router.get('/me', userController.getProfile);
-router.put('/me', updateProfileValidator, validate, userController.updateProfile);
+router.get('/me',     userController.getProfile);
+router.put('/me',     updateProfileValidator, validate, userController.updateProfile);
+
+// New: user search for messaging (chat with anyone by name/email)
+router.get('/search', userController.searchUsers);
 
 module.exports = router;

@@ -6,19 +6,23 @@ const { publishToChannel } = require('../utils/centrifugoClient');
 
 const createConversation = async (req, res) => {
     try {
+        const requesterId = req.user.userId;                    // [AUTH] always from JWT
         const { participants, participantRoles, isGroup, groupName } = req.body;
 
         if (!participants || participants.length < 2) {
             return res.status(400).json({ error: 'At least 2 participants required' });
         }
 
+        // Ensure requester is included in participants
+        if (!participants.includes(requesterId)) {
+            participants.push(requesterId);
+        }
+
         if (!isGroup) {
-            // Check if a 1-on-1 conversation already exists
             const existingConversation = await Conversation.findOne({
                 isGroup: false,
                 participants: { $all: participants, $size: participants.length }
             });
-
             if (existingConversation) {
                 return res.status(200).json(existingConversation);
             }
@@ -41,7 +45,7 @@ const createConversation = async (req, res) => {
 
 const getConversations = async (req, res) => {
     try {
-        const userId = req.user.userId; // FIX: from JWT — was req.params.userId (spoofable)
+        const userId = req.user.userId;                        // [AUTH] from JWT
         const limit = parseInt(req.query.limit) || 20;
         const page = parseInt(req.query.page) || 1;
 
@@ -68,8 +72,9 @@ const getMessages = async (req, res) => {
             return res.status(404).json({ error: 'Conversation not found' });
         }
 
+        // [FIX] Sort ascending (oldest first) so frontend renders correctly
         const messages = await Message.find({ conversationId })
-            .sort({ createdAt: -1 }) // Newest first for pagination
+            .sort({ createdAt: 1 })
             .skip((page - 1) * limit)
             .limit(limit);
 
@@ -82,10 +87,11 @@ const getMessages = async (req, res) => {
 
 const sendMessage = async (req, res) => {
     try {
-        const { conversationId, senderId, content } = req.body;
+        const senderId = req.user.userId;                      // [AUTH-FIX] from JWT — was req.body.senderId (spoofable)
+        const { conversationId, content } = req.body;
 
-        if (!conversationId || !senderId || (!content && !(req.files && req.files.length > 0))) {
-            return res.status(400).json({ error: 'conversationId, senderId, and content or media are required' });
+        if (!conversationId || (!content && !(req.files && req.files.length > 0))) {
+            return res.status(400).json({ error: 'conversationId and content or media are required' });
         }
 
         const conversation = await Conversation.findById(conversationId);
@@ -97,7 +103,6 @@ const sendMessage = async (req, res) => {
             return res.status(403).json({ error: 'Sender is not a participant in this conversation' });
         }
 
-        // Handle media uploads via Cloudinary
         const mediaUrls = [];
         if (req.files && req.files.length > 0) {
             const uploadPromises = req.files.map(file => uploadToCloudinary(file.buffer));
@@ -115,9 +120,8 @@ const sendMessage = async (req, res) => {
 
         await newMessage.save();
 
-        let previewText = content ? content.substring(0, 50) + (content.length > 50 ? '...' : '') : 'Sent an attachment';
+        const previewText = content ? content.substring(0, 50) + (content.length > 50 ? '...' : '') : 'Sent an attachment';
 
-        // Update conversation's last message
         conversation.lastMessage = {
             senderId,
             content: previewText,
@@ -125,29 +129,25 @@ const sendMessage = async (req, res) => {
         };
         await conversation.save();
 
-        // Determine recipients
         const recipientIds = conversation.participants.filter(id => id !== senderId);
 
-        // Emit Kafka event for notifications
         await emitEvent('messaging-events', 'message_sent', {
-            messageId: newMessage._id,
+            messageId  : newMessage._id,
             conversationId: conversation._id,
             senderId,
             recipientIds,
             contentPreview: previewText,
-            isGroup: conversation.isGroup,
-            groupName: conversation.groupName
+            isGroup    : conversation.isGroup,
+            groupName  : conversation.groupName
         });
 
-        // Publish to Centrifugo for real-time delivery
         try {
             await publishToChannel(`chat:${conversationId}`, {
-                type: 'new_message',
+                type   : 'new_message',
                 message: newMessage
             });
         } catch (centrifugoErr) {
             console.error('Failed to publish to Centrifugo:', centrifugoErr.message);
-            // We don't fail the request if Centrifugo fails
         }
 
         res.status(201).json(newMessage);
@@ -159,12 +159,8 @@ const sendMessage = async (req, res) => {
 
 const markAsRead = async (req, res) => {
     try {
+        const userId = req.user.userId;                        // [AUTH-FIX] from JWT — was req.body.userId (spoofable)
         const { conversationId } = req.params;
-        const { userId } = req.body;
-
-        if (!userId) {
-            return res.status(400).json({ error: 'userId is required' });
-        }
 
         const result = await Message.updateMany(
             { conversationId, readBy: { $ne: userId } },
@@ -180,19 +176,15 @@ const markAsRead = async (req, res) => {
 
 const deleteMessage = async (req, res) => {
     try {
+        const userId = req.user.userId;                        // [AUTH-FIX] from JWT — was req.body.senderId (spoofable)
         const { messageId } = req.params;
-        const { senderId } = req.body;
-
-        if (!senderId) {
-            return res.status(400).json({ error: 'senderId is required' });
-        }
 
         const message = await Message.findById(messageId);
         if (!message) {
             return res.status(404).json({ error: 'Message not found' });
         }
 
-        if (message.senderId !== senderId) {
+        if (message.senderId !== userId) {
             return res.status(403).json({ error: 'You can only delete your own messages' });
         }
 
