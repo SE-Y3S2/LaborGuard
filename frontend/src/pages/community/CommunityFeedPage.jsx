@@ -8,7 +8,7 @@ import { CommunityPostCard } from "@/components/community/CommunityPostCard";
 import { PostComposer } from "@/components/community/PostComposer";
 import { PostSkeleton } from "@/components/community/PostSkeleton";
 import { CommentThread } from "@/components/community/CommentThread";
-import { UserSuggestion } from "@/components/community/UserSuggestion";
+import { StoryComposerModal } from "@/components/community/StoryComposerModal";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -31,8 +31,9 @@ const CommunityFeedPage = () => {
 
   const {
     useGetPosts, useGetTrending, useSearchByHashtag,
-    likePost, sharePost, toggleBookmark, deletePost, reportPost,
+    likePost, sharePost, toggleBookmark, deletePost, reportPost, votePoll,
   } = useCommunity();
+  const [storyComposerOpen, setStoryComposerOpen] = useState(false);
 
   const { data: feedPosts = [],     isLoading: feedLoading }     = useGetPosts();
   const { data: trendingPosts = [], isLoading: trendingLoading } = useGetTrending();
@@ -49,7 +50,7 @@ const CommunityFeedPage = () => {
     <div className="min-h-screen bg-slate-50">
       {/* ── Stories Bar ─────────────────────────────────────────── */}
       <StoriesBar
-        onAddStory={() => navigate("/community/status/new")}
+        onAddStory={() => setStoryComposerOpen(true)}
         onViewStory={setViewingStory}
       />
 
@@ -121,6 +122,7 @@ const CommunityFeedPage = () => {
                   onBookmark={(id) => toggleBookmark.mutate(id)}
                   onDelete={(id) => deletePost.mutate(id)}
                   onReport={(id) => reportPost.mutate({ postId: id, reason: "Reported by user" })}
+                  onVote={(postId, optionIndex) => votePoll.mutate({ postId, optionIndex })}
                 />
               ))}
             </div>
@@ -207,6 +209,12 @@ const CommunityFeedPage = () => {
           onClose={() => setSelectedPost(null)}
         />
       )}
+
+      {/* ── Story Composer Modal ────────────────────────────────── */}
+      <StoryComposerModal
+        open={storyComposerOpen}
+        onClose={() => setStoryComposerOpen(false)}
+      />
 
       {/* ── Story Viewer (basic overlay) ───────────────────────── */}
       {viewingStory && (

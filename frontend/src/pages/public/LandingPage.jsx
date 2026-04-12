@@ -188,8 +188,8 @@ const LandingPage = () => {
                                         </div>
                                     ))}
                                 </div>
-                                <Button size="lg" className="h-16 px-10 rounded-full font-black uppercase tracking-widest text-xs bg-white text-slate-900 hover:bg-slate-100 shadow-2xl">
-                                    Our Impact Report
+                                <Button asChild size="lg" className="h-16 px-10 rounded-full font-black uppercase tracking-widest text-xs bg-white text-slate-900 hover:bg-slate-100 shadow-2xl">
+                                    <Link to="/advocacy">Our Impact Report</Link>
                                 </Button>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
@@ -218,7 +218,7 @@ const LandingPage = () => {
                             <Link to="/register">Create Free Account</Link>
                         </Button>
                         <Button asChild variant="ghost" size="lg" className="h-16 px-12 rounded-full font-black uppercase tracking-widest text-xs border-2 border-slate-100">
-                            <Link to="/contact">Contact Support</Link>
+                            <Link to="/advocacy">Contact Support</Link>
                         </Button>
                     </div>
                 </div>

@@ -13,7 +13,7 @@ const ComplaintList = ({ complaints = [], role = 'worker', pagination, onPageCha
   const navigate = useNavigate();
 
   const getDetailPath = (id) => {
-    if (role === 'admin')  return `/admin/complaints/${id}`;
+    if (role === 'admin')  return `/complaints/${id}`;
     if (role === 'lawyer') return `/legal/cases/${id}`;
     if (role === 'ngo')    return `/ngo/cases/${id}`;
     return `/worker/complaints/${id}`;

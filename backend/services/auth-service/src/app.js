@@ -17,6 +17,16 @@ const adminRoutes = require('./routes/adminRoutes');
 // Load env vars
 dotenv.config();
 
+// Fail fast if critical secrets are missing in production — never silently fall back.
+if (process.env.NODE_ENV === 'production') {
+    const required = ['SESSION_SECRET', 'JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET', 'MONGODB_URI'];
+    const missing = required.filter((k) => !process.env[k]);
+    if (missing.length) {
+        console.error(`[auth-service] Missing required env vars: ${missing.join(', ')}`);
+        process.exit(1);
+    }
+}
+
 // Passport config
 require('./config/passport');
 
@@ -29,7 +39,7 @@ app.use(helmet({
 
 // Session Middleware (Required for Passport OAuth)
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'secret',
+    secret: process.env.SESSION_SECRET || 'dev-only-insecure-session-secret',
     resave: false,
     saveUninitialized: false
 }));

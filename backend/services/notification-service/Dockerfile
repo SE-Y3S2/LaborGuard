@@ -13,6 +13,6 @@ FROM base AS production
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-EXPOSE 5006
+EXPOSE 5004
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "src/index.js"]

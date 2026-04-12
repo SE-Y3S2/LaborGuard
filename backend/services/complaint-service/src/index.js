@@ -29,9 +29,13 @@ app.set('etag', false);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Environment variables
-const PORT = process.env.PORT || 3003;
+const PORT = process.env.PORT || 5003;
 const SERVICE_NAME = process.env.SERVICE_NAME || 'complaint-service';
 const MONGODB_URI = process.env.MONGODB_URI;
+if (process.env.NODE_ENV === 'production' && !process.env.KAFKA_BROKER) {
+    console.error('[complaint-service] KAFKA_BROKER env var is required in production');
+    process.exit(1);
+}
 const KAFKA_BROKER = process.env.KAFKA_BROKER || 'localhost:9092';
 
 // MongoDB Connection

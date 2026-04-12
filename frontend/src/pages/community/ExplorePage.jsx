@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { Compass, Hash, TrendingUp, Search } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Compass, Hash, TrendingUp, Search, BarChart3 } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCommunity } from "@/hooks/useCommunity";
 import { CommunityPostCard } from "@/components/community/CommunityPostCard";
+import { PollCard } from "@/components/community/PollCard";
 import { PostSkeleton } from "@/components/community/PostSkeleton";
 import { CommentThread } from "@/components/community/CommentThread";
 import { cn } from "@/lib/utils";
@@ -15,18 +16,26 @@ const POPULAR_TAGS = [
 
 const ExplorePage = () => {
   const navigate = useNavigate();
-  const { useGetTrending, useSearchByHashtag, likePost, sharePost, toggleBookmark, deletePost, reportPost } = useCommunity();
+  const [searchParams] = useSearchParams();
+  const { useGetTrending, useSearchByHashtag, useGetPolls, likePost, sharePost, toggleBookmark, deletePost, reportPost, votePoll } = useCommunity();
   const [selectedTag, setSelectedTag] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [selectedPost, setSelectedPost] = useState(null);
 
   const { data: trending = [], isLoading: trendingLoading } = useGetTrending();
   const { data: tagPosts = [],  isLoading: tagLoading }     = useSearchByHashtag(selectedTag);
+  const { data: polls = [] } = useGetPolls();
 
   const posts = selectedTag ? tagPosts : trending;
   const loading = selectedTag ? tagLoading : trendingLoading;
 
   const searchTag = (tag) => setSelectedTag(tag.replace(/^#/, "").trim());
+
+  // Accept ?tag=XYZ from hashtag clicks in feed
+  useEffect(() => {
+    const tagFromUrl = searchParams.get("tag");
+    if (tagFromUrl) setSelectedTag(tagFromUrl.replace(/^#/, "").trim());
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -91,6 +100,23 @@ const ExplorePage = () => {
           </div>
         </div>
 
+        {/* Active polls */}
+        {!selectedTag && polls.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-teal-600" />
+              <h2 className="text-sm font-black text-slate-700 uppercase tracking-wide">Active Polls</h2>
+            </div>
+            {polls.slice(0, 2).map((poll) => (
+              <PollCard
+                key={poll._id}
+                poll={poll}
+                onVote={(postId, optionIndex) => votePoll.mutate({ postId, optionIndex })}
+              />
+            ))}
+          </div>
+        )}
+
         {/* Section header */}
         <div className="flex items-center gap-2">
           <TrendingUp className="h-4 w-4 text-teal-600" />
@@ -125,6 +151,7 @@ const ExplorePage = () => {
                 onBookmark={(id) => toggleBookmark.mutate(id)}
                 onDelete={(id) => deletePost.mutate(id)}
                 onReport={(id) => reportPost.mutate({ postId: id, reason: "Reported by user" })}
+                onVote={(postId, optionIndex) => votePoll.mutate({ postId, optionIndex })}
               />
             ))}
           </div>

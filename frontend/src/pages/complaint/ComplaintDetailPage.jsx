@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getComplaintById, updateComplaintStatus } from '../../services/complaint/complaintService';
+import { complaintApi } from '@/api/complaintApi';
+import { registryApi } from '@/api/registryApi';
 import Alert from '../../components/core/Alert';
 import { useAuth } from '@/hooks/useAuth';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { toast } from 'sonner';
 import {
   ArrowLeft, Clock, Building2, User, Tag,
-  CheckCircle2, XCircle, Loader2, MessageSquare
+  CheckCircle2, XCircle, Loader2, MessageSquare, UserPlus, Trash2
 } from 'lucide-react';
 
 const STATUS_OPTIONS = ['pending', 'under_review', 'resolved', 'rejected'];
@@ -29,6 +33,15 @@ const ComplaintDetailPage = () => {
   const [newStatus, setNewStatus] = useState('');
   const [updating, setUpdating] = useState(false);
 
+  // Officer assignment (admin only)
+  const [officers, setOfficers] = useState([]);
+  const [selectedOfficerId, setSelectedOfficerId] = useState('');
+  const [assigning, setAssigning] = useState(false);
+
+  // Delete dialog
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   const fetchComplaint = async () => {
     setLoading(true);
     setError('');
@@ -45,6 +58,49 @@ const ComplaintDetailPage = () => {
   };
 
   useEffect(() => { fetchComplaint(); }, [id]);
+
+  // Load officers for admins only
+  useEffect(() => {
+    if (user?.role !== 'admin') return;
+    (async () => {
+      try {
+        const res = await registryApi.getAllOfficers({ limit: 100 });
+        const list = res.data?.data?.officers || res.data?.officers || res.data?.data || [];
+        setOfficers(list.filter((o) => o.isActive !== false));
+      } catch (err) {
+        // non-fatal; dropdown stays empty
+        console.warn('Failed to load officers', err);
+      }
+    })();
+  }, [user?.role]);
+
+  const handleAssignOfficer = async () => {
+    if (!selectedOfficerId) return;
+    setAssigning(true);
+    try {
+      await complaintApi.assignComplaint(id, selectedOfficerId);
+      toast.success('Officer assigned');
+      await fetchComplaint();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to assign officer');
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await complaintApi.deleteComplaint(id);
+      toast.success('Complaint deleted');
+      navigate('/complaints/admin');
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to delete complaint');
+    } finally {
+      setDeleting(false);
+      setDeleteOpen(false);
+    }
+  };
 
   const handleStatusUpdate = async () => {
     if (newStatus === complaint.status) return;
@@ -63,6 +119,7 @@ const ComplaintDetailPage = () => {
   };
 
   const canUpdateStatus = ['admin', 'lawyer'].includes(user?.role);
+  const isAdmin = user?.role === 'admin';
 
   if (loading) {
     return (
@@ -188,16 +245,77 @@ const ComplaintDetailPage = () => {
           </div>
         )}
 
+        {/* Officer Assignment — admin only */}
+        {isAdmin && (
+          <div className="pt-4 border-t border-slate-100">
+            <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Assign Legal Officer</h2>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <select
+                value={selectedOfficerId}
+                onChange={(e) => setSelectedOfficerId(e.target.value)}
+                className="modern-select flex-1 max-w-sm"
+                disabled={officers.length === 0}
+              >
+                <option value="">
+                  {officers.length === 0 ? "No active officers available" : "Select an officer..."}
+                </option>
+                {officers.map((o) => (
+                  <option key={o._id || o.userId} value={o.userId || o._id}>
+                    {(o.firstName || o.name || "Officer")}{o.lastName ? ` ${o.lastName}` : ''}
+                    {o.specialization ? ` — ${o.specialization}` : ''}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={handleAssignOfficer}
+                disabled={assigning || !selectedOfficerId}
+                className="btn-primary max-w-[200px] py-3">
+                {assigning ? (
+                  <><Loader2 className="h-4 w-4 animate-spin mr-2" />Assigning...</>
+                ) : (
+                  <><UserPlus className="h-4 w-4 mr-2" />Assign Officer</>
+                )}
+              </button>
+            </div>
+            {complaint?.assignedTo && (
+              <p className="mt-3 text-[11px] font-bold text-slate-500">
+                Currently assigned to: <span className="text-slate-800">{complaint.assignedTo?.firstName || complaint.assignedTo}</span>
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Message Button */}
-        <div className="pt-4 border-t border-slate-100">
+        <div className="pt-4 border-t border-slate-100 flex flex-wrap gap-4 items-center">
           <button
             onClick={() => navigate(`/messages?complaint=${complaint._id}`)}
             className="flex items-center gap-2 text-sm font-black text-primary hover:underline uppercase tracking-widest">
             <MessageSquare className="h-4 w-4" />
             Send Message About This Case
           </button>
+
+          {isAdmin && (
+            <button
+              onClick={() => setDeleteOpen(true)}
+              className="ml-auto flex items-center gap-2 text-sm font-black text-red-500 hover:text-red-700 uppercase tracking-widest"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete complaint
+            </button>
+          )}
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={deleteOpen}
+        onClose={() => !deleting && setDeleteOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete complaint?"
+        description="This permanently removes the complaint, its audit trail, and any associated attachments. This cannot be undone."
+        confirmLabel="Delete"
+        variant="destructive"
+        isLoading={deleting}
+      />
     </div>
   );
 };

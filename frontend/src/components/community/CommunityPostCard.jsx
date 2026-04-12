@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Heart, MessageCircle, Share2, Bookmark, MoreHorizontal,
   ShieldCheck, Trash2, Flag, Link2, CheckCircle2
@@ -30,9 +31,12 @@ const CommunityPostCard = ({
   onBookmark,
   onDelete,
   onReport,
+  onVote,
   isBookmarked = false,
 }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const userHasVoted = post.poll?.options?.some((o) => o.votes?.includes(user?.userId));
   const [showMenu, setShowMenu] = useState(false);
   const [liked,    setLiked]    = useState(post.likes?.includes(user?.userId));
   const [likeCount, setLikeCount] = useState(post.likes?.length || 0);
@@ -146,9 +150,14 @@ const CommunityPostCard = ({
       {post.hashtags?.length > 0 && (
         <div className="flex flex-wrap gap-1.5 px-4 pb-2">
           {post.hashtags.slice(0, 4).map((tag, i) => (
-            <span key={i} className="text-[11px] font-bold text-teal-600 hover:text-teal-800 cursor-pointer transition-colors">
+            <button
+              key={i}
+              type="button"
+              onClick={() => navigate(`/community/explore?tag=${encodeURIComponent(tag)}`)}
+              className="text-[11px] font-bold text-teal-600 hover:text-teal-800 cursor-pointer transition-colors"
+            >
               #{tag}
-            </span>
+            </button>
           ))}
         </div>
       )}
@@ -190,14 +199,25 @@ const CommunityPostCard = ({
           {post.poll.options.map((opt, i) => {
             const totalVotes = post.poll.options.reduce((s, o) => s + (o.votes?.length || 0), 0);
             const pct = totalVotes > 0 ? Math.round(((opt.votes?.length || 0) / totalVotes) * 100) : 0;
+            const selected = opt.votes?.includes(user?.userId);
             return (
-              <div key={i} className="relative h-9 rounded-lg bg-slate-100 overflow-hidden">
+              <button
+                key={i}
+                type="button"
+                onClick={() => !userHasVoted && onVote?.(post._id, i)}
+                disabled={userHasVoted}
+                className={cn(
+                  "relative h-9 w-full rounded-lg bg-slate-100 overflow-hidden text-left",
+                  userHasVoted ? "cursor-default" : "cursor-pointer hover:bg-slate-200 transition-colors",
+                  selected && "ring-2 ring-teal-500"
+                )}
+              >
                 <div className="absolute inset-y-0 left-0 bg-teal-100 transition-all duration-700" style={{ width: `${pct}%` }} />
                 <div className="relative z-10 flex items-center justify-between h-full px-3">
                   <span className="text-xs font-bold text-slate-700">{opt.text}</span>
                   <span className="text-xs font-black text-teal-700">{pct}%</span>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>

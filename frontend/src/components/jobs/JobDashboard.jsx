@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { toast } from 'sonner';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 
 const JobDashboard = () => {
     const [jobs, setJobs] = useState([]);
@@ -8,6 +10,7 @@ const JobDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
     // Application Modal State
     const [selectedJob, setSelectedJob] = useState(null);
@@ -16,7 +19,7 @@ const JobDashboard = () => {
     const [submitting, setSubmitting] = useState(false);
 
     const navigate = useNavigate();
-    const JOBS_API = 'http://localhost:5006/api/jobs';
+    const JOBS_API = `${import.meta.env.VITE_JOB_SERVICE_URL || 'http://localhost:5006'}/api/jobs`;
     const userRole = localStorage.getItem('userRole');
 
     const fetchJobs = async () => {
@@ -62,39 +65,41 @@ const JobDashboard = () => {
             fetchJobs();
             setTimeout(() => setSuccess(''), 3000);
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to apply');
+            toast.error(err.response?.data?.message || 'Failed to apply');
         } finally {
             setSubmitting(false);
         }
     };
 
-    const handleDelete = async (jobId) => {
-        if (window.confirm('Delete this job?')) {
-            try {
-                const token = localStorage.getItem('accessToken');
-                await axios.delete(`${JOBS_API}/${jobId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                fetchJobs();
-            } catch (err) {
-                alert(err.response?.data?.message || 'Failed to delete job');
-            }
+    const confirmDelete = async () => {
+        if (!pendingDeleteId) return;
+        try {
+            const token = localStorage.getItem('accessToken');
+            await axios.delete(`${JOBS_API}/${pendingDeleteId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            toast.success('Job deleted');
+            fetchJobs();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to delete job');
+        } finally {
+            setPendingDeleteId(null);
         }
     };
- 
+
     const handleApplyClick = (job) => {
         if (!userRole) {
             // Guest -> Redirect to login
             navigate('/login');
             return;
         }
- 
+
         if (userRole !== 'worker') {
-            // Other Role (Employer/Admin) -> Show popup
-            alert('Only registered workers can apply to this vacancy post.');
+            // Other Role (Employer/Admin) -> Show toast
+            toast.info('Only registered workers can apply to this vacancy.');
             return;
         }
- 
+
         // Worker -> Show modal
         setSelectedJob(job);
     };
@@ -163,7 +168,7 @@ const JobDashboard = () => {
  
                                         {(userRole === 'admin' || userRole === 'employer') && (
                                             <button
-                                                onClick={() => handleDelete(job._id)}
+                                                onClick={() => setPendingDeleteId(job._id)}
                                                 className="ml-4 bg-[#fee2e2] text-accent-danger border-none pt-[0.8rem] pb-[0.8rem] px-4 rounded-xl cursor-pointer transition-transform duration-200 hover:scale-110 flex items-center justify-center"
                                             >🗑️</button>
                                         )}
@@ -174,6 +179,16 @@ const JobDashboard = () => {
                     </div>
                 )}
             </div>
+
+            <ConfirmDialog
+                isOpen={!!pendingDeleteId}
+                onClose={() => setPendingDeleteId(null)}
+                onConfirm={confirmDelete}
+                title="Delete job?"
+                description="This permanently removes the job posting."
+                confirmLabel="Delete"
+                variant="destructive"
+            />
 
             {/* APPLICATION MODAL */}
             {selectedJob && (

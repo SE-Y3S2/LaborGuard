@@ -44,6 +44,15 @@ export const useJobs = (id) => {
     enabled: !!jobId,
   });
 
+  // Employer: fetch ALL applications across own jobs
+  const useGetEmployerApplications = () => useQuery({
+    queryKey: ["employer-applications"],
+    queryFn: async () => {
+      const res = await jobApi.getEmployerApplications();
+      return res.data.data || [];
+    },
+  });
+
   // Worker: fetch own applications
   const useGetMyApplications = () => useQuery({
     queryKey: ["my-applications"],
@@ -111,6 +120,7 @@ export const useJobs = (id) => {
     useGetJob,
     useGetEmployerJobs,
     useGetJobApplications,
+    useGetEmployerApplications,
     useGetMyApplications,
     createJob:               createJobMutation,
     updateJob:               updateJobMutation,

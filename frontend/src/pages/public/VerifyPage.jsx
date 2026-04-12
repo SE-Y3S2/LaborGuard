@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { authApi } from "@/api/authApi";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -58,8 +58,8 @@ const VerifyPage = () => {
         }
         setIsResending(true);
         try {
-            const response = await axios.post("http://localhost:5001/api/auth/resend-verification", { email });
-            toast.success(response.data.message || 'A fresh verification code was sent to your email.');
+            const response = await authApi.resendVerification(email);
+            toast.success(response.data?.message || 'A fresh verification code was sent to your email.');
         } catch (err) {
             toast.error(err.response?.data?.message || 'Failed to resend code');
         } finally {

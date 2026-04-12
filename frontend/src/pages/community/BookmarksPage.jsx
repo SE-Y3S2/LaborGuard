@@ -8,7 +8,7 @@ import { CommentThread } from "@/components/community/CommentThread";
 
 const BookmarksPage = () => {
   const navigate = useNavigate();
-  const { useGetBookmarks, likePost, sharePost, toggleBookmark, deletePost, reportPost } = useCommunity();
+  const { useGetBookmarks, likePost, sharePost, toggleBookmark, deletePost, reportPost, votePoll } = useCommunity();
   const { data: bookmarks = [], isLoading } = useGetBookmarks();
   const [selectedPost, setSelectedPost] = useState(null);
 
@@ -53,6 +53,7 @@ const BookmarksPage = () => {
               onBookmark={(id) => toggleBookmark.mutate(id)}
               onDelete={(id) => deletePost.mutate(id)}
               onReport={(id) => reportPost.mutate({ postId: id, reason: "Reported by user" })}
+              onVote={(postId, optionIndex) => votePoll.mutate({ postId, optionIndex })}
             />
           ))
         )}

@@ -1,6 +1,6 @@
 {
-  "token_hmac_secret_key": "my-secret",
-  "api_key": "my-api-key",
+  "token_hmac_secret_key": "{{.Env.CENTRIFUGO_TOKEN_SECRET}}",
+  "api_key": "{{.Env.CENTRIFUGO_API_KEY}}",
   "health": true,
   "allowed_origins": ["*"],
   "presence": true,
