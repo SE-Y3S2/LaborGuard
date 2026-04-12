@@ -6,6 +6,7 @@ import { appointmentApi } from "@/api/appointmentApi";
 import { toast } from "sonner";
 import {
   Calendar,
+  CalendarClock,
   Clock,
   MapPin,
   User as UserIcon,
@@ -26,6 +27,7 @@ import { Badge } from "@/components/common/Badge";
 import { Input } from "@/components/common/Input";
 import { Spinner } from "@/components/common/Spinner";
 import { EmptyState } from "@/components/common/EmptyState";
+import { RescheduleAppointmentModal } from "@/components/complaint/RescheduleAppointmentModal";
 import { cn } from "@/lib/utils";
 
 const LegalAppointments = () => {
@@ -34,8 +36,9 @@ const LegalAppointments = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [showFilterMenu, setShowFilterMenu] = useState(false);
+    const [reschedulingApt, setReschedulingApt] = useState(null);
 
-    const { data: rawAppointments = [], isLoading } = useQuery({
+    const { data: rawAppointments = [], isLoading, refetch } = useQuery({
         queryKey: ['legal-appointments', user?.userId],
         queryFn: async () => {
             const res = await appointmentApi.getAssignedAppointments();
@@ -230,11 +233,23 @@ const LegalAppointments = () => {
                                             {apt.meetingType === 'online' ? <Video className="h-4 w-4 mr-2" /> : <ChevronRight className="h-4 w-4 mr-2" />}
                                             {apt.meetingType === 'online' ? "Launch Secure Link" : "View Case"}
                                         </Button>
+                                        {(apt.status === 'auto_booked' || apt.status === 'confirmed') && (
+                                            <Button
+                                                onClick={() => setReschedulingApt(apt)}
+                                                variant="ghost"
+                                                className="h-16 px-6 rounded-full font-black uppercase tracking-widest text-[10px] bg-slate-50 hover:bg-primary/5 text-primary transition-all"
+                                                title="Reschedule"
+                                            >
+                                                <CalendarClock className="h-4 w-4 mr-2" />
+                                                Reschedule
+                                            </Button>
+                                        )}
                                         <Button
                                             onClick={() => apt.complaintId && navigate(`/legal/cases/${apt.complaintId}`)}
                                             variant="ghost"
                                             size="icon"
                                             className="h-16 w-16 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all"
+                                            title="Open case"
                                         >
                                             <MoreVertical className="h-5 w-5" />
                                         </Button>
@@ -250,6 +265,13 @@ const LegalAppointments = () => {
             <div className="fixed bottom-0 right-0 p-12 opacity-[0.03] pointer-events-none select-none">
                  <Calendar className="h-96 w-96 rotate-12" />
             </div>
+
+            <RescheduleAppointmentModal
+                open={!!reschedulingApt}
+                appointment={reschedulingApt}
+                onClose={() => setReschedulingApt(null)}
+                onRescheduled={refetch}
+            />
         </div>
     );
 };
