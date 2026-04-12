@@ -14,7 +14,7 @@ const {
 const { upload } = require('../utils/cloudinary');
 
 // GET /api/complaints/stats
-router.get('/stats', authenticate, authorize('admin', 'lawyer'), complaintController.getComplaintStats);
+router.get('/stats', authenticate, authorize('admin', 'lawyer', 'ngo'), complaintController.getComplaintStats);
 
 // GET /api/complaints/my
 router.get('/my', authenticate, authorize('worker'), listComplaintsRules, validate, complaintController.getMyComplaints);

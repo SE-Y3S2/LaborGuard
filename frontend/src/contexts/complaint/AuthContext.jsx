@@ -1,77 +1,41 @@
-import { createContext, useEffect, useMemo, useState } from 'react';
-import { authApi } from '../../services/complaint/apiClient';
+import { createContext, useMemo } from 'react';
+import { useAuthStore } from '../../store/authStore';
 
 const AuthContext = createContext({});
 
 export const AuthProvider = ({ children }) => {
-  const [accessToken, setAccessToken] = useState(localStorage.getItem('accessToken') || '');
-  const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || '');
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const user = useAuthStore((s) => s.user);
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const storeLogout = useAuthStore((s) => s.logout);
+  const setAuth = useAuthStore((s) => s.setAuth);
 
-  const isAuthenticated = Boolean(accessToken);
-
-  const setSession = ({ accessToken: token, userRole: role, profile: sessionProfile }) => {
-    if (token) {
-      localStorage.setItem('accessToken', token);
-      setAccessToken(token);
+  const setSession = ({ accessToken: token, userRole: role, profile: sessionProfile, refreshToken }) => {
+    if (token && sessionProfile) {
+      setAuth(sessionProfile, token, refreshToken ?? null);
     }
-
-    if (role) {
-      localStorage.setItem('userRole', role);
-      setUserRole(role);
-    }
-
-    if (sessionProfile) {
-      setProfile(sessionProfile);
-    }
+    if (token) localStorage.setItem('accessToken', token);
+    if (role) localStorage.setItem('userRole', role);
   };
 
   const logout = () => {
+    storeLogout();
     localStorage.removeItem('accessToken');
     localStorage.removeItem('userRole');
-    setAccessToken('');
-    setUserRole('');
-    setProfile(null);
   };
-
-  const fetchProfile = async () => {
-    if (!accessToken) return;
-    setLoading(true);
-    setError('');
-
-    try {
-      const response = await authApi.get('/users/me');
-      setProfile(response.data.data);
-      setUserRole(response.data.data.role || userRole);
-    } catch (err) {
-      logout();
-      setError('Session expired. Please log in again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (accessToken && !profile) {
-      fetchProfile();
-    }
-  }, [accessToken]);
 
   const value = useMemo(
     () => ({
-      accessToken,
-      userRole,
-      profile,
-      loading,
-      error,
-      isAuthenticated,
+      accessToken: accessToken || '',
+      userRole: user?.role || (typeof localStorage !== 'undefined' ? localStorage.getItem('userRole') : '') || '',
+      profile: user,
+      loading: false,
+      error: '',
+      isAuthenticated: Boolean(accessToken),
       setSession,
       logout,
-      fetchProfile
+      fetchProfile: () => {}
     }),
-    [accessToken, userRole, profile, loading, error, isAuthenticated]
+    [user, accessToken, storeLogout, setAuth]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

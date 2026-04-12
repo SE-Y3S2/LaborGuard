@@ -5,18 +5,22 @@ import { toast } from "sonner";
 export const useComplaints = (id) => {
   const queryClient = useQueryClient();
 
-  // Fetch all complaints with optional filters
-  const useGetComplaints = (params) => {
+  // Fetch all complaints with optional filters (admin / lawyer / ngo list)
+  const useGetComplaints = (params, queryOptions = {}) => {
+    const { enabled = true } = queryOptions;
     return useQuery({
       queryKey: ["complaints", params],
       queryFn: async () => {
         const res = await complaintApi.getAllComplaints(params);
+        const body = res.data?.data;
+        const list = Array.isArray(body) ? body : body?.complaints ?? [];
         return {
-          complaints: res.data?.data || [],
+          complaints: list,
           pagination: res.data?.pagination || { total: 0, page: 1, limit: 10, totalPages: 0 }
         };
       },
       placeholderData: (prev) => prev,
+      enabled,
     });
   };
 
