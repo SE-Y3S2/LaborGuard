@@ -53,7 +53,7 @@ const Navbar = () => {
     const links = {
       worker: '/worker/complaints',
       lawyer: '/legal/cases',
-      admin: '/admin/dashboard?tab=users',
+      admin: '/complaints/admin',
       ngo: '/ngo/cases',
       employer: '/employer/jobs',
     };
@@ -65,7 +65,7 @@ const Navbar = () => {
       worker: 'My Complaints',
       lawyer: 'Case Docket',
       ngo: 'Investigations',
-      admin: 'User Registry',
+      admin: 'All Complaints',
       employer: 'My Job Listings',
     };
     return labels[user?.role] || 'Dashboard';
@@ -74,7 +74,7 @@ const Navbar = () => {
   const getComplaintsIcon = () => {
     if (user?.role === 'lawyer') return Gavel;
     if (user?.role === 'ngo') return ShieldAlert;
-    if (user?.role === 'admin') return Users;
+    if (user?.role === 'admin') return FileText;
     if (user?.role === 'employer') return Briefcase;
     return FileText;
   };
