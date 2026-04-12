@@ -62,7 +62,47 @@ const updateProfile = async (req, res, next) => {
     }
 };
 
+/**
+ * GET /api/users/search?q={query}
+ * Searches users by name or email (case-insensitive).
+ * Returns safe fields only — no password, no tokens.
+ */
+const searchUsers = async (req, res, next) => {
+    try {
+        const { q } = req.query;
+        if (!q || q.trim().length < 2) {
+            return res.status(400).json({ success: false, message: 'Query must be at least 2 characters' });
+        }
+
+        const regex = new RegExp(q.trim(), 'i');
+        const users = await User.find({
+            $or: [
+                { name: regex },
+                { email: regex }
+            ],
+            _id: { $ne: req.user.userId }   // exclude self
+        })
+        .select('_id name email role profile.avatarUrl')
+        .limit(10)
+        .lean();
+
+        // Normalize: map _id to userId for frontend consistency
+        const results = users.map(u => ({
+            userId : u._id.toString(),
+            name   : u.name,
+            email  : u.email,
+            role   : u.role,
+            avatarUrl: u.profile?.avatarUrl || ''
+        }));
+
+        res.status(200).json({ success: true, data: results });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getProfile,
-    updateProfile
+    updateProfile,
+    searchUsers
 };

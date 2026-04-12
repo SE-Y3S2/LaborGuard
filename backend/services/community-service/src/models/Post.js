@@ -5,6 +5,10 @@ const postSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    // Denormalized author fields — written at create time so feed queries need no join
+    authorName: { type: String, default: '' },
+    authorAvatar: { type: String, default: '' },
+    authorRole: { type: String, default: 'worker' },
     content: {
         type: String,
         required: true
@@ -16,6 +20,10 @@ const postSchema = new mongoose.Schema({
         type: String
     }],
     shareCount: {
+        type: Number,
+        default: 0
+    },
+    commentCount: {
         type: Number,
         default: 0
     },
@@ -43,5 +51,6 @@ const postSchema = new mongoose.Schema({
 
 postSchema.index({ createdAt: -1 });
 postSchema.index({ hashtags: 1 });
+postSchema.index({ authorId: 1 });
 
 module.exports = mongoose.model('Post', postSchema);

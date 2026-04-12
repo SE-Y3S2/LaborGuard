@@ -31,6 +31,7 @@ router.patch('/:id/confirm', authenticate, authorize('admin'), validateObjectId,
 router.patch('/:id/reschedule', authenticate, authorize('admin', 'lawyer'), validateObjectId, rescheduleAppointmentRules, validate, appointmentController.rescheduleAppointment);
 
 // PATCH /api/appointments/:id/cancel
-router.patch('/:id/cancel', authenticate, authorize('admin'), validateObjectId, cancelAppointmentRules, validate, appointmentController.cancelAppointment);
+// [FIX] Workers can cancel their own appointments — was authorize('admin') only
+router.patch('/:id/cancel', authenticate, authorize('admin', 'worker'), validateObjectId, cancelAppointmentRules, validate, appointmentController.cancelAppointment);
 
 module.exports = router;

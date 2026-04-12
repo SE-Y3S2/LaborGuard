@@ -34,8 +34,12 @@ import NGODashboard from './pages/ngo/NGODashboard';
 // Shared
 import CommunityFeedPage from './pages/community/CommunityFeedPage';
 import AdvocacyHub from './pages/community/AdvocacyHub';
+import UserProfilePage from './pages/community/UserProfilePage';
+import ExplorePage from './pages/community/ExplorePage';
+import BookmarksPage from './pages/community/BookmarksPage';
 import ChatPage from './pages/messaging/ChatPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import NotificationsPage from './pages/notifications/NotificationsPage';
 
 import { ProtectedRoute, PublicRoute } from './components/auth/ProtectedRoute';
 
@@ -150,8 +154,13 @@ function App() {
           {/* ── Shared Authenticated Routes ───────────────────────────────────── */}
           <Route element={<ProtectedRoute allowedRoles={['worker', 'admin', 'lawyer', 'employer', 'ngo']} />}>
             <Route element={<DashboardLayout />}>
-              <Route path="/community" element={<CommunityFeedPage />} />
-              <Route path="/messages" element={<ChatPage />} />
+              <Route path="/community"                     element={<CommunityFeedPage />} />
+              <Route path="/community/explore"             element={<ExplorePage />} />
+              <Route path="/community/bookmarks"           element={<BookmarksPage />} />
+              <Route path="/community/advocacy"            element={<AdvocacyHub />} />
+              <Route path="/community/profile/:userId"     element={<UserProfilePage />} />
+              <Route path="/messages"                      element={<ChatPage />} />
+              <Route path="/notifications"                  element={<NotificationsPage />} />
             </Route>
           </Route>
 

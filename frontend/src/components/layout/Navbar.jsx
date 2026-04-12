@@ -26,7 +26,7 @@ const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
 
-  const { useGetUnreadCount, useGetNotifications, markAllAsRead } = useNotifications();
+  const { useGetUnreadCount, useGetNotifications, markAllAsRead, markAsRead } = useNotifications();
   const { data: unreadCount } = useGetUnreadCount();
   const { data: notifications } = useGetNotifications();
   const storeUnread = useNotificationStore((s) => s.unreadCount);
@@ -143,6 +143,9 @@ const Navbar = () => {
                     {recentNotifications.length > 0 ? (
                       recentNotifications.map((n, i) => (
                         <div key={n._id || i}
+                          onClick={() => {
+                            if (!n.isRead) markAsRead?.mutate(n._id);
+                          }}
                           className={cn(
                             "p-4 border-b border-slate-50 hover:bg-slate-50/50 transition-colors cursor-pointer",
                             !n.isRead && "bg-primary/5"
@@ -178,6 +181,12 @@ const Navbar = () => {
                         <p className="text-xs font-bold text-slate-400">No notifications yet</p>
                       </div>
                     )}
+                  </div>
+                  <div className="p-3 border-t border-slate-50">
+                    <Button variant="ghost" size="sm" className="w-full text-[10px] font-bold text-primary hover:bg-primary/5 uppercase tracking-widest"
+                      onClick={() => navigate('/notifications')}>
+                      View All Notifications
+                    </Button>
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>

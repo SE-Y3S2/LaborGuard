@@ -8,8 +8,15 @@
 
 | Resource | URL |
 |---|---|
-| **Frontend (Vercel)** | `https://laborguard.vercel.app` |
-| **Backend API Gateway** | `https://laborguard-api.up.railway.app` |
+| **Frontend (Vercel)** | [labor-guard.vercel.app](https://labor-guard.vercel.app) |
+| **Auth Service (Render)** | [laborguard-auth-service.onrender.com](https://laborguard-auth-service.onrender.com) |
+| **Community Service (Render)** | [laborguard.onrender.com](https://laborguard.onrender.com) |
+| **Complaint Service (Render)** | [laborguard-complaint-service.onrender.com](https://laborguard-complaint-service.onrender.com) |
+| **Notification Service (Render)** | [laborguard-notification-service.onrender.com](https://laborguard-notification-service.onrender.com) |
+| **Messaging Service (Render)** | [laborguard-messaging-service.onrender.com](https://laborguard-messaging-service.onrender.com) |
+| **Jobs Service (Render)** | [laborguard-jobs-service.onrender.com](https://laborguard-jobs-service.onrender.com) |
+
+> ⚠️ Render free-tier services may take ~30s to wake from cold start on first request.
 
 ***
 
@@ -511,42 +518,66 @@ JWT_SECRET=test_secret
 ### Performance Tests
 
 Load testing using Artillery.io to validate API throughput under concurrent requests.
+All 6 services have a `tests/performance/load-test.yml` config file.
 
 **Install Artillery:**
 ```bash
 npm install -g artillery
 ```
 
-**Run Performance Test on Auth Service:**
+**Set environment variables for authenticated scenarios:**
 ```bash
+# Set a valid JWT token from a logged-in test user
+export LOAD_TEST_TOKEN=your_valid_jwt_token_here
+export LOAD_TEST_CONV_ID=a_valid_conversation_id   # for messaging-service tests
+```
+
+**Run performance tests per service:**
+
+```bash
+# Auth Service (port 5001)
 cd backend/services/auth-service
+artillery run tests/performance/load-test.yml
+
+# Community Service (port 5002)
+cd backend/services/community-service
+artillery run tests/performance/load-test.yml
+
+# Complaint Service (port 5003)
+cd backend/services/complaint-service
+LOAD_TEST_TOKEN=<your_token> artillery run tests/performance/load-test.yml
+
+# Notification Service (port 5004)
+cd backend/services/notification-service
+LOAD_TEST_TOKEN=<your_token> artillery run tests/performance/load-test.yml
+
+# Messaging Service (port 5005)
+cd backend/services/messaging-service
+LOAD_TEST_TOKEN=<your_token> artillery run tests/performance/load-test.yml
+
+# Job Service (port 5006) — public routes, no token needed
+cd backend/services/job-service
 artillery run tests/performance/load-test.yml
 ```
 
-**Sample Artillery config (`load-test.yml`):**
-```yaml
-config:
-  target: "http://localhost:3001"
-  phases:
-    - duration: 60
-      arrivalRate: 10
-      name: "Warm up"
-    - duration: 120
-      arrivalRate: 50
-      name: "Load test"
-scenarios:
-  - name: "Login endpoint"
-    flow:
-      - post:
-          url: "/api/auth/login"
-          json:
-            email: "test@example.com"
-            password: "TestPass123!"
+**Each load test config has 3 phases:**
+
+| Phase | Duration | Arrival Rate | Purpose |
+|---|---|---|---|
+| Warm up | 30s | 5 req/s | Establish baseline |
+| Load test | 60s | 15–25 req/s | Simulate production load |
+| Stress test | 30s | 30–50 req/s | Find breaking point |
+
+**View HTML report:**
+```bash
+artillery run tests/performance/load-test.yml --output report.json
+artillery report report.json
 ```
 
-> 📝 **Note:** If `load-test.yml` files are not yet in the repo, create them in each service under `tests/performance/`. See [Artillery docs](https://www.artillery.io/docs).
+> 📝 **Note:** Ensure all services are running locally via `docker compose up` before running load tests. Render free-tier services may throttle under high load.
 
 ***
+
 
 ### Testing Environment Configuration
 
@@ -561,16 +592,19 @@ NODE_ENV=test
 
 ## ☁️ Deployment
 
-#### Deployed Service URLs 
+### Live Service URLs
 
-| Service | URL |
-|---|---|
-| auth-service | `https://laborguard-auth.onrender.com` |
-| community-service | `https://laborguard-community.onrender.com` |
-| complaint-service | `https://laborguard-complaint.onrender.com` |
-| notification-service | `https://laborguard-notification.onrender.com` |
-| messaging-service | `https://laborguard-messaging.onrender.com` |
-| job-service | `https://laborguard-jobs.onrender.com` |
+| Service | Platform | URL |
+|---|---|---|
+| **Frontend** | Vercel | [labor-guard.vercel.app](https://labor-guard.vercel.app) |
+| **auth-service** | Render | [laborguard-auth-service.onrender.com](https://laborguard-auth-service.onrender.com) |
+| **community-service** | Render | [laborguard.onrender.com](https://laborguard.onrender.com) |
+| **complaint-service** | Render | [laborguard-complaint-service.onrender.com](https://laborguard-complaint-service.onrender.com) |
+| **notification-service** | Render | [laborguard-notification-service.onrender.com](https://laborguard-notification-service.onrender.com) |
+| **messaging-service** | Render | [laborguard-messaging-service.onrender.com](https://laborguard-messaging-service.onrender.com) |
+| **job-service** | Render | [laborguard-jobs-service.onrender.com](https://laborguard-jobs-service.onrender.com) |
+
+> ⚠️ **Cold starts:** Render free-tier services may take ~30 seconds to respond after a period of inactivity. This is expected behaviour.
 
 ***
 
@@ -581,13 +615,32 @@ NODE_ENV=test
 3. Set **Root Directory**: `frontend`
 4. Set **Build Command**: `npm run build`
 5. Set **Output Directory**: `dist`
-6. Add environment variables (VITE_ prefixed, pointing to deployed Render URLs)
+6. Add environment variables (VITE_ prefixed), pointing to the Render service URLs above
 7. Click **Deploy**
 
-**Live Frontend URL:** `https://laborguard.vercel.app` 
+**Live Frontend:** [https://labor-guard.vercel.app](https://labor-guard.vercel.app)
+
+**Production environment variables (Vercel dashboard):**
+```env
+VITE_AUTH_SERVICE_URL=https://laborguard-auth-service.onrender.com
+VITE_COMMUNITY_SERVICE_URL=https://laborguard.onrender.com
+VITE_COMPLAINT_SERVICE_URL=https://laborguard-complaint-service.onrender.com
+VITE_NOTIFICATION_SERVICE_URL=https://laborguard-notification-service.onrender.com
+VITE_MESSAGING_SERVICE_URL=https://laborguard-messaging-service.onrender.com
+VITE_JOB_SERVICE_URL=https://laborguard-jobs-service.onrender.com
+```
 
 ***
 
+### Successful Deployment Evidence
+
+#### 1. Backend Microservices (Render)
+![Render Deployment Platform](./assets/Render-Deployment.png)
+
+#### 2. Frontend Application (Vercel)
+![Vercel Deployment Platform](./assets/Vercel-Deployment.png)
+
+***
 
 ## 📁 Project Structure
 
@@ -655,10 +708,10 @@ LaborGuard/
 
 ## 👨‍💻 Team
 
-| Member | Role | Services |
+| Member | Role | Contribtion |
 |---|---|---|
-| Nivakaran | Full-Stack | Community service, Frontend, Integration |
-| Kaveen | Full-Stack | Auth Service, Job Service, Frontend |
+| Nivakaran | Full-Stack | Community service, Frontend, Integration, Deployment |
+| Kaveen | Full-Stack | Auth Service, Job Service, Frontend, Integration |
 | Chenuli | Full-Stack | Complaint Service, Frontend |
 | Dhushanthini | Full-Stack | Messaging Service, Notification Service, Frontend |
 
