@@ -124,7 +124,7 @@ const getComplaintById = async (complaintId, user) => {
 
   const isOwner = complaint.workerId.toString() === user.userId;
   const isAssigned = complaint.assignedTo?.toString() === user.userId;
-  const isPrivileged = user.role === 'admin' || (user.role === 'lawyer' && isAssigned)
+  const isPrivileged = user.role === 'admin' || (user.role === 'lawyer' && isAssigned) || user.role === 'ngo';
 
   if (!isOwner && !isPrivileged) {
     const error = new Error('Access denied. You can only view your own complaints.');

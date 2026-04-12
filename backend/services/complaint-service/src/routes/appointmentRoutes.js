@@ -22,7 +22,7 @@ router.get('/assigned', authenticate, authorize('lawyer'), listAppointmentRules,
 router.get('/', authenticate, authorize('admin'), listAppointmentRules, validate, appointmentController.getAllAppointments);
 
 // GET /api/appointments/:id
-router.get('/:id', authenticate, validateObjectId, validate, appointmentController.getAppointmentById);
+router.get('/:id', authenticate, authorize('worker', 'admin', 'lawyer'), validateObjectId, validate, appointmentController.getAppointmentById);
 
 // PATCH /api/appointments/:id/confirm
 router.patch('/:id/confirm', authenticate, authorize('admin'), validateObjectId, confirmAppointmentRules, validate, appointmentController.confirmAppointment);

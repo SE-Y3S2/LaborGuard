@@ -22,6 +22,9 @@ app.use(helmet({
 }));
 app.use(express.json());
 
+// Disable ETag generation to prevent 304 responses
+app.set('etag', false);
+
 // Swagger Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 

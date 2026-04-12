@@ -16,7 +16,8 @@ import {
   ExternalLink,
   ShieldAlert,
   ArrowRight,
-  Loader2
+  Loader2,
+  Calendar
 } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { Badge } from "@/components/common/Badge";
@@ -123,7 +124,9 @@ const ComplaintDetailsPage = () => {
                                 </div>
                                 <div className="flex items-center gap-1.5 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100">
                                     <MapPin className="h-4 w-4 text-primary" />
-                                    {complaint.location.city}, {complaint.location.district}
+                                    {complaint.location?.city && complaint.location?.district 
+                                        ? `${complaint.location.city}, ${complaint.location.district}` 
+                                        : 'Location not specified'}
                                 </div>
                             </div>
                         </div>

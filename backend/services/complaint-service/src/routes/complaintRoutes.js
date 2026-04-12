@@ -26,7 +26,7 @@ router.post('/', authenticate, authorize('worker'), upload.array('evidence', 5),
 router.get('/', authenticate, authorize('admin', 'lawyer', 'ngo'), listComplaintsRules, validate, complaintController.getAllComplaints);
 
 // GET /api/complaints/:id
-router.get('/:id', authenticate, validateObjectId, validate, complaintController.getComplaintById);
+router.get('/:id', authenticate, authorize('worker', 'admin', 'lawyer', 'ngo'), validateObjectId, validate, complaintController.getComplaintById);
 
 // PATCH /api/complaints/:id
 router.patch('/:id', authenticate, authorize('worker'), validateObjectId, updateComplaintRules, validate, complaintController.updateComplaint);
@@ -41,9 +41,9 @@ router.patch('/:id/assign', authenticate, authorize('admin'), validateObjectId, 
 router.delete('/:id', authenticate, validateObjectId, validate, complaintController.deleteComplaint);
 
 // POST /api/complaints/:id/attachments
-router.post('/:id/attachments', authenticate, validateObjectId, upload.single('file'), complaintController.uploadAttachment);
+router.post('/:id/attachments', authenticate, authorize('worker', 'admin'), validateObjectId, upload.single('file'), complaintController.uploadAttachment);
 
 // GET /api/complaints/:id/report
-router.get('/:id/report', authenticate, validateObjectId, complaintController.generateReport);
+router.get('/:id/report', authenticate, authorize('worker', 'admin', 'lawyer', 'ngo'), validateObjectId, complaintController.generateReport);
 
 module.exports = router;
