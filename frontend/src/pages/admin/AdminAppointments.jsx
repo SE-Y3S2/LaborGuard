@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   XCircle,
   Target,
+  CalendarClock,
 } from "lucide-react";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/common/Button";
@@ -20,6 +21,7 @@ import { Input } from "@/components/common/Input";
 import { Spinner } from "@/components/common/Spinner";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { RescheduleAppointmentModal } from "@/components/complaint/RescheduleAppointmentModal";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -48,6 +50,7 @@ const AdminAppointments = () => {
   const [confirmNotes, setConfirmNotes] = useState("");
   const [cancelId, setCancelId] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
+  const [reschedulingApt, setReschedulingApt] = useState(null);
 
   const { confirmAppointment, cancelAppointment } = useComplaints();
 
@@ -167,6 +170,7 @@ const AdminAppointments = () => {
             const scheduled = new Date(apt.scheduledAt);
             const isOnline = apt.meetingType === "online";
             const canConfirm = apt.status === "auto_booked";
+            const canReschedule = apt.status === "auto_booked" || apt.status === "confirmed";
             const canCancel = apt.status !== "cancelled" && apt.status !== "completed";
             return (
               <div
@@ -219,6 +223,16 @@ const AdminAppointments = () => {
                     >
                       <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
                       Confirm
+                    </Button>
+                  )}
+                  {canReschedule && (
+                    <Button
+                      onClick={() => setReschedulingApt(apt)}
+                      variant="ghost"
+                      className="h-10 rounded-xl font-black uppercase tracking-widest text-[10px] text-primary hover:bg-primary/5"
+                    >
+                      <CalendarClock className="h-3.5 w-3.5 mr-1.5" />
+                      Reschedule
                     </Button>
                   )}
                   {canCancel && (
@@ -314,6 +328,14 @@ const AdminAppointments = () => {
         cancelLabel="Keep Slot"
         variant="destructive"
         isLoading={cancelAppointment.isPending}
+      />
+
+      {/* Reschedule modal */}
+      <RescheduleAppointmentModal
+        open={!!reschedulingApt}
+        appointment={reschedulingApt}
+        onClose={() => setReschedulingApt(null)}
+        onRescheduled={refetch}
       />
     </div>
   );
