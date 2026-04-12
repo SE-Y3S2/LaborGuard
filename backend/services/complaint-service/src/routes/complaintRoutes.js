@@ -11,6 +11,7 @@ const {
   validateObjectId,
   listComplaintsRules
 } = require('../utils/validator');
+const { upload } = require('../utils/cloudinary');
 
 // GET /api/complaints/stats
 router.get('/stats', authenticate, authorize('admin', 'lawyer'), complaintController.getComplaintStats);
@@ -19,7 +20,7 @@ router.get('/stats', authenticate, authorize('admin', 'lawyer'), complaintContro
 router.get('/my', authenticate, authorize('worker'), listComplaintsRules, validate, complaintController.getMyComplaints);
 
 // POST /api/complaints
-router.post('/', authenticate, authorize('worker'), createComplaintRules, validate, complaintController.createComplaint);
+router.post('/', authenticate, authorize('worker'), upload.array('evidence', 5), createComplaintRules, validate, complaintController.createComplaint);
 
 // GET /api/complaints
 router.get('/', authenticate, authorize('admin'), listComplaintsRules, validate, complaintController.getAllComplaints);
@@ -40,7 +41,6 @@ router.patch('/:id/assign', authenticate, authorize('admin'), validateObjectId, 
 router.delete('/:id', authenticate, validateObjectId, validate, complaintController.deleteComplaint);
 
 // POST /api/complaints/:id/attachments
-const { upload } = require('../utils/cloudinary');
 router.post('/:id/attachments', authenticate, validateObjectId, upload.single('file'), complaintController.uploadAttachment);
 
 // GET /api/complaints/:id/report

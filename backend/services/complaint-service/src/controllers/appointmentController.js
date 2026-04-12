@@ -26,7 +26,7 @@ const getAllAppointments = async (req, res, next) => {
  */
 const getMyAppointments = async (req, res, next) => {
   try {
-    const result = await appointmentService.getMyAppointments(req.user.id, req.query);
+    const result = await appointmentService.getMyAppointments(req.user.userId, req.query);
 
     res.status(200).json({
       success: true,
@@ -45,7 +45,7 @@ const getMyAppointments = async (req, res, next) => {
  */
 const getAssignedAppointments = async (req, res, next) => {
   try {
-    const result = await appointmentService.getAssignedAppointments(req.user.id, req.query);
+    const result = await appointmentService.getAssignedAppointments(req.user.userId, req.query);
 
     res.status(200).json({
       success: true,

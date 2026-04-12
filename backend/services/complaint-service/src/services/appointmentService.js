@@ -237,8 +237,8 @@ const getAppointmentById = async (appointmentId, user) => {
     throw error;
   }
 
-  const isWorkerOwner = appointment.workerId.toString() === user.id;
-  const isAssignedOfficer = appointment.legalOfficerId.toString() === user.id;
+  const isWorkerOwner = appointment.workerId.toString() === user.userId;
+  const isAssignedOfficer = appointment.legalOfficerId.toString() === user.userId;
   const isAdmin = user.role === 'admin';
 
   if (!isWorkerOwner && !isAssignedOfficer && !isAdmin) {
@@ -297,7 +297,7 @@ const rescheduleAppointment = async (appointmentId, { scheduledAt, reason }, use
 
   // Legal officer can only reschedule their own assigned appointments
   if (user.role === 'legal_officer') {
-    const isAssigned = appointment.legalOfficerId.toString() === user.id;
+    const isAssigned = appointment.legalOfficerId.toString() === user.userId;
     if (!isAssigned) {
       const error = new Error('Access denied. You can only reschedule appointments assigned to you.');
       error.statusCode = 403;
@@ -309,7 +309,7 @@ const rescheduleAppointment = async (appointmentId, { scheduledAt, reason }, use
   appointment.rescheduleHistory.push({
     previousDate: appointment.scheduledAt,
     newDate: new Date(scheduledAt),
-    changedBy: user.id,
+    changedBy: user.userId,
     changedByRole: user.role,
     reason: reason || null,
     changedAt: new Date()

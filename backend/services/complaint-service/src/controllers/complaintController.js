@@ -7,7 +7,20 @@ const complaintService = require('../services/complaintService');
  */
 const createComplaint = async (req, res, next) => {
   try {
-    const complaint = await complaintService.createComplaint(req.body, req.user);
+    const attachments = (req.files || []).map((file) => ({
+      url: file.path,
+      fileType: file.mimetype.startsWith('image/') ? 'image' : 'document',
+      originalName: file.originalname,
+      uploadedAt: new Date()
+    }));
+
+    const complaint = await complaintService.createComplaint(
+      {
+        ...req.body,
+        attachments
+      },
+      req.user
+    );
 
     res.status(201).json({
       success: true,
@@ -45,7 +58,7 @@ const getAllComplaints = async (req, res, next) => {
  */
 const getMyComplaints = async (req, res, next) => {
   try {
-    const result = await complaintService.getMyComplaints(req.user.id, req.query);
+    const result = await complaintService.getMyComplaints(req.user.userId, req.query);
 
     res.status(200).json({
       success: true,
