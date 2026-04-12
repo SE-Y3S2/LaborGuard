@@ -106,7 +106,7 @@ Each microservice is independently containerized, connected through Kafka for as
 |---|---|---|---|
 | **auth-service** | 5001 | User registration, login, JWT, Google OAuth, role-based access | Google OAuth 2.0 |
 | **community-service** | 5002 | Community feed posts, statuses, user profiles, advocacy hub | Google Perspective API |
-| **complaint-service** | 5003 | Worker complaints lifecycle, email notifications, legal case assignment | Nodemailer (Gmail) |
+| **complaint-service** | 5003 | Worker complaints lifecycle, appointments management, email notifications, legal case assignment | Nodemailer (Gmail) |
 | **notification-service** | 5004 | Push/in-app notifications via Kafka events | — |
 | **messaging-service** | 5005 | Real-time actor-to-actor chat | — |
 | **job-service** | 5006 | Job listings CRUD, applicant management, PDF generation | PDFKit |
