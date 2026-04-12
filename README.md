@@ -96,7 +96,7 @@ Each microservice is independently containerized, connected through Kafka for as
 | **Auth** | JWT, Google OAuth 2.0 |
 | **Containerization** | Docker, Docker Compose |
 | **Testing** | Jest, Supertest, Artillery.io |
-| **Third-Party APIs** | Google Perspective API (content moderation), Nodemailer (email), Gemini AI |
+| **Third-Party APIs** | Google Perspective API (content moderation), Nodemailer (email), Gemini AI, Resend, OpenAI, Clodinary, Centrifge |
 
 ***
 
@@ -174,17 +174,17 @@ npm install
 npm run dev
 ```
 
-Frontend is available at: **http://localhost:5173**
+Frontend is available at: **http://localhost:3000**
 
 ### 5. Verify Services Are Running
 
 ```bash
-curl http://localhost:3001/health   # auth-service
-curl http://localhost:3002/health   # community-service
-curl http://localhost:3003/health   # complaint-service
-curl http://localhost:3004/health   # notification-service
-curl http://localhost:3005/health   # messaging-service
-curl http://localhost:3006/health   # job-service
+curl http://localhost:5001/health   # auth-service
+curl http://localhost:5002/health   # community-service
+curl http://localhost:5003/health   # complaint-service
+curl http://localhost:5004/health   # notification-service
+curl http://localhost:5005/health   # messaging-service
+curl http://localhost:5006/health   # job-service
 ```
 
 ### Stop All Services
@@ -203,21 +203,21 @@ docker compose down -v     # stop + remove volumes
 ### auth-service
 
 ```env
-PORT=3001
+PORT=5001
 MONGODB_URI=mongodb://mongodb:27017/laborguard-auth
 JWT_SECRET=your_jwt_secret_here
 JWT_EXPIRES_IN=7d
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
-GOOGLE_CALLBACK_URL=http://localhost:3001/api/auth/google/callback
-FRONTEND_URL=http://localhost:5173
+GOOGLE_CALLBACK_URL=http://localhost:5001/api/auth/google/callback
+FRONTEND_URL=http://localhost:3000
 KAFKA_BROKER=kafka:9092
 ```
 
 ### community-service
 
 ```env
-PORT=3002
+PORT=5002
 MONGODB_URI=mongodb://mongodb:27017/laborguard-community
 KAFKA_BROKER=kafka:9092
 PERSPECTIVE_API_KEY=your_perspective_api_key
@@ -226,7 +226,7 @@ PERSPECTIVE_API_KEY=your_perspective_api_key
 ### complaint-service
 
 ```env
-PORT=3003
+PORT=5003
 MONGODB_URI=mongodb://mongodb:27017/laborguard-complaints
 KAFKA_BROKER=kafka:9092
 EMAIL_USER=your_email@gmail.com
@@ -236,7 +236,7 @@ EMAIL_PASS=your_app_password
 ### notification-service
 
 ```env
-PORT=3004
+PORT=5004
 MONGODB_URI=mongodb://mongodb:27017/laborguard-notifications
 KAFKA_BROKER=kafka:9092
 ```
@@ -244,7 +244,7 @@ KAFKA_BROKER=kafka:9092
 ### messaging-service
 
 ```env
-PORT=3005
+PORT=5005
 MONGODB_URI=mongodb://mongodb:27017/laborguard-messaging
 KAFKA_BROKER=kafka:9092
 ```
@@ -252,7 +252,7 @@ KAFKA_BROKER=kafka:9092
 ### job-service
 
 ```env
-PORT=3006
+PORT=5006
 MONGODB_URI=mongodb://mongodb:27017/laborguard-jobs
 KAFKA_BROKER=kafka:9092
 ```
@@ -260,12 +260,12 @@ KAFKA_BROKER=kafka:9092
 ### frontend
 
 ```env
-VITE_AUTH_SERVICE_URL=http://localhost:3001
-VITE_COMMUNITY_SERVICE_URL=http://localhost:3002
-VITE_COMPLAINT_SERVICE_URL=http://localhost:3003
-VITE_NOTIFICATION_SERVICE_URL=http://localhost:3004
-VITE_MESSAGING_SERVICE_URL=http://localhost:3005
-VITE_JOB_SERVICE_URL=http://localhost:3006
+VITE_AUTH_SERVICE_URL=http://localhost:5001
+VITE_COMMUNITY_SERVICE_URL=http://localhost:5002
+VITE_COMPLAINT_SERVICE_URL=http://localhost:5003
+VITE_NOTIFICATION_SERVICE_URL=http://localhost:5004
+VITE_MESSAGING_SERVICE_URL=http://localhost:5005
+VITE_JOB_SERVICE_URL=http://localhost:5006
 VITE_GOOGLE_CLIENT_ID=your_google_client_id
 ```
 
@@ -276,7 +276,7 @@ VITE_GOOGLE_CLIENT_ID=your_google_client_id
 > Full Postman Collection: *(add your published Postman link here)*  
 > Base URLs (local): `http://localhost:{port}/api`
 
-### 🔑 Auth Service (Port 3001)
+### 🔑 Auth Service (Port 5001)
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
@@ -313,7 +313,7 @@ POST /api/auth/register
 
 ***
 
-### 🤝 Community Service (Port 3002)
+### 🤝 Community Service (Port 5002)
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
@@ -349,7 +349,7 @@ Authorization: Bearer <token>
 
 ***
 
-### 📋 Complaint Service (Port 3003)
+### 📋 Complaint Service (Port 5003)
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
@@ -389,7 +389,7 @@ Authorization: Bearer <token>
 
 ***
 
-### 🔔 Notification Service (Port 3004)
+### 🔔 Notification Service (Port 5004)
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
@@ -401,7 +401,7 @@ Authorization: Bearer <token>
 
 ***
 
-### 💬 Messaging Service (Port 3005)
+### 💬 Messaging Service (Port 5005)
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
@@ -413,7 +413,7 @@ Authorization: Bearer <token>
 
 ***
 
-### 💼 Job Service (Port 3006)
+### 💼 Job Service (Port 5006)
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
