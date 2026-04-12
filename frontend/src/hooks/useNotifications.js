@@ -11,13 +11,13 @@ export const useNotifications = () => {
   const queryClient = useQueryClient();
   const { setUnreadCount } = useNotificationStore();
 
-  // Fetch all notifications
+  // Fetch all notifications (paginated)
   const useGetNotifications = (params) => {
     return useQuery({
       queryKey: ["notifications", params],
       queryFn: async () => {
         const res = await notificationApi.getNotifications();
-        return res.data.data || [];
+        return res.data || [];
       },
     });
   };
@@ -28,7 +28,8 @@ export const useNotifications = () => {
       queryKey: ["notifications-unread"],
       queryFn: async () => {
         const res = await notificationApi.getUnreadCount();
-        const count = res.data.data?.count ?? res.data.data ?? 0;
+        // Handle both { unreadCount: N } and { data: { count: N } } shapes
+        const count = res.data?.unreadCount ?? res.data?.data?.count ?? 0;
         setUnreadCount(count);
         return count;
       },
@@ -56,19 +57,20 @@ export const useNotifications = () => {
     },
   });
 
-  // Update notification settings
-  const updateSettingsMutation = useMutation({
-    mutationFn: (data) => notificationApi.updateSettings(data),
+  // Delete single notification
+  const deleteNotificationMutation = useMutation({
+    mutationFn: (id) => notificationApi.deleteNotification(id),
     onSuccess: () => {
-      toast.success("Notification settings updated");
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-unread"] });
     },
   });
 
   return {
     useGetNotifications,
     useGetUnreadCount,
-    markAsRead: markAsReadMutation,
-    markAllAsRead: markAllAsReadMutation,
-    updateSettings: updateSettingsMutation,
+    markAsRead       : markAsReadMutation,
+    markAllAsRead    : markAllAsReadMutation,
+    deleteNotification: deleteNotificationMutation,
   };
 };

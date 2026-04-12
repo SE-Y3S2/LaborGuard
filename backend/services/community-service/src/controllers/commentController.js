@@ -11,6 +11,7 @@ const Comment = require('../models/Comment');
 const Post    = require('../models/Post');
 const Report  = require('../models/Report');
 const { emitEvent } = require('../utils/kafkaProducer');
+const mongoose = require('mongoose');
 
 // ── addComment ────────────────────────────────────────────────────────────────
 exports.addComment = async (req, res) => {
@@ -27,6 +28,9 @@ exports.addComment = async (req, res) => {
         if (!post) return res.status(404).json({ message: 'Post not found' });
 
         const comment = await Comment.create({ postId, authorId, content });
+
+        // Atomically increment commentCount on the post
+        await Post.findByIdAndUpdate(postId, { $inc: { commentCount: 1 } });
 
         // Notify post author (don't notify on self-comments)
         if (post.authorId.toString() !== authorId) {
@@ -77,7 +81,11 @@ exports.deleteComment = async (req, res) => {
             return res.status(403).json({ message: 'Unauthorized to delete this comment' });
         }
 
-        await Comment.findByIdAndDelete(commentId);
+        // Decrement commentCount atomically (floor at 0)
+        await Promise.all([
+            Comment.findByIdAndDelete(commentId),
+            Post.findByIdAndUpdate(comment.postId, { $inc: { commentCount: -1 } })
+        ]);
         res.json({ message: 'Comment deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Error deleting comment', error: error.message });

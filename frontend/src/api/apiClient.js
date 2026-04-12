@@ -52,11 +52,11 @@ export const authClient = axios.create({
 });
 
 export const communityClient = axios.create({
-  baseURL: `${import.meta.env.VITE_COMMUNITY_SERVICE_URL || 'http://localhost:3002'}/api`,
+  baseURL: `${import.meta.env.VITE_COMMUNITY_SERVICE_URL || 'http://localhost:5002'}/api`,
 });
 
 export const complaintClient = axios.create({
-  baseURL: `${import.meta.env.VITE_COMPLAINT_SERVICE_URL || 'http://localhost:3003'}/api`,
+  baseURL: `${import.meta.env.VITE_COMPLAINT_SERVICE_URL || 'http://localhost:5003'}/api`,
 });
 
 export const jobClient = axios.create({
@@ -64,7 +64,7 @@ export const jobClient = axios.create({
 });
 
 export const messageClient = axios.create({
-  baseURL: `${import.meta.env.VITE_MESSAGING_SERVICE_URL || 'http://localhost:3005'}/api`,
+  baseURL: `${import.meta.env.VITE_MESSAGING_SERVICE_URL || 'http://localhost:5005'}/api`,
 });
 
 export const notificationClient = axios.create({

@@ -57,7 +57,7 @@ const MyComplaints = () => {
           <p className="text-sm font-bold text-slate-500 max-w-lg">Track and manage your labor rights cases in real-time.</p>
         </div>
         <Button asChild className="rounded-full px-8 h-12 shadow-lg shadow-primary/20">
-          <Link to="/worker/complaints/new" className="font-black uppercase tracking-widest text-xs flex items-center gap-2">
+          <Link to="/complaints/new" className="font-black uppercase tracking-widest text-xs flex items-center gap-2">
             <PlusCircle className="h-4 w-4" />
             File New Case
           </Link>
