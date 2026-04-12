@@ -50,9 +50,14 @@ const LegalAppointments = () => {
             .filter((apt) => statusFilter === "all" || apt.status === statusFilter)
             .filter((apt) => {
                 if (!term) return true;
-                const name = (apt.workerName || apt.worker?.firstName || "").toLowerCase();
-                const caseId = String(apt.caseId || apt.complaintId || "").toLowerCase();
-                return name.includes(term) || caseId.includes(term);
+                const worker = apt.worker || {};
+                const name = (
+                    worker.firstName
+                        ? `${worker.firstName} ${worker.lastName || ""}`
+                        : String(apt.workerId || "")
+                ).toLowerCase();
+                const complaintIdStr = String(apt.complaintId || "").toLowerCase();
+                return name.includes(term) || complaintIdStr.includes(term);
             });
     }, [rawAppointments, searchTerm, statusFilter]);
 
@@ -61,13 +66,32 @@ const LegalAppointments = () => {
     };
 
     const handleLaunchLink = (apt) => {
-        if (apt.meetingUrl || apt.meetingLink) {
-            window.open(apt.meetingUrl || apt.meetingLink, "_blank", "noopener,noreferrer");
+        if (apt.meetingType === "online" && apt.meetingDetails) {
+            const url = /^https?:\/\//.test(apt.meetingDetails)
+                ? apt.meetingDetails
+                : `https://${apt.meetingDetails}`;
+            window.open(url, "_blank", "noopener,noreferrer");
         } else if (apt.complaintId) {
             navigate(`/legal/cases/${apt.complaintId}`);
         } else {
             toast.info("Meeting details not yet published.");
         }
+    };
+
+    const STATUS_LABELS = {
+        auto_booked: "Auto-Booked",
+        confirmed: "Confirmed",
+        completed: "Completed",
+        cancelled: "Cancelled",
+    };
+
+    const formatCategory = (category) =>
+        category ? category.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "Legal Consultation";
+
+    const getWorkerName = (apt) => {
+        if (apt.worker?.firstName) return `${apt.worker.firstName} ${apt.worker.lastName || ""}`.trim();
+        if (apt.workerId) return `Worker #${String(apt.workerId).slice(-6)}`;
+        return "Unknown Worker";
     };
 
     if (isLoading) return (
@@ -128,7 +152,7 @@ const LegalAppointments = () => {
                     </Button>
                     {showFilterMenu && (
                         <div className="absolute right-0 top-16 z-20 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 p-1">
-                            {["all", "pending", "confirmed", "rescheduled", "cancelled"].map((s) => (
+                            {["all", "auto_booked", "confirmed", "completed", "cancelled"].map((s) => (
                                 <button
                                     key={s}
                                     type="button"
@@ -138,7 +162,7 @@ const LegalAppointments = () => {
                                         statusFilter === s ? "text-primary bg-primary/5" : "text-slate-500"
                                     )}
                                 >
-                                    {s === "all" ? "All Appointments" : s}
+                                    {s === "all" ? "All Appointments" : STATUS_LABELS[s] || s}
                                 </button>
                             ))}
                         </div>
@@ -163,33 +187,36 @@ const LegalAppointments = () => {
                                     <div className="flex flex-col md:flex-row items-start md:items-center gap-10 flex-1">
                                         {/* Date/Time Block */}
                                         <div className="space-y-1 bg-slate-900 text-white p-6 rounded-[32px] min-w-[140px] text-center shadow-xl shadow-slate-900/10">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">{new Date(apt.date).toLocaleDateString('en-US', { month: 'short' })}</p>
-                                            <p className="text-4xl font-black tracking-tighter">{new Date(apt.date).getDate()}</p>
-                                            <p className="text-[9px] font-bold uppercase tracking-widest text-primary">{new Date(apt.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">{new Date(apt.scheduledAt).toLocaleDateString('en-US', { month: 'short' })}</p>
+                                            <p className="text-4xl font-black tracking-tighter">{new Date(apt.scheduledAt).getDate()}</p>
+                                            <p className="text-[9px] font-bold uppercase tracking-widest text-primary">{new Date(apt.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                         </div>
 
                                         <div className="space-y-4 flex-1">
                                             <div className="flex items-center gap-3">
                                                 <Badge className={cn(
                                                     "px-3 py-1 rounded-full font-black uppercase tracking-widest text-[8px]",
-                                                    apt.status === 'confirmed' ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                                                    apt.status === 'confirmed' ? "bg-green-100 text-green-700" :
+                                                    apt.status === 'cancelled' ? "bg-red-100 text-red-700" :
+                                                    apt.status === 'completed' ? "bg-slate-100 text-slate-700" :
+                                                    "bg-amber-100 text-amber-700"
                                                 )}>
-                                                    {apt.status === 'confirmed' ? "Protocol Verified" : "Verification Pending"}
+                                                    {STATUS_LABELS[apt.status] || apt.status}
                                                 </Badge>
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-300 font-mono">Case #{apt.caseId}</span>
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-300 font-mono">Case #{String(apt.complaintId || '').slice(-6)}</span>
                                             </div>
                                             <h3 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                                                {apt.workerName}
+                                                {getWorkerName(apt)}
                                                 <ShieldCheck className="h-5 w-5 text-blue-500" />
                                             </h3>
                                             <div className="flex flex-wrap items-center gap-8 text-[11px] font-black uppercase tracking-widest text-slate-400">
                                                 <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-2xl">
                                                     <Target className="h-4 w-4 text-primary" />
-                                                    {apt.type}
+                                                    {formatCategory(apt.category)}
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    <MapPin className="h-4 w-4 text-primary" />
-                                                    {apt.location}
+                                                    {apt.meetingType === 'online' ? <Video className="h-4 w-4 text-primary" /> : <MapPin className="h-4 w-4 text-primary" />}
+                                                    {apt.meetingDetails || (apt.meetingType ? apt.meetingType.replace('_',' ') : 'TBD')}
                                                 </div>
                                             </div>
                                         </div>
@@ -200,8 +227,8 @@ const LegalAppointments = () => {
                                             onClick={() => handleLaunchLink(apt)}
                                             className="h-16 px-10 rounded-full font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-primary/20 group flex items-center"
                                         >
-                                            {apt.location?.includes('Virtual') ? <Video className="h-4 w-4 mr-2" /> : <ChevronRight className="h-4 w-4 mr-2" />}
-                                            {apt.location?.includes('Virtual') ? "Launch Secure Link" : "View Logistics"}
+                                            {apt.meetingType === 'online' ? <Video className="h-4 w-4 mr-2" /> : <ChevronRight className="h-4 w-4 mr-2" />}
+                                            {apt.meetingType === 'online' ? "Launch Secure Link" : "View Case"}
                                         </Button>
                                         <Button
                                             onClick={() => apt.complaintId && navigate(`/legal/cases/${apt.complaintId}`)}

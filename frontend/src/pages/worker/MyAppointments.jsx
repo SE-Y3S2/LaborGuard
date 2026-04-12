@@ -13,6 +13,7 @@ const FILTER_TABS = [
   { value: "",            label: "All Slots" },
   { value: "auto_booked", label: "Pending" },
   { value: "confirmed",   label: "Confirmed" },
+  { value: "completed",   label: "Completed" },
   { value: "cancelled",   label: "Cancelled" },
 ];
 

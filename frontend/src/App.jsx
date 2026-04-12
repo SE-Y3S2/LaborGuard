@@ -40,6 +40,7 @@ import ExplorePage from './pages/community/ExplorePage';
 import BookmarksPage from './pages/community/BookmarksPage';
 import ChatPage from './pages/messaging/ChatPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminAppointments from './pages/admin/AdminAppointments';
 import NotificationsPage from './pages/notifications/NotificationsPage';
 
 import { ProtectedRoute, PublicRoute } from './components/auth/ProtectedRoute';
@@ -138,6 +139,7 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
             <Route element={<DashboardLayout />}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/appointments" element={<AdminAppointments />} />
             </Route>
           </Route>
 
