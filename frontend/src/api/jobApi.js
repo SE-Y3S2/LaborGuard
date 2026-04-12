@@ -22,6 +22,9 @@ export const jobApi = {
   // FIX: renamed from getApplications → getJobApplications to match useJobs hook call
   getJobApplications: (jobId) => jobClient.get(`/jobs/${jobId}/applications`),
 
+  // Employer: all applications across their jobs
+  getEmployerApplications: () => jobClient.get('/jobs/employer/applications'),
+
   // FIX: was PATCH /applications/:appId/status (wrong method + wrong path prefix)
   // Backend: PUT /api/jobs/applications/:appId/status
   // FIX: was (appId, status) — now (appId, data) to include rejectionReason, arrivalDate, etc.

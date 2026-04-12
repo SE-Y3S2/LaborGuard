@@ -184,7 +184,11 @@ const NGODashboard = () => {
                                         <p className="text-7xl font-black tracking-tighter">84.2</p>
                                         <Badge className="bg-primary text-white border-none font-black text-[9px] tracking-widest">OPTIMAL ADVOCACY</Badge>
                                      </div>
-                                     <Button variant="outline" className="w-full h-14 rounded-[28px] border-white/10 text-white hover:bg-white/5 text-[10px] font-black uppercase tracking-widest mt-12 relative z-10 transition-all">
+                                     <Button
+                                        onClick={() => navigate("/community/advocacy")}
+                                        variant="outline"
+                                        className="w-full h-14 rounded-[28px] border-white/10 text-white hover:bg-white/5 text-[10px] font-black uppercase tracking-widest mt-12 relative z-10 transition-all"
+                                     >
                                         <Globe className="h-4 w-4 mr-2" />
                                         Public Oversight
                                      </Button>
@@ -238,7 +242,12 @@ const NGODashboard = () => {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <Button variant="ghost" className="h-14 w-14 rounded-[28px] bg-slate-50/50 hover:bg-primary/5 text-slate-400 hover:text-primary transition-all">
+                        <Button
+                            onClick={() => navigate("/ngo/cases")}
+                            variant="ghost"
+                            className="h-14 w-14 rounded-[28px] bg-slate-50/50 hover:bg-primary/5 text-slate-400 hover:text-primary transition-all"
+                            title="Advanced case filters"
+                        >
                             <Filter className="h-5 w-5" />
                         </Button>
                     </div>

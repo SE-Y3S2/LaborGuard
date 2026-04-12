@@ -10,9 +10,13 @@ app.use(cors());
 app.use(express.json());
 
 // Environment variables
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 5001;
 const SERVICE_NAME = process.env.SERVICE_NAME || 'auth-service';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/laborguard';
+if (process.env.NODE_ENV === 'production' && !process.env.KAFKA_BROKER) {
+  console.error(`[${SERVICE_NAME}] KAFKA_BROKER env var is required in production`);
+  process.exit(1);
+}
 const KAFKA_BROKER = process.env.KAFKA_BROKER || 'localhost:9092';
 
 // MongoDB Connection

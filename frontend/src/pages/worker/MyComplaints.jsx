@@ -15,10 +15,11 @@ import { Badge } from "@/components/common/Badge";
 import { Pagination } from "@/components/common/Pagination";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Spinner } from "@/components/common/Spinner";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const MyComplaints = () => {
+  const navigate = useNavigate();
   const [params, setParams] = useState({
     page: 1,
     limit: 10,

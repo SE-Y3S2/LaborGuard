@@ -27,6 +27,7 @@ import { Badge } from "@/components/common/Badge";
 import { Input } from "@/components/common/Input";
 import { Spinner } from "@/components/common/Spinner";
 import { EmptyState } from "@/components/common/EmptyState";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { Link, useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
@@ -39,13 +40,14 @@ import { cn } from "@/lib/utils";
 const EmployerDashboard = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const { useGetJobs, deleteJob } = useJobs();
+    const { useGetEmployerJobs, useGetEmployerApplications, deleteJob } = useJobs();
     const [searchTerm, setSearchTerm] = useState("");
 
-    // Query for employer-specific jobs
-    const { data: jobs, isLoading: jobsLoading } = useGetJobs({ employerId: user.id });
+    const { data: jobs, isLoading: jobsLoading } = useGetEmployerJobs();
+    const { data: applications = [] } = useGetEmployerApplications();
+    const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
-    const filteredJobs = jobs?.filter(job => 
+    const filteredJobs = jobs?.filter(job =>
         job.title.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -56,12 +58,23 @@ const EmployerDashboard = () => {
         </div>
     );
 
+    const totalApps = applications.length;
+    const acceptedApps = applications.filter((a) => a.status === "accepted").length;
+    const reviewedApps = applications.filter((a) => a.status === "accepted" || a.status === "rejected").length;
+    const resolutionRate = totalApps > 0 ? Math.round((reviewedApps / totalApps) * 100) : 0;
+
     const stats = [
-        { label: "Active Postings", value: jobs?.length || 0, icon: Briefcase, color: "text-primary", bg: "bg-primary/10" },
-        { label: "Total Applications", value: "--", icon: Users, color: "text-blue-500", bg: "bg-blue-50" },
-        { label: "Hired Workers", value: "--", icon: CheckCircle2, color: "text-green-500", bg: "bg-green-50" },
-        { label: "Completion Rate", value: "98%", icon: TrendingUp, color: "text-purple-500", bg: "bg-purple-50" },
+        { label: "Active Postings",    value: jobs?.length || 0, icon: Briefcase,    color: "text-primary",  bg: "bg-primary/10" },
+        { label: "Total Applications", value: totalApps,         icon: Users,        color: "text-blue-500", bg: "bg-blue-50" },
+        { label: "Hired Workers",      value: acceptedApps,      icon: CheckCircle2, color: "text-green-500", bg: "bg-green-50" },
+        { label: "Review Rate",        value: `${resolutionRate}%`, icon: TrendingUp, color: "text-purple-500", bg: "bg-purple-50" },
     ];
+
+    const appsByJob = applications.reduce((acc, a) => {
+        const jid = a.jobId?._id || a.jobId;
+        acc[jid] = (acc[jid] || 0) + (a.status === "pending" ? 1 : 0);
+        return acc;
+    }, {});
 
     return (
         <div className="space-y-12 animate-fade-in pb-20 mt-4">
@@ -162,7 +175,7 @@ const EmployerDashboard = () => {
                                             <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
                                                 <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl">
                                                     <Users className="h-3 w-3" />
-                                                    Pending: --
+                                                    Pending: {appsByJob[job._id] || 0}
                                                 </div>
                                                 <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl">
                                                     <Clock className="h-3 w-3" />
@@ -193,13 +206,9 @@ const EmployerDashboard = () => {
                                                         <Edit className="h-4 w-4 mr-3 text-slate-400" />
                                                         Update Posting
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem 
+                                                    <DropdownMenuItem
                                                         className="p-4 rounded-xl font-black uppercase tracking-widest text-[9px] cursor-pointer text-destructive hover:bg-red-50"
-                                                        onClick={async () => {
-                                                            if (window.confirm("Permanent erasure requested. Confirm deletion of vacancy?")) {
-                                                                await deleteJob.mutateAsync(job._id);
-                                                            }
-                                                        }}
+                                                        onClick={() => setPendingDeleteId(job._id)}
                                                     >
                                                         <Trash2 className="h-4 w-4 mr-3" />
                                                         Delete Vacancy
@@ -214,6 +223,20 @@ const EmployerDashboard = () => {
                     </div>
                 )}
             </div>
+
+            <ConfirmDialog
+                isOpen={!!pendingDeleteId}
+                onClose={() => setPendingDeleteId(null)}
+                onConfirm={async () => {
+                    await deleteJob.mutateAsync(pendingDeleteId);
+                    setPendingDeleteId(null);
+                }}
+                title="Delete vacancy?"
+                description="This permanently removes the job posting. Applicants will no longer see it."
+                confirmLabel="Delete"
+                variant="destructive"
+                isLoading={deleteJob.isPending}
+            />
 
             {/* Platform Quick Links */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-2">

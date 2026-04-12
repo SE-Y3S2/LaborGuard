@@ -7,11 +7,11 @@ RUN npm config set fetch-retry-maxtimeout 600000 && \
 RUN npm ci --legacy-peer-deps
 COPY . .
 ARG VITE_AUTH_SERVICE_URL=http://localhost:5001
-ARG VITE_COMMUNITY_SERVICE_URL=http://localhost:3002
-ARG VITE_COMPLAINT_SERVICE_URL=http://localhost:3003
+ARG VITE_COMMUNITY_SERVICE_URL=http://localhost:5002
+ARG VITE_COMPLAINT_SERVICE_URL=http://localhost:5003
 ARG VITE_NOTIFICATION_SERVICE_URL=http://localhost:5004
 ARG VITE_MESSAGING_SERVICE_URL=http://localhost:5005
-ARG VITE_JOB_SERVICE_URL=http://localhost:5003
+ARG VITE_JOB_SERVICE_URL=http://localhost:5006
 ARG VITE_CENTRIFUGO_URL=ws://localhost:8000/connection/websocket
 ARG VITE_GOOGLE_CLIENT_ID
 ARG VITE_APP_NAME=LaborGuard

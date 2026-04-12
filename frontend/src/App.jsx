@@ -19,6 +19,7 @@ import WorkerDashboard from './pages/worker/WorkerDashboard';
 import JobBoardPage from './pages/worker/JobBoardPage';
 import MyComplaints from './pages/worker/MyComplaints';
 import WorkerNewComplaintPage from './pages/worker/NewComplaintPage';
+import FileComplaintPage from './pages/worker/FileComplaintPage';
 import ComplaintDetailsPage from './pages/worker/ComplaintDetailsPage';
 import MyAppointments from './pages/worker/MyAppointments';
 import WorkerProfile from './pages/worker/WorkerProfile';
@@ -94,6 +95,7 @@ function App() {
               <Route path="/worker/jobs" element={<JobBoardPage />} />
               <Route path="/worker/complaints" element={<MyComplaints />} />
               <Route path="/worker/complaints/new" element={<WorkerNewComplaintPage />} />
+              <Route path="/worker/complaints/file" element={<FileComplaintPage />} />
               <Route path="/worker/complaints/:id" element={<ComplaintDetailsPage />} />
               <Route path="/worker/appointments" element={<MyAppointments />} />
               <Route path="/worker/profile" element={<WorkerProfile />} />

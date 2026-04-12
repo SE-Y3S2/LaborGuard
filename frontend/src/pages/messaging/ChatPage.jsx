@@ -312,8 +312,9 @@ const ChatPage = () => {
     if (!conv) return "";
     if (conv.isGroup) return conv.groupName || "Group Chat";
     // Participants are stored as userId strings — show shortened ID as fallback
-    const otherId = conv.participants.find(p => p !== user?.userId);
-    return conv.participantNames?.[otherId] || `User ${otherId?.slice(-6) || ""}`;
+    const otherId = conv.participants?.find(p => p !== user?.userId);
+    if (!otherId) return "Unknown user";
+    return conv.participantNames?.[otherId] || `User ${otherId.slice(-6)}`;
   };
 
   const getConvInitial = (conv) => getConvDisplayName(conv).charAt(0).toUpperCase();

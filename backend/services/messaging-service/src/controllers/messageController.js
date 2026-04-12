@@ -63,6 +63,7 @@ const getConversations = async (req, res) => {
 
 const getMessages = async (req, res) => {
     try {
+        const userId = req.user.userId;                        // [AUTH] from JWT
         const { conversationId } = req.params;
         const limit = parseInt(req.query.limit) || 50;
         const page = parseInt(req.query.page) || 1;
@@ -70,6 +71,11 @@ const getMessages = async (req, res) => {
         const conversation = await Conversation.findById(conversationId);
         if (!conversation) {
             return res.status(404).json({ error: 'Conversation not found' });
+        }
+
+        // [SEC] Only participants may read conversation messages
+        if (!conversation.participants.includes(userId)) {
+            return res.status(403).json({ error: 'You are not a participant in this conversation' });
         }
 
         // [FIX] Sort ascending (oldest first) so frontend renders correctly

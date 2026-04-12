@@ -11,6 +11,7 @@ import { useCommunity } from "@/hooks/useCommunity";
 import { useAuth } from "@/hooks/useAuth";
 import { CommunityPostCard } from "@/components/community/CommunityPostCard";
 import { CommentThread } from "@/components/community/CommentThread";
+import { ProfileEditorModal } from "@/components/community/ProfileEditorModal";
 import { cn } from "@/lib/utils";
 
 const ROLE_CONFIG = {
@@ -25,12 +26,13 @@ const UserProfilePage = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
-  const { useGetProfile, followUser, unfollowUser, likePost, sharePost, toggleBookmark, deletePost, reportPost, useGetComments, addComment, deleteComment } = useCommunity();
+  const { useGetProfile, followUser, unfollowUser } = useCommunity();
 
   const { data: profile, isLoading: profileLoading } = useGetProfile(userId);
   const [following, setFollowing] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
   const [activeTab, setActiveTab] = useState("posts");
+  const [editorOpen, setEditorOpen] = useState(false);
 
   const isMe = userId === currentUser?.userId;
   const roleInfo = ROLE_CONFIG[profile?.role] || ROLE_CONFIG.worker;
@@ -139,7 +141,7 @@ const UserProfilePage = () => {
           <div className="flex items-center gap-3 mt-5 w-full max-w-xs">
             {isMe ? (
               <button
-                onClick={() => navigate("/profile")}
+                onClick={() => setEditorOpen(true)}
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wide transition-colors"
               >
                 <Settings className="h-3.5 w-3.5" />
@@ -201,6 +203,13 @@ const UserProfilePage = () => {
       </div>
 
       {selectedPost && <CommentThread post={selectedPost} onClose={() => setSelectedPost(null)} />}
+
+      <ProfileEditorModal
+        open={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        profile={profile}
+        userId={userId}
+      />
     </div>
   );
 };
