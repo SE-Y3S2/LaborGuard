@@ -11,7 +11,7 @@ describe('Appointment Controller', () => {
             params: {},
             body: {},
             query: {},
-            user: { id: 'user123', role: 'admin' }
+            user: { userId: 'user123', role: 'admin' }
         };
         mockRes = {
             status: jest.fn().mockReturnThis(),
@@ -40,7 +40,7 @@ describe('Appointment Controller', () => {
 
     describe('getMyAppointments', () => {
         it('should return worker appointments', async () => {
-            mockReq.user = { id: 'worker1', role: 'worker' };
+            mockReq.user = { userId: 'worker1', role: 'worker' };
             const mockResult = { appointments: [] };
             appointmentService.getMyAppointments.mockResolvedValue(mockResult);
 
@@ -53,7 +53,7 @@ describe('Appointment Controller', () => {
 
     describe('getAssignedAppointments', () => {
         it('should return legal officer appointments', async () => {
-            mockReq.user = { id: 'officer1', role: 'legal_officer' };
+            mockReq.user = { userId: 'officer1', role: 'lawyer' };
             const mockResult = { appointments: [] };
             appointmentService.getAssignedAppointments.mockResolvedValue(mockResult);
 

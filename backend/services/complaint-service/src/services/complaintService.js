@@ -124,7 +124,7 @@ const getComplaintById = async (complaintId, user) => {
 
   const isOwner = complaint.workerId.toString() === user.userId;
   const isAssigned = complaint.assignedTo?.toString() === user.userId;
-  const isPrivileged = user.role === 'admin' || (user.role === 'legal_officer' && isAssigned)
+  const isPrivileged = user.role === 'admin' || (user.role === 'lawyer' && isAssigned)
 
   if (!isOwner && !isPrivileged) {
     const error = new Error('Access denied. You can only view your own complaints.');
@@ -184,7 +184,7 @@ const updateComplaint = async (complaintId, data, user) => {
 const updateComplaintStatus = async (complaintId, { status, reason }, user) => {
   const complaint = await Complaint.findById(complaintId);
 
-  if (user.role === 'legal_officer') {
+  if (user.role === 'lawyer') {
     const isAssigned = complaint.assignedTo?.toString() === user.userId;
     if (!isAssigned) {
       const error = new Error('Access denied. You can only update status of complaints assigned to you.');

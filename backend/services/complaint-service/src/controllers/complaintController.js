@@ -35,7 +35,7 @@ const createComplaint = async (req, res, next) => {
 /**
  * @desc    Get all complaints with filters, search, and pagination
  * @route   GET /api/complaints
- * @access  Private (admin, legal_officer)
+ * @access  Private (admin, lawyer)
  */
 const getAllComplaints = async (req, res, next) => {
   try {
@@ -73,7 +73,7 @@ const getMyComplaints = async (req, res, next) => {
 /**
  * @desc    Get a single complaint by ID
  * @route   GET /api/complaints/:id
- * @access  Private (worker — own only, admin, legal_officer)
+ * @access  Private (worker — own only, admin, lawyer)
  */
 const getComplaintById = async (req, res, next) => {
   try {

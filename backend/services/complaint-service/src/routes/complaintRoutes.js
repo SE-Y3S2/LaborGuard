@@ -23,7 +23,7 @@ router.get('/my', authenticate, authorize('worker'), listComplaintsRules, valida
 router.post('/', authenticate, authorize('worker'), upload.array('evidence', 5), createComplaintRules, validate, complaintController.createComplaint);
 
 // GET /api/complaints
-router.get('/', authenticate, authorize('admin'), listComplaintsRules, validate, complaintController.getAllComplaints);
+router.get('/', authenticate, authorize('admin', 'lawyer', 'ngo'), listComplaintsRules, validate, complaintController.getAllComplaints);
 
 // GET /api/complaints/:id
 router.get('/:id', authenticate, validateObjectId, validate, complaintController.getComplaintById);

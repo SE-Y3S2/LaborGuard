@@ -296,7 +296,7 @@ const rescheduleAppointment = async (appointmentId, { scheduledAt, reason }, use
   }
 
   // Legal officer can only reschedule their own assigned appointments
-  if (user.role === 'legal_officer') {
+  if (user.role === 'lawyer') {
     const isAssigned = appointment.legalOfficerId.toString() === user.userId;
     if (!isAssigned) {
       const error = new Error('Access denied. You can only reschedule appointments assigned to you.');

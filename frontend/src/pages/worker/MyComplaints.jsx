@@ -32,7 +32,7 @@ const MyComplaints = () => {
   const { data, isLoading } = useGetMyComplaints(params);
 
   const complaints = data?.complaints || [];
-  const totalPages = data?.totalPages || 1;
+  const totalPages = data?.pagination?.totalPages || 1;
 
   const handlePageChange = (page) => {
     setParams({ ...params, page });

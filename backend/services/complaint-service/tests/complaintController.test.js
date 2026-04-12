@@ -12,7 +12,7 @@ describe('Complaint Controller', () => {
             body: {},
             query: {},
             files: [],
-            user: { id: 'user123', email: 'worker@example.com', name: 'John Doe', role: 'worker' }
+            user: { userId: 'user123', email: 'worker@example.com', name: 'John Doe', role: 'worker' }
         };
         mockRes = {
             status: jest.fn().mockReturnThis(),

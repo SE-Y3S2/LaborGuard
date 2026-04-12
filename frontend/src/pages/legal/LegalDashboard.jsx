@@ -28,10 +28,11 @@ const LegalDashboard = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: complaints, isLoading } = useGetComplaints({
+  const { data: complaintsData, isLoading } = useGetComplaints({
     assignedTo: user.id,
     status: statusFilter !== "all" ? statusFilter : undefined,
   });
+  const complaints = complaintsData?.complaints || [];
 
   const getStatusConfig = (status) => {
     switch (status) {
@@ -58,8 +59,8 @@ const LegalDashboard = () => {
   );
 
   const stats = [
-    { label: "Active Docket",     value: complaints?.length || 0,                                     icon: Gavel,      color: "text-primary",    bg: "bg-primary/10" },
-    { label: "Critical Priority", value: complaints?.filter(c => c.priority === 'critical').length || 0, icon: ShieldAlert, color: "text-red-500",    bg: "bg-red-50" },
+    { label: "Active Docket",     value: complaints.length || 0,                                     icon: Gavel,      color: "text-primary",    bg: "bg-primary/10" },
+    { label: "Critical Priority", value: complaints.filter(c => c.priority === 'critical').length || 0, icon: ShieldAlert, color: "text-red-500",    bg: "bg-red-50" },
     { label: "Upcoming Consults", value: "--",                                                          icon: Calendar,   color: "text-blue-500",   bg: "bg-blue-50" },
     { label: "Resolution Rate",   value: "84%",                                                         icon: TrendingUp, color: "text-green-500",  bg: "bg-green-50" },
   ];

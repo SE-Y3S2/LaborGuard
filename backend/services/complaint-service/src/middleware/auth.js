@@ -36,7 +36,7 @@ const authenticate = (req, res, next) => {
 
 // Role-based access control middleware factory.
 // Pass in the roles that are allowed to access the route.
-// Usage: authorize('admin', 'legal_officer')
+// Usage: authorize('admin', 'lawyer')
 const authorize = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user) {

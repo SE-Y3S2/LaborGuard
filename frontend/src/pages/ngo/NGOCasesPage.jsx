@@ -25,10 +25,11 @@ const NGOCasesPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("all");
 
-  const { data: cases, isLoading } = useGetComplaints({
+  const { data: casesData, isLoading } = useGetComplaints({
     priority: priorityFilter !== "all" ? priorityFilter : undefined,
     status: "pending",
   });
+  const cases = casesData?.complaints || [];
 
   const filtered = cases?.filter((c) =>
     c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

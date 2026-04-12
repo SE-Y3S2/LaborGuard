@@ -37,7 +37,7 @@ const WorkerDashboard = () => {
 
   // FIX: Was "<d" (JSX crash) — now properly using <div> throughout
   const stats = {
-    total:    complaintsData?.total || 0,
+    total:    complaintsData?.pagination?.total || 0,
     pending:  complaints.filter((c) => c.status === "pending").length,
     resolved: complaints.filter((c) => c.status === "resolved").length,
     critical: complaints.filter((c) => c.priority === "critical").length,

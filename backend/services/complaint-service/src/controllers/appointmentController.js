@@ -41,7 +41,7 @@ const getMyAppointments = async (req, res, next) => {
 /**
  * @desc    Get appointments assigned to the authenticated legal officer
  * @route   GET /api/appointments/assigned
- * @access  Private (legal_officer)
+ * @access  Private (lawyer)
  */
 const getAssignedAppointments = async (req, res, next) => {
   try {
@@ -60,7 +60,7 @@ const getAssignedAppointments = async (req, res, next) => {
 /**
  * @desc    Get a single appointment by ID
  * @route   GET /api/appointments/:id
- * @access  Private (worker — own, legal_officer — assigned, admin — any)
+ * @access  Private (worker — own, lawyer — assigned, admin — any)
  */
 const getAppointmentById = async (req, res, next) => {
   try {
@@ -101,7 +101,7 @@ const confirmAppointment = async (req, res, next) => {
 /**
  * @desc    Reschedule an appointment
  * @route   PATCH /api/appointments/:id/reschedule
- * @access  Private (admin, legal_officer — assigned only)
+ * @access  Private (admin, lawyer — assigned only)
  */
 const rescheduleAppointment = async (req, res, next) => {
   try {
