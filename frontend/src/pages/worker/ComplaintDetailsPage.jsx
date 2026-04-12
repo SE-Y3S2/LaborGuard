@@ -58,7 +58,7 @@ const ComplaintDetailsPage = () => {
                 icon: AlertCircle,
                 desc: "Your case was not accepted. Please review the officer's feedback for details."
             };
-            default: return { label: status, class: '', icon: Info, desc: '' };
+            default: return { label: status, class: '', icon: AlertCircle, desc: '' };
         }
     };
 

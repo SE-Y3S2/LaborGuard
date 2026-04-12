@@ -11,7 +11,7 @@ export const complaintApi = {
   // FIX: renamed updateStatus → updateComplaintStatus to match useComplaints hook call
   // useComplaints: complaintApi.updateComplaintStatus(complaintId, { status, reason })
   updateComplaintStatus: (id, data)  => complaintClient.patch(`/complaints/${id}/status`, data),
-  assignComplaint:   (id, officerId) => complaintClient.patch(`/complaints/${id}/assign`, { assignedTo: officerId }),
+  assignComplaint:   (id, officerId) => complaintClient.patch(`/complaints/${id}/assign`, { officerId }),
   deleteComplaint:   (id)            => complaintClient.delete(`/complaints/${id}`),
   uploadAttachment:  (id, formData)  => complaintClient.post(`/complaints/${id}/attachments`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }

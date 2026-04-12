@@ -1,11 +1,14 @@
-import { complaintApi } from './apiClient';
+import { complaintClient } from '../../api/apiClient';
 
-export const getComplaintStats = () => complaintApi.get('/complaints/stats');
-export const getMyComplaints = (params) => complaintApi.get('/complaints/my', { params });
-export const getAllComplaints = (params) => complaintApi.get('/complaints', { params });
-export const getAssignedComplaints = (params) => complaintApi.get('/complaints', { params });
-export const getComplaintById = (complaintId) => complaintApi.get(`/complaints/${complaintId}`);
-export const createComplaint = (payload) => complaintApi.post('/complaints', payload);
-export const updateComplaint = (complaintId, payload) => complaintApi.patch(`/complaints/${complaintId}`, payload);
-export const updateComplaintStatus = (complaintId, payload) => complaintApi.patch(`/complaints/${complaintId}/status`, payload);
-export const assignComplaint = (complaintId, payload) => complaintApi.patch(`/complaints/${complaintId}/assign`, payload);
+export const getComplaintStats = () => complaintClient.get('/complaints/stats');
+export const getMyComplaints = (params) => complaintClient.get('/complaints/my', { params });
+export const getAllComplaints = (params) => complaintClient.get('/complaints', { params });
+export const getAssignedComplaints = (params) => complaintClient.get('/complaints', { params });
+export const getComplaintById = (complaintId) => complaintClient.get(`/complaints/${complaintId}`);
+export const createComplaint = (payload) => complaintClient.post('/complaints', payload);
+export const updateComplaint = (complaintId, payload) =>
+  complaintClient.patch(`/complaints/${complaintId}`, payload);
+export const updateComplaintStatus = (complaintId, payload) =>
+  complaintClient.patch(`/complaints/${complaintId}/status`, payload);
+export const assignComplaint = (complaintId, payload) =>
+  complaintClient.patch(`/complaints/${complaintId}/assign`, payload);

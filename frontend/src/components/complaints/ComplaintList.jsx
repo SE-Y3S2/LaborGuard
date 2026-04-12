@@ -13,7 +13,7 @@ const ComplaintList = ({ complaints = [], role = 'worker', pagination, onPageCha
   const navigate = useNavigate();
 
   const getDetailPath = (id) => {
-    if (role === 'admin')  return `/admin/complaints/${id}`;
+    if (role === 'admin')  return `/complaints/${id}`;
     if (role === 'lawyer') return `/legal/cases/${id}`;
     if (role === 'ngo')    return `/ngo/cases/${id}`;
     return `/worker/complaints/${id}`;
@@ -73,15 +73,17 @@ const ComplaintList = ({ complaints = [], role = 'worker', pagination, onPageCha
       })}
 
       {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
+      {pagination && pagination.totalPages > 1 && (() => {
+        const currentPage = pagination.page ?? pagination.currentPage ?? 1;
+        return (
         <div className="flex items-center justify-between pt-4">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-            Page {pagination.currentPage} of {pagination.totalPages}
+            Page {currentPage} of {pagination.totalPages}
           </p>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => onPageChange(pagination.currentPage - 1)}
-              disabled={pagination.currentPage <= 1}
+              onClick={() => onPageChange(currentPage - 1)}
+              disabled={currentPage <= 1}
               className="h-9 w-9 rounded-full border border-slate-200 flex items-center justify-center text-slate-500
                          hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all">
               <ChevronLeft className="h-4 w-4" />
@@ -93,7 +95,7 @@ const ComplaintList = ({ complaints = [], role = 'worker', pagination, onPageCha
                   onClick={() => onPageChange(page)}
                   className={cn(
                     "h-9 w-9 rounded-full border text-xs font-black transition-all",
-                    pagination.currentPage === page
+                    currentPage === page
                       ? "bg-primary border-primary text-white"
                       : "border-slate-200 text-slate-500 hover:border-primary hover:text-primary"
                   )}>
@@ -102,15 +104,16 @@ const ComplaintList = ({ complaints = [], role = 'worker', pagination, onPageCha
               );
             })}
             <button
-              onClick={() => onPageChange(pagination.currentPage + 1)}
-              disabled={pagination.currentPage >= pagination.totalPages}
+              onClick={() => onPageChange(currentPage + 1)}
+              disabled={currentPage >= pagination.totalPages}
               className="h-9 w-9 rounded-full border border-slate-200 flex items-center justify-center text-slate-500
                          hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all">
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 };

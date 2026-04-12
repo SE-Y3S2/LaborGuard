@@ -16,8 +16,9 @@ const NGOReportsPage = () => {
   const { data: cases, isLoading } = useQuery({
     queryKey: ["ngo-reports-cases"],
     queryFn: async () => {
-      const res = await complaintApi.getAll({ limit: 50, status: "resolved" });
-      return res.data.data?.complaints || [];
+      const res = await complaintApi.getAllComplaints({ limit: 50, status: "resolved" });
+      const body = res.data.data;
+      return Array.isArray(body) ? body : body?.complaints || [];
     },
   });
 
