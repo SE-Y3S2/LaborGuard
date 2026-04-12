@@ -20,11 +20,16 @@ const AppointmentCard = ({ appointment, onCancel, onJoin }) => {
     scheduledAt,
     status,
     meetingType,
-    meetingLink,
-    location,
+    meetingDetails,
     notes,
-    officerId, // Populated object or ID
+    legalOfficerId, // ObjectId string (unpopulated) or populated object
   } = appointment;
+
+  const isOnline = meetingType === "online";
+  const officer =
+    typeof legalOfficerId === "object" && legalOfficerId !== null ? legalOfficerId : null;
+  const officerName = officer?.name || officer?.firstName || null;
+  const officerIdStr = typeof legalOfficerId === "string" ? legalOfficerId : officer?._id;
 
   const getStatusConfig = (status) => {
     switch (status) {
@@ -86,22 +91,31 @@ const AppointmentCard = ({ appointment, onCancel, onJoin }) => {
                     {format(new Date(scheduledAt), "p")}
                 </span>
                 <span className="flex items-center gap-1.5">
-                    {meetingType === "virtual" ? <Video className="h-4 w-4 text-primary" /> : <MapPin className="h-4 w-4 text-primary" />}
-                    {meetingType === "virtual" ? "Video Consultation" : "In-Person Meeting"}
+                    {isOnline ? <Video className="h-4 w-4 text-primary" /> : <MapPin className="h-4 w-4 text-primary" />}
+                    {isOnline ? "Video Consultation" : meetingType === "phone" ? "Phone Call" : "In-Person Meeting"}
                 </span>
             </div>
           </div>
 
-          {officerId && (
+          {officerIdStr && (
             <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100 w-fit">
                 <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black uppercase text-xs">
-                    {officerId.name?.charAt(0) || "L"}
+                    {officerName?.charAt(0) || "L"}
                 </div>
                 <div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Legal Officer</p>
-                    <p className="text-xs font-bold text-slate-700">{officerId.name || "Assigned Officer"}</p>
+                    <p className="text-xs font-bold text-slate-700">
+                      {officerName || `Officer #${officerIdStr.slice(-6)}`}
+                    </p>
                 </div>
             </div>
+          )}
+
+          {meetingDetails && (
+            <p className="text-xs font-bold text-slate-600 bg-primary/5 p-3 rounded-xl border border-primary/10 leading-relaxed break-all">
+                <span className="block text-[10px] font-black uppercase tracking-widest text-primary mb-1">Meeting Details</span>
+                {meetingDetails}
+            </p>
           )}
 
           {notes && (
@@ -118,9 +132,14 @@ const AppointmentCard = ({ appointment, onCancel, onJoin }) => {
             </div>
 
             <div className="flex flex-col gap-2 w-full">
-                {status === "confirmed" && meetingType === "virtual" && (
-                    <Button 
-                        onClick={() => window.open(meetingLink, "_blank")}
+                {status === "confirmed" && isOnline && meetingDetails && (
+                    <Button
+                        onClick={() => {
+                            const url = /^https?:\/\//.test(meetingDetails)
+                                ? meetingDetails
+                                : `https://${meetingDetails}`;
+                            window.open(url, "_blank", "noopener,noreferrer");
+                        }}
                         className="w-full rounded-xl font-black uppercase tracking-widest text-[10px] h-10 shadow-lg shadow-primary/10"
                     >
                         <Video className="h-3.5 w-3.5 mr-2" />
