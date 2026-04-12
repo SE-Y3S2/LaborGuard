@@ -365,6 +365,16 @@ Authorization: Bearer <token>
 | `GET` | `/api/appointments` | ✅ JWT | Get appointments |
 | `GET` | `/health` | ❌ | Health check |
 
+---
+
+### ⚡ Auto-Booking Behavior
+
+- When an admin updates a complaint status to `under_review`, the system:
+  - Checks eligibility (category + priority)
+  - Automatically creates a legal appointment
+  - Assigns a legal officer based on specialization (round-robin)
+  - Sends notifications to worker and legal officer
+
 **File Complaint Request Example:**
 ```json
 POST /api/complaints
